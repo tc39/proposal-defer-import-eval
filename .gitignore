@@ -36,3 +36,7 @@ jspm_packages
 # Optional REPL history
 .node_repl_history
 
+# Only apps should have lockfiles
+yarn.lock
+package-lock.json
+npm-shrinkwrap.json
