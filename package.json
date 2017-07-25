@@ -1,0 +1,13 @@
+{
+  "private": true,
+  "name": "template-for-proposals",
+  "description": "A repository template for ECMAScript proposals.",
+  "scripts": {
+  },
+  "homepage": "https://github.com/tc39/template-for-proposals#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tc39/template-for-proposals.git"
+  },
+  "license": "MIT"
+}
