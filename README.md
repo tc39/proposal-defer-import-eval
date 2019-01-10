@@ -12,7 +12,7 @@ Please ensure the following:
 ## Create your proposal repo
 
 Follow these steps:
-  1. Fork this repo, or create your own repo, clone this one, and point it at yours
+  1. Create your own repo, clone this one, and copy its contents into your repo. (Note: Do not fork this repo in GitHub's web interface, as that will later prevent transfer into the TC39 organization)
   1. Go to your repo settings “Options” page, under “GitHub Pages”, and set the source to the **master branch** and click Save.
     1. Ensure "Issues" is checked.
     1. Also, you probably want to disable "Wiki" and "Projects"
