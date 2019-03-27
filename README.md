@@ -12,20 +12,20 @@ Please ensure the following:
 ## Create your proposal repo
 
 Follow these steps:
-  1. Create your own repo, clone this one, and copy its contents into your repo. (Note: Do not fork this repo in GitHub's web interface, as that will later prevent transfer into the TC39 organization)
-  1. Go to your repo settings “Options” page, under “GitHub Pages”, and set the source to the **master branch** and click Save.
-    1. Ensure "Issues" is checked.
-    1. Also, you probably want to disable "Wiki" and "Projects"
-  1. Avoid merge conflicts with build process output files by running:
-```sh
-git config --local --add merge.output.driver true
-git config --local --add merge.output.driver true
-```
-  1. Add a post-rewrite git hook to auto-rebuild the output on every commit:
-```sh
-cp hooks/post-rewrite .git/hooks/post-rewrite
-chmod +x .git/hooks/post-rewrite
-```
+  1.  Create your own repo, clone this one, and copy its contents into your repo. (Note: Do not fork this repo in GitHub's web interface, as that will later prevent transfer into the TC39 organization)
+  1.  Go to your repo settings “Options” page, under “GitHub Pages”, and set the source to the **master branch** and click Save.
+      1. Ensure "Issues" is checked.
+      1. Also, you probably want to disable "Wiki" and "Projects"
+  1.  Avoid merge conflicts with build process output files by running:
+      ```sh
+      git config --local --add merge.output.driver true
+      git config --local --add merge.output.driver true
+      ```
+  1.  Add a post-rewrite git hook to auto-rebuild the output on every commit:
+      ```sh
+      cp hooks/post-rewrite .git/hooks/post-rewrite
+      chmod +x .git/hooks/post-rewrite
+      ```
 
 ## Maintain your proposal repo
 
