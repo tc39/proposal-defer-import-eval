@@ -5,9 +5,9 @@ A repository template for ECMAScript proposals.
 ## Before creating a proposal
 
 Please ensure the following:
-  1. You are a member of TC39
   1. You have read the [process document](https://tc39.github.io/process-document/)
   1. You have reviewed the [existing proposals](https://github.com/tc39/proposals/)
+  1. You are aware that your proposal requires being a member of TC39, or locating a TC39 member to "champion" your proposal
 
 ## Create your proposal repo
 
