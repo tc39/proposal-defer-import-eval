@@ -3,6 +3,7 @@
   "name": "template-for-proposals",
   "description": "A repository template for ECMAScript proposals.",
   "scripts": {
+    "start": "npm run build -- --watch",
     "build": "ecmarkup spec.emu index.html"
   },
   "homepage": "https://github.com/tc39/template-for-proposals#readme",
