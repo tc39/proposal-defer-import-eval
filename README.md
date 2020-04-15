@@ -12,10 +12,12 @@ Please ensure the following:
 ## Create your proposal repo
 
 Follow these steps:
-  1.  Create your own repo, clone this one, and copy its contents into your repo. (Note: Do not fork this repo in GitHub's web interface, as that will later prevent transfer into the TC39 organization)
-  1.  Go to your repo settings “Options” page, under “GitHub Pages”, and set the source to the **master branch** and click Save.
-      1. Ensure "Issues" is checked.
-      1. Also, you probably want to disable "Wiki" and "Projects"
+  1.  Click the green ["use this template"](https://github.com/tc39/template-for-proposals/generate) button in the repo header. (Note: Do not fork this repo in GitHub's web interface, as that will later prevent transfer into the TC39 organization)
+  1.  Go to your repo settings “Options” page, under “GitHub Pages”, and set the source to the **master branch** (and click Save, if it does not autosave this setting)
+      1. check "Enforce HTTPS"
+      1. On "Options", under "Features", Ensure "Issues" is checked, and disable "Wiki", and "Projects" (unless you intend to use Projects)
+      1. Under "Merge button", check "automatically delete head branches"
+<!--
   1.  Avoid merge conflicts with build process output files by running:
       ```sh
       git config --local --add merge.output.driver true
@@ -26,6 +28,7 @@ Follow these steps:
       cp hooks/post-rewrite .git/hooks/post-rewrite
       chmod +x .git/hooks/post-rewrite
       ```
+-->
 
 ## Maintain your proposal repo
 
