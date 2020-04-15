@@ -10,13 +10,18 @@ function Search(menu) {
   this.$search = document.getElementById('menu-search');
   this.$searchBox = document.getElementById('menu-search-box');
   this.$searchResults = document.getElementById('menu-search-results');
-  
+
   this.loadBiblio();
-  
+
   document.addEventListener('keydown', this.documentKeydown.bind(this));
-  
+
   this.$searchBox.addEventListener('keydown', debounce(this.searchBoxKeydown.bind(this), { stopPropagation: true }));
   this.$searchBox.addEventListener('keyup', debounce(this.searchBoxKeyup.bind(this), { stopPropagation: true }));
+
+  // Perform an initial search if the box is not empty.
+  if (this.$searchBox.value) {
+    this.search(this.$searchBox.value);
+  }
 }
 
 Search.prototype.loadBiblio = function () {
@@ -56,7 +61,7 @@ Search.prototype.searchBoxKeyup = function (e) {
   if (e.keyCode === 13 || e.keyCode === 9) {
     return;
   }
-  
+
   this.search(e.target.value);
 }
 
@@ -79,25 +84,23 @@ Search.prototype.triggerSearch = function (e) {
 // prefer shorter matches.
 function relevance(result, searchString) {
   var relevance = 0;
-  
+
   relevance = Math.max(0, 8 - result.match.chunks) << 7;
-  
+
   if (result.match.caseMatch) {
     relevance *= 2;
   }
-  
+
   if (result.match.prefix) {
     relevance += 2048
   }
-  
+
   relevance += Math.max(0, 255 - result.entry.key.length);
-  
+
   return relevance;
 }
 
 Search.prototype.search = function (searchString) {
-  var s = Date.now();
-
   if (searchString === '') {
     this.displayResults([]);
     this.hideSearch();
@@ -105,12 +108,12 @@ Search.prototype.search = function (searchString) {
   } else {
     this.showSearch();
   }
-  
+
   if (searchString.length === 1) {
     this.displayResults([]);
     return;
   }
-    
+
   var results;
 
   if (/^[\d\.]*$/.test(searchString)) {
@@ -121,20 +124,24 @@ Search.prototype.search = function (searchString) {
     });
   } else {
     results = [];
-    
+
     for (var i = 0; i < this.biblio.length; i++) {
       var entry = this.biblio[i];
-  
+      if (!entry.key) {
+        // biblio entries without a key aren't searchable
+        continue;
+      }
+
       var match = fuzzysearch(searchString, entry.key);
       if (match) {
         results.push({ entry: entry, match: match });
       }
     }
-  
+
     results.forEach(function (result) {
       result.relevance = relevance(result, searchString);
     });
-    
+
     results = results.sort(function (a, b) { return b.relevance - a.relevance });
 
   }
@@ -142,7 +149,7 @@ Search.prototype.search = function (searchString) {
   if (results.length > 50) {
     results = results.slice(0, 50);
   }
-  
+
   this.displayResults(results);
 }
 Search.prototype.hideSearch = function () {
@@ -159,7 +166,7 @@ Search.prototype.selectResult = function () {
   if ($first) {
     document.location = $first.getAttribute('href');
   }
-  
+
   this.$searchBox.value = '';
   this.$searchBox.blur();
   this.displayResults([]);
@@ -173,7 +180,7 @@ Search.prototype.selectResult = function () {
 Search.prototype.displayResults = function (results) {
   if (results.length > 0) {
     this.$searchResults.classList.remove('no-results');
-    
+
     var html = '<ul>';
 
     results.forEach(function (result) {
@@ -190,7 +197,7 @@ Search.prototype.displayResults = function (results) {
       } else if (entry.type === 'production') {
         text = entry.key;
         cssClass = 'prod';
-        id = entry.id;  
+        id = entry.id;
       } else if (entry.type === 'op') {
         text = entry.key;
         cssClass = 'op';
@@ -202,7 +209,7 @@ Search.prototype.displayResults = function (results) {
       }
 
       if (text) {
-        html += '<li class=menu-search-result-' + cssClass + '><a href="#' + id + '">' + text + '</a></li>'
+        html += '<li class=menu-search-result-' + cssClass + '><a href="#' + id + '">' + text + '</a></li>';
       }
     });
 
@@ -225,7 +232,7 @@ function Menu() {
   this.$toc = document.querySelector('#menu-toc > ol');
   this.$specContainer = document.getElementById('spec-container');
   this.search = new Search(this);
-  
+
   this._pinnedIds = {}; 
   this.loadPinEntries();
 
@@ -270,9 +277,9 @@ function Menu() {
                     && target.offsetHeight + target.scrollTop >= target.scrollHeight;
 
     if (offBottom) {
-		  e.preventDefault();
-	  }
-  })
+      e.preventDefault();
+    }
+  });
 }
 
 Menu.prototype.documentKeydown = function (e) {
@@ -299,7 +306,7 @@ Menu.prototype.revealInToc = function (path) {
     current[i].classList.remove('revealed');
     current[i].classList.remove('revealed-leaf');
   }
-  
+
   var current = this.$toc;
   var index = 0;
   while (index < path.length) {
@@ -310,7 +317,7 @@ Menu.prototype.revealInToc = function (path) {
         if (index === path.length - 1) {
           children[i].classList.add('revealed-leaf');
           var rect = children[i].getBoundingClientRect();
-          this.$toc.getBoundingClientRect().top
+          // this.$toc.getBoundingClientRect().top;
           var tocRect = this.$toc.getBoundingClientRect();
           if (rect.top + 10 > tocRect.bottom) {
             this.$toc.scrollTop = this.$toc.scrollTop + (rect.top - tocRect.bottom) + (rect.bottom - rect.top);
@@ -321,29 +328,27 @@ Menu.prototype.revealInToc = function (path) {
         current = children[i].querySelector('ol');
         index++;
         break;
-      }      
+      }
     }
-    
+
   }
 }
 
 function findActiveClause(root, path) {
   var clauses = new ClauseWalker(root);
   var $clause;
-  var found = false;
   var path = path || [];
-  
+
   while ($clause = clauses.nextNode()) {
     var rect = $clause.getBoundingClientRect();
     var $header = $clause.children[0];
     var marginTop = parseInt(getComputedStyle($header)["margin-top"]);
-    
+
     if ((rect.top - marginTop) <= 0 && rect.bottom > 0) {
-      found = true;
       return findActiveClause($clause, path.concat($clause)) || path;
     }
   }
-  
+
   return path;
 }
 
@@ -368,7 +373,7 @@ function ClauseWalker(root) {
     },
     false
     );
-  
+
   return treeWalker;
 }
 
@@ -451,7 +456,7 @@ Menu.prototype.loadPinEntries = function () {
   } catch (e) {
     return;
   }
-  
+
   var pinsString = window.localStorage.pinEntries;
   if (!pinsString) return;
   var pins = JSON.parse(pinsString);
@@ -482,6 +487,11 @@ function init() {
   var $container = document.getElementById('spec-container');
   $container.addEventListener('mouseover', debounce(function (e) {
     Toolbox.activateIfMouseOver(e);
+  }));
+  document.addEventListener('keydown', debounce(function (e) {
+    if (e.code === "Escape" && Toolbox.active) {
+      Toolbox.deactivate();
+    }
   }));
 }
 
@@ -581,12 +591,11 @@ function fuzzysearch (searchString, haystack, caseInsensitive) {
   var qlen = searchString.length;
   var chunks = 1;
   var finding = false;
-  var prefix = true;
-  
+
   if (qlen > tlen) {
     return false;
   }
-  
+
   if (qlen === tlen) {
     if (searchString === haystack) {
       return { caseMatch: true, chunks: 1, prefix: true };
@@ -596,7 +605,7 @@ function fuzzysearch (searchString, haystack, caseInsensitive) {
       return false;
     }
   }
-  
+
   outer: for (var i = 0, j = 0; i < qlen; i++) {
     var nch = searchString[i];
     while (j < tlen) {
@@ -610,12 +619,12 @@ function fuzzysearch (searchString, haystack, caseInsensitive) {
         finding = false;
       }
     }
-    
-    if (caseInsensitive) { return false }
-    
+
+    if (caseInsensitive) { return false; }
+
     return fuzzysearch(searchString.toLowerCase(), haystack.toLowerCase(), true);
   }
-  
+
   return { caseMatch: !caseInsensitive, chunks: chunks, prefix: j <= qlen };
 }
 
@@ -772,7 +781,6 @@ var referencePane = {
       var target = document.getElementById(id);
       var cid = findParentClauseId(target);
       var clause = menu.search.biblio.byId[cid];
-      var dupCount = 0;
       return { id: id, clause: clause }
     }).sort(function (a, b) {
       return sortByClauseNumber(a.clause, b.clause);
@@ -812,7 +820,7 @@ function sortByClauseNumber(c1, c2) {
     if (i >= c2c.length) {
       return 1;
     }
-    
+
     var c1 = c1c[i];
     var c2 = c2c[i];
     var c1cn = Number(c1);
@@ -1024,11 +1032,11 @@ emu-note > div.note-contents {
   flex-shrink: 1;
 }
 
-emu-note > div.note-contents > p:first-child {
+emu-note > div.note-contents > p:first-of-type {
   margin-top: 0;
 }
 
-emu-note > div.note-contents > p:last-child {
+emu-note > div.note-contents > p:last-of-type {
   margin-bottom: 0;
 }
 
@@ -1056,6 +1064,10 @@ emu-table figure {
 
 emu-production {
     display: block;
+}
+
+emu-grammar[type="example"] emu-production,
+emu-grammar[type="definition"] emu-production {
     margin-top: 1em;
     margin-bottom: 1em;
     margin-left: 5ex;
@@ -1083,6 +1095,7 @@ emu-gann {
 }
 
 emu-gann emu-t:last-child,
+emu-gann emu-gprose:last-child,
 emu-gann emu-nt:last-child {
     margin-right: 0;
 }
@@ -1137,10 +1150,6 @@ emu-mods {
     font-weight: normal;
 }
 
-emu-production[collapsed] emu-mods {
-  display: none;
-}
-
 emu-params, emu-opt {
   margin-right: 1ex;
   font-family: monospace;
@@ -1157,6 +1166,10 @@ emu-opt {
 emu-gprose {
     font-size: 0.9em;
     font-family: Helvetica, Arial, sans-serif;
+}
+
+emu-production emu-gprose {
+    margin-right: 1ex;
 }
 
 h1.shortname {
@@ -1186,7 +1199,7 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 .secnum {
   text-decoration: none;
-  margin-right: 10px;
+  margin-right: 5px;
 }
 
 h1 span.title {
@@ -1327,6 +1340,9 @@ ins.block, del.block,
 emu-production > ins, emu-production > del,
 emu-grammar > ins, emu-grammar > del {
   display: block;
+}
+emu-rhs > ins, emu-rhs > del { 
+  display: inline;
 }
 
 tr.ins > td > ins {
@@ -1792,21 +1808,27 @@ li.menu-search-result-term:before {
   text-align: right;
   padding-right: 5px;
 }
-</style></head><body><div id="menu-toggle">☰</div><div id="menu-spacer"></div><div id="menu"><div id="menu-search"><input type="text" id="menu-search-box" placeholder="Search..."><div id="menu-search-results" class="inactive"></div></div><div id="menu-pins"><div class="menu-pane-header">Pins</div><ul id="menu-pins-list"></ul></div><div class="menu-pane-header">Table of Contents</div><div id="menu-toc"><ol class="toc"><li><span class="item-toggle-none"></span><a href="#sec-demo-clause" title="This is an emu-clause"><span class="secnum">1</span> This is an emu-clause</a></li><li><span class="item-toggle-none"></span><a href="#sec-copyright-and-software-license" title="Copyright &amp; Software License"><span class="secnum">A</span> Copyright &amp; Software License</a></li></ol></div></div><div id="spec-container"><h1 class="version first">Stage -1 Draft / September 25, 2017</h1><h1 class="title">Proposal Title Goes Here</h1>
+
+@media print {
+  #menu-toggle {
+    display: none; 
+  }
+}
+</style></head><body><div id="menu-toggle">☰</div><div id="menu-spacer"></div><div id="menu"><div id="menu-search"><input type="text" id="menu-search-box" placeholder="Search..."><div id="menu-search-results" class="inactive"></div></div><div id="menu-pins"><div class="menu-pane-header">Pins</div><ul id="menu-pins-list"></ul></div><div class="menu-pane-header">Table of Contents</div><div id="menu-toc"><ol class="toc"><li><span class="item-toggle-none"></span><a href="#sec-demo-clause" title="This is an emu-clause"><span class="secnum">1</span> This is an emu-clause</a></li><li><span class="item-toggle-none"></span><a href="#sec-copyright-and-software-license" title="Copyright &amp; Software License"><span class="secnum">A</span> Copyright &amp; Software License</a></li></ol></div></div><div id="spec-container"><h1 class="version first">Stage -1 Draft / April 15, 2020</h1><h1 class="title">Proposal Title Goes Here</h1>
 
 <emu-clause id="sec-demo-clause">
-  <h1><span class="secnum">1</span>This is an emu-clause</h1>
+  <h1><span class="secnum">1</span> This is an emu-clause</h1>
   <p>This is an algorithm:</p>
-  <emu-alg><ol><li>Let <var>proposal</var> be <emu-val>undefined</emu-val>.</li><li>If IsAccepted(<var>proposal</var>),<ol><li>Let <var>stage</var> be <emu-val>0</emu-val>.</li></ol></li><li>Else,<ol><li>Let <var>stage</var> be <emu-val>-1</emu-val>.</li></ol></li><li>Return ?&nbsp;<emu-xref aoid="ToString" id="_ref_0"><a href="https://tc39.github.io/ecma262/#sec-tostring">ToString</a></emu-xref>(<var>proposal</var>).
+  <emu-alg><ol><li>Let <var>proposal</var> be <emu-val>undefined</emu-val>.</li><li>If IsAccepted(<var>proposal</var>),<ol><li>Let <var>stage</var> be <emu-val>0</emu-val>.</li></ol></li><li>Else,<ol><li>Let <var>stage</var> be <emu-val>-1</emu-val>.</li></ol></li><li>Return ?&nbsp;<emu-xref aoid="ToString" id="_ref_0"><a href="https://tc39.es/ecma262/#sec-tostring">ToString</a></emu-xref>(<var>proposal</var>).
   </li></ol></emu-alg>
 </emu-clause><emu-annex id="sec-copyright-and-software-license">
-      <h1><span class="secnum">A</span>Copyright &amp; Software License</h1>
+      <h1><span class="secnum">A</span> Copyright &amp; Software License</h1>
       
       <h2>Copyright Notice</h2>
-      <p>© 2017 Your Name Goes Here</p>
+      <p>© 2020 Your Name Goes Here</p>
 
       <h2>Software License</h2>
-      <p>All Software contained in this document ("Software") is protected by copyright and is being made available under the "BSD License", included below. This Software may be subject to third party rights (rights from parties other than Ecma International), including patent rights, and no licenses under such third party rights are granted under this license even if the third party concerned is a member of Ecma International. SEE THE ECMA CODE OF CONDUCT IN PATENT MATTERS AVAILABLE AT http://www.ecma-international.org/memento/codeofconduct.htm FOR INFORMATION REGARDING THE LICENSING OF PATENT CLAIMS THAT ARE REQUIRED TO IMPLEMENT ECMA INTERNATIONAL STANDARDS.</p>
+      <p>All Software contained in this document ("Software") is protected by copyright and is being made available under the "BSD License", included below. This Software may be subject to third party rights (rights from parties other than Ecma International), including patent rights, and no licenses under such third party rights are granted under this license even if the third party concerned is a member of Ecma International. SEE THE ECMA CODE OF CONDUCT IN PATENT MATTERS AVAILABLE AT https://ecma-international.org/memento/codeofconduct.htm FOR INFORMATION REGARDING THE LICENSING OF PATENT CLAIMS THAT ARE REQUIRED TO IMPLEMENT ECMA INTERNATIONAL STANDARDS.</p>
 
 <p>Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:</p>
 
