@@ -13,7 +13,7 @@ Please ensure the following:
 
 Follow these steps:
   1.  Click the green ["use this template"](https://github.com/tc39/template-for-proposals/generate) button in the repo header. (Note: Do not fork this repo in GitHub's web interface, as that will later prevent transfer into the TC39 organization)
-  1.  Go to your repo settings “Options” page, under “GitHub Pages”, and set the source to the **master branch** (and click Save, if it does not autosave this setting)
+  1.  Go to your repo settings “Options” page, under “GitHub Pages”, and set the source to the **main branch** under the root (and click Save, if it does not autosave this setting)
       1. check "Enforce HTTPS"
       1. On "Options", under "Features", Ensure "Issues" is checked, and disable "Wiki", and "Projects" (unless you intend to use Projects)
       1. Under "Merge button", check "automatically delete head branches"
@@ -43,7 +43,7 @@ Follow these steps:
 
       ```markdown
       You can browse the [ecmarkup output](https://ACCOUNT.github.io/PROJECT/)
-      or browse the [source](https://github.com/ACCOUNT/PROJECT/blob/master/spec.emu).
+      or browse the [source](https://github.com/ACCOUNT/PROJECT/blob/HEAD/spec.emu).
       ```
 
       where *ACCOUNT* and *PROJECT* are the first two path elements in your project's Github URL.
@@ -56,5 +56,5 @@ Follow these steps:
   1. Make your changes to `spec.emu` (ecmarkup uses HTML syntax, but is not HTML, so I strongly suggest not naming it ".html")
   1. Any commit that makes meaningful changes to the spec, should run `npm run build` and commit the resulting output.
   1. Whenever you update `ecmarkup`, run `npm run build` and commit any changes that come from that dependency.
-  
-  [explainer]: https://github.com/tc39/how-we-work/blob/master/explainer.md
+
+  [explainer]: https://github.com/tc39/how-we-work/blob/HEAD/explainer.md
