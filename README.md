@@ -29,7 +29,7 @@ Follow these steps:
       chmod +x .git/hooks/post-rewrite
       ```
 -->
-  1.  ["How to write a good explainer"][explainer] explains how to make a good first impression.
+  3.  ["How to write a good explainer"][explainer] explains how to make a good first impression.
 
       > Each TC39 proposal should have a `README.md` file which explains the purpose
       > of the proposal and its shape at a high level.
