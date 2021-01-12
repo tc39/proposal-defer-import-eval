@@ -22,6 +22,10 @@ server-side and client-side. This proposal seeks to explore the problem of loadi
 
 ## Background
 
+Lazy loading is a common solution for startup performance. However this is a detail rather
+meaningful information for programmers, and appears in its most problematic form on projects with
+some complexity seeking additional performance. We can use the following example:
+
 ```js
 import aMethod from "a.js";
 
@@ -42,7 +46,12 @@ function eventuallyCalled() {
 }
 ```
 
-### Where top level await and dynamic import fall short
+### Where dynamic import falls short
+
+The pure js solution to this problem, as it is now, would be to use dynamic import. However, due to
+the nature of dynamic import, we end up with large scale refactoring that is often not meaningful
+for programmers in order to get the desired performance characteristics. For example, we end up with
+the following:
 
 ```js
 async function lazyAMethod(...args) {
@@ -69,7 +78,8 @@ async function eventuallyCalled() {
 
 This is an issue for a couple of reasons:
 
-1) introduces a large refactoring task
+1) introduces a large refactoring task, including knockon effects in potentially distant code such
+as `eventuallyCalled` in this example.
 2) introduces information about async work, when the only goal here is to *hint* that something can
 be deferred, not a semantic change to the code.
 
@@ -103,33 +113,32 @@ lazyImport * as ns from "y";
 Modules can be simplified to have three points at which laziness can be implemented:
 
 1) Load
-2) Parse
-  a) if an import statement is found, go to step 1. Repeat for all imports.
-3) Evaluate
+1) Parse
 
-In existing polyfills for this behavior, some implement laziness at point 1. However we should not implement laziness at step 1, because that would invalidate Run to completion semantics and require pausing in sync code. The desire for a "hint" for engines is not enough of a reason to relinquish this invariant.
+    1) if an import statement is found, go to step 1. Repeat for all imports.
 
-Similarily, we cannot implement laziness at point 2, due to point 2.a, which builds the rest of the
-module graph. We want the module graph to be present and complete, so that other work can also be
+1) Evaluate
+
+In existing polyfills for this behavior, some implement laziness at point 1. This would mean that we do not fully build the module graph at load time. Implementing laziness at step 1 would potentially invalidate Run to completion semantics and require pausing in sync code. The desire for a "hint" for engines might not be enough of a reason to relinquish this invariant on it's own (please see the alternatives section for more info).
+
+One problematic point to implement laziness is at point 2, due to point 2.i, which builds the rest of the module graph. Without parsing, we will be unable to have a complete module graph. We want the module graph to be present and complete, so that other work can also be
 done.
 
-This leaves us with implementing lazy modules at point 3, the point of evaluation. Implementations
-would be able to have a light-weight parse step for stage 2, to further speed up load times.
+Implementing lazy modules at point 3, the point of evaluation would relinquish some significant
+performance advantages. At the very least implementations would be able to have a light-weight parse step for stage 2, and loading would be required.
 
 Deferring the evaluation of a lazy module will be semantically different from what "regular" modules
 currently do, which will evaluate the top level of the module eagerly.
 
-## Usecases
-
-
+The proposal in it's simplest form will pause at point 3, and for the present moment this is the
+approach taken. Please see [Alternatives](#alternatives) for more ideas.
 
 ## Existing workarounds
 
 ### Client-side
 
-Most modern frontend frameworks have a lazy loading solution built-in. This is a collection of
-examples with a high level overview of how they work. In the case of angular, vue, and ember, they
-are usually variations on the following (this example is from vue):
+Most modern frontend frameworks have a lazy loading solution built-in based off dynamic import. One characteristic is that
+they all mask the async nature of the code for the benefit of the programmer. This example is from vue:
 
 ```js
 // file1.js
@@ -144,7 +153,8 @@ export default {
 ```
 
 For frontend developers working with a framework, the solutions provided by the framework are often
-quite good.
+quite good. However a language feature providing this benefit would likely be welcome especially by
+those not working in frameworks.
 
 #### Lazy load it, but hide the async-ness
 
@@ -166,41 +176,34 @@ throws until the promise resolves. The only framework currently exploring this t
 with is ["suspense" and "lazy" components](https://reactjs.org/docs/concurrent-mode-suspense.html).
 Simplified example [here](https://gist.github.com/sebmarkbage/2c7acb6210266045050632ea611aebee).
 
-This solves one problem that the above solution does not: In this solution, there is no possiblity
-of race conditions as everything is forced to be sync.
-
 ## Server-side and JS Applications
 
 For JavaScript that runs locally and outside of a browser context, the story is a bit different.
 There has been a great deal of inertia in moving away from requireJS due to the performance impact.
-A polyfill might look like this:
+Loading sync with require is by default, so the following is possible:
 
 ```js
-var _require = require;
-var require = function (moduleName) {
-    var module;
-    return new Proxy(function () {
-        if (!module) {
-            module = _require(moduleName)
-        }
-        return module.apply(this, arguments)
-    }, {
-        get: function (target, name) {
-            if (!module) {
-                module = _require(moduleName)
-            }
-            return module[name];
-        }
-    })
-};
+function lazyAMethod(...args) {
+   const aMethod = require("./a.js");
+   return aMethod(...args);
+}
 
-console.log('Before require');
-var a = require('./module')
-console.log('After require');
-console.log(a.d)
-console.log('After log module');
+function rarelyUsedA() {
+  // ...
+  const aMethod = lazyAMethod();
+}
+
+function alsoRarelyUsedA() {
+  // ...
+  const aMethod =lazyAMethod();
+}
+
+// ...
+
+function eventuallyCalled() {
+  rarelyUsedA();
+}
 ```
-(this was found on [stack overflow](https://stackoverflow.com/questions/9132772/lazy-loading-in-node-js))
 
 In the case of Firefox DevTools, we have several implementations of the following:
 
@@ -234,8 +237,8 @@ exports.defineLazyModuleGetter = function(object, name, resource, symbol) {
 };
 ```
 
-A more complete list of examples can be found in [Usecases](./usecases.md).
-
+This is only possible due to an exposed function, `ChromeUtils.import` which allows us to
+synchronously load the file.
 
 ## Known issues
 
@@ -288,12 +291,22 @@ interim, bundlers would be able to use the syntax outlined here to do similar op
 
 TODO: Fill this out more.
 
-## Co-routines
+### Co-routines
 
 The issue highlighted above regarding top level await, and regarding async fetch requests, could be
 mitigated by the introduction of co-routines. This would remove the invariant of run to completion.
 There is some need for this potentially, as illustrated by the React usecase.
 
+### Delegating work to blocking workers
+
+This is loosely based off an idea of "transactional JS". This would delegate work to the Host, who
+would run it in the context of a worker and block further execution until the result is ready.
+Objects which require manipulation would need to be isolated (read-only to the worker),
+and the modification could only be applied when the worker returns the result. This approach would
+not invalidate Run to Completion, as the guarentee provided by Run to Completion is that the data
+will not change in memory while the sync function runs unless it is changed by that function itself.
+
+This leaves the issue of blocking the main thread.
 
 ## Other Languages
 
