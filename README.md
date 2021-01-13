@@ -300,7 +300,7 @@ There is some need for this potentially, as illustrated by the React usecase.
 ### Delegating work to blocking workers
 
 One of the problem of the proposed solution is that all resources have to be loaded ahead, before
-doing a lazy initialization. Frameeworks have defined systems where the resources are not necessarily
+doing a lazy initialization. Frameworks have defined systems where the resources are not necessarily
 fetched yet, and if it is not fetched then the framework behave as-if we were doing a transaction, by
 unwinding everything and starting over.
 
@@ -339,4 +339,3 @@ None so far.
 ## Q&A
 
 TODO.
-
