@@ -306,10 +306,14 @@ There is some need for this potentially, as illustrated by the React usecase.
 
 ### Delegating work to blocking workers
 
+We do not know yet if the performance characteristics of the basic proposal will be enough for the
+server-side case. In considering this also on the front end, we might explore a more creative
+solution.
+
 One of the problem of the proposed solution is that all resources have to be loaded ahead, before
-doing a lazy initialization. Frameworks have defined systems where the resources are not necessarily
+doing a lazy initialization. In the case of React, Frameworks have defined systems where the resources are not necessarily
 fetched yet, and if it is not fetched then the framework behave as-if we were doing a transaction, by
-unwinding everything and starting over.
+unwinding everything and starting over. This resembles a co-routine, but might be done differently.
 
 Today the main-thread cannot be blocked for multiple reasons. But we could block a worker thread as
 long as we do not break the run-to-completion restriction. The run-to-completion ensures that the amount
@@ -322,7 +326,7 @@ are either returning main-thread results computed asynchronously on the main-thr
 result of fetch function which do not involve changing the state of the Worker thread.
 
 Once the worker work is completed, the data can be transfered back to the main thread by resolving a
-Promise.
+Promise. This could be done behind the scenes.
 
 Some problems remains on how to efficiently transfer contextual information to the worker thread,
 without adding race conditions. To which some options might be to add a copy-on-write feature where
