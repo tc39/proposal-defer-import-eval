@@ -46,12 +46,11 @@ function eventuallyCalled() {
 }
 ```
 
-### Where dynamic import falls short
+### Dynamic import: a complimentary tool.
 
-The pure js solution to this problem, as it is now, would be to use dynamic import. However, due to
-the nature of dynamic import, we end up with large scale refactoring that is often not meaningful
-for programmers in order to get the desired performance characteristics. For example, we end up with
-the following:
+At present, the tool available to developers is dynamic import. And it works really well in a number
+of cases (particularily in frontend frameworks). However when we are looking at large codebases that
+do not rely on a framework, we run into the following problem.
 
 ```js
 async function lazyAMethod(...args) {
@@ -83,6 +82,10 @@ as `eventuallyCalled` in this example.
 2) introduces information about async work, when the only goal here is to *hint* that something can
 be deferred, not a semantic change to the code.
 
+To elaborate a bit more on point 2, if we consider server side applications, they often are not interested in making a fetch
+request, they are accessing local resources. In the Firefox codebase, [we have dedicated utilities to load files synchronously](https://searchfox.org/mozilla-central/rev/07342ce09126c513540c1c343476e026cfa907bf/js/xpconnect/loader/mozJSComponentLoader.cpp#1184-1298). Attempts to use dynamic import on the other hand, [requires us to manually turn the
+event loop (see lines 249-251)](https://phabricator.services.mozilla.com/D18858), something developers most certainly do not have access to.
+
 ## Description
 
 Lazy import can defer the evaluation, and a large part of the parsing, of a module for the purposes
@@ -100,38 +103,40 @@ import defaultName from "y" with { lazyInit: true }
 import * as ns from "y" with { lazyInit: true }
 ```
 
-or using a custom keyword, in this case using `lazyImport` as a stand in:
+or using a custom keyword, in this case using `lazy import` as a stand in:
 
 ```js
-lazyImport {x} from "y";
-lazyImport defaultName from "y";
-lazyImport * as ns from "y";
+lazy import {x} from "y";
+lazy import defaultName from "y";
+lazy import * as ns from "y";
 ```
 
 ## Semantics
 
 Modules can be simplified to have three points at which laziness can be implemented:
 
-1) Load
-1) Parse
+1) Before Load
+1) Before Parse
 
-    1) if an import statement is found, go to step 1. Repeat for all imports.
+    1) Note: after Parse, if an import statement is found, go to beginning for that resource. Repeat for all imports.
 
-1) Evaluate
+1) Before Evaluate
 
-In existing polyfills for this behavior, some implement laziness at point 1. This would mean that we do not fully build the module graph at load time. Implementing laziness at step 1 would potentially invalidate Run to completion semantics and require pausing in sync code. The desire for a "hint" for engines might not be enough of a reason to relinquish this invariant on it's own (please see the alternatives section for more info).
+In existing polyfills for this behavior, some implement laziness at point 1. This would mean that we do not fully build the module graph at load time. Implementing laziness at point 1 would invalidate run-to-completion semantics and require pausing in sync code.
 
 One problematic point to implement laziness is at point 2, due to point 2.i, which builds the rest of the module graph. Without parsing, we will be unable to have a complete module graph. We want the module graph to be present and complete, so that other work can also be
 done.
 
-Implementing lazy modules at point 3, the point of evaluation would relinquish some significant
+Implementing lazy modules at point 3, before evaluation would relinquish some significant
 performance advantages. At the very least implementations would be able to have a light-weight parse step for stage 2, and loading would be required.
 
 Deferring the evaluation of a lazy module will be semantically different from what "regular" modules
 currently do, which will evaluate the top level of the module eagerly.
 
 The proposal in it's simplest form will pause at point 3, and for the present moment this is the
-approach taken. Please see [Alternatives](#alternatives) for more ideas.
+approach taken. However, we can't be certain that we will get desirable performance characteristics
+from this alone, or that it will be as useful for client side applications as it might be for
+serverside applications (more on that in the next section). Some [Alternative](#alternatives) explorations have been proposed.
 
 ## Existing workarounds
 
@@ -154,7 +159,8 @@ export default {
 
 For frontend developers working with a framework, the solutions provided by the framework are often
 quite good. However a language feature providing this benefit would likely be welcome especially by
-those not working in frameworks.
+those not working in frameworks. This works well with code splitting -- where bundlers such as
+webpack parse files for `import(..)` and create additional files that can be loaded async.
 
 #### Lazy load it, but hide the async-ness
 
@@ -175,6 +181,10 @@ of a "co-routine". Effectively, the framework uses a loop with a try/catch, whic
 throws until the promise resolves. The only framework currently exploring this technique is React,
 with is ["suspense" and "lazy" components](https://reactjs.org/docs/concurrent-mode-suspense.html).
 Simplified example [here](https://gist.github.com/sebmarkbage/2c7acb6210266045050632ea611aebee).
+
+This work also points to a potential lack of dynamic import for all cases on the front end. This
+requires more investigation, but it looks like lazy import and dynamic import are complimentary on
+the frontend as well as serverside.
 
 ## Server-side and JS Applications
 
@@ -231,7 +241,7 @@ function defineLazyGetter(object, name, lambda) {
 }
 exports.defineLazyModuleGetter = function(object, name, resource, symbol) {
   defineLazyGetter(object, name, function() {
-    const temp = ChromeUtils.import(resource);
+    const temp = ChromeUtils.import(resource); // this calls the module component loader
     return temp[symbol || name];
   });
 };
@@ -280,18 +290,15 @@ has also resulted in a delayed adoption of ESMs for performance sensitive code.
 This said, the solution may lie in the same space. The batch preloading presentation by Dan Ehrenberg in the
 [November 2020 meeting](https://github.com/tc39/notes/blob/master/meetings/2020-11/nov-19.md#batch-preloading-and-javascript) pointed a direction for JS bundles, which would offer a delivery mechanism. This would mean that the modules may be available on disk for quick access. This would mean that the same technique used for server side applications would also work for web applications.
 
-This interplay is also clear in the ecosystem, where [webpack
-codespliting](https://webpack.js.org/guides/code-splitting/) parses files to find imports, to then
-have them split out modules in the bundle.
-
-In the case that batch preloading outline above works, no extra handling will be necessary. In the
-interim, bundlers would be able to use the syntax outlined here to do similar optimizations.
-
 ## Alternatives
 
-TODO: Fill this out more.
+This section exists to document potential alternatives, however at present the proposal is focusing
+on the more minimal approach of pausing before evaluation. If that fails, we may need to discuss
+these in more detail.
 
 ### Co-routines
+
+The inspiration here comes from React's use of try/catch.
 
 The issue highlighted above regarding top level await, and regarding async fetch requests, could be
 mitigated by the introduction of co-routines. This would remove the invariant of run to completion.
