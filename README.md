@@ -280,6 +280,17 @@ There are two possibilities for how to handle this case:
 1) Throw an error if we come across an async module during the parse step
 2) roll back the "lazy parse", and treat it as a normal module import -- possibly with a warning
 
+There are also two implications here. The first is, whatever we choose, must be true for any
+dependencies of a lazy module as well. So in the traversal of a "lazy" graph, we will need to throw
+if any dependency is async. We may also need to include an additional piece of syntax, something to
+the effect of:
+
+```js
+import { item } from "./file" assert { sync: true } with { lazyInit: true }
+```
+
+Or something like this.
+
 ### Impact on web related code
 
 The solution described here assumes that the largest cost paid at start up is in building the
