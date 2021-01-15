@@ -1,4 +1,6 @@
-# Lazy Module Initialization
+# Deferring Module Evaluation
+
+previously known as "Lazy Module Initialization"
 
 ## Status
 
@@ -17,7 +19,7 @@ as they also encapsulate meaningful information about a program. However, the cu
 for this are somewhat cumbersome, and reduce the ergonomics and readibility of code. The best tool
 right now is `import()` but it forces all code relying on a lazily loaded module to become async.
 
-This proposal seeks to explore the problem of loading large applications through this perspective.
+This proposal seeks to explore the problem of loading large applications, but focus on a different aspect with is deferring evaluation of modules.
 
 ## Background
 
@@ -93,7 +95,7 @@ of ergonomic touch ups to performance.
 
 The api can take a couple of forms, here are some suggestions:
 
-Using import attributes:
+Using import attributes (using `lazyInit` here to illustrate, but it could also be something like `deferEval` or similar:
 
 ```js
 import {x} from "y" with { lazyInit: true }
@@ -108,6 +110,8 @@ lazy import {x} from "y";
 lazy import defaultName from "y";
 lazy import * as ns from "y";
 ```
+
+The language needs some bikesheddding, as "Lazy" is often associated with "Lazy Loading", but this is not what is happening here. For now, lacking the right word, "Lazy" will be used, but not in the sense of "lazy-load", rather in the sense of "lazy-eval".
 
 ## Semantics
 
@@ -138,6 +142,60 @@ The proposal in it's simplest form will pause at point 3, and for the present mo
 approach taken. However, we can't be certain that we will get desirable performance characteristics
 from this alone, or that it will be as useful for client side applications as it might be for
 server-side applications (more on that in the next section). Some [Alternative](./alternatives.md) explorations have been proposed.
+
+Roughly, the semantics would be similar to wrapping a module's code in a function, wrappingg that in a getter which replaces the name with the "function" once it is accessed for the first time, and exporting that. For example:
+
+```js
+// moduleWrapper.js
+export default function ModuleWrapper(object, name, lambda) {
+  Object.defineProperty(object, name, {
+    get: function() {
+      // Redefine this accessor property as a data property.
+      // Delete it first, to rule out "too much recursion" in case object is
+      // a proxy whose defineProperty handler might unwittingly trigger this
+      // getter again.
+      delete object[name];
+      const value = lambda.apply(object);
+      Object.defineProperty(object, name, {
+        value,
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      });
+      return value;
+    },
+    configurable: true,
+    enumerable: true,
+  });
+  return object;
+}
+
+// module.js
+immport ModuleWrapper from "./ModuleWrapper";
+
+function MyModule() {
+ // ... all of the work of the module
+}
+
+export default ModuleWrapper({}, "MyModule", MyModule);
+
+// parent.js
+import { MyModule } from "./module";
+
+function Foo() {
+  MyModule.bar() // first use
+}
+```
+
+## Impact on execution order
+
+TODO: Add description here
+|-------------------------------|----------------------|------------------------------|----------------|
+|                               | Static Import        | Dynamic Import               | "Lazy" Import  |
+|-------------------------------|----------------------|------------------------------|----------------|
+| Top level exectuion of module | Load, Parse, Execute |                              |  Load, Parse,  |
+| First use                     |                      | Load, Parse, Execute         |  Execute       |
+|-------------------------------|----------------------|------------------------------|----------------|
 
 ## Code Splitting: a complimentary tool.
 
