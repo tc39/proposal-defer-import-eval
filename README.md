@@ -191,12 +191,12 @@ function Foo() {
 
 TODO: Add description here
 
-|-------------------------------|----------------------|------------------------------|----------------|
+
 |                               | Static Import        | Dynamic Import               | "Lazy" Import  |
 |-------------------------------|----------------------|------------------------------|----------------|
 | Top level exectuion of module | Load, Parse, Execute |                              |  Load, Parse,  |
 | First use                     |                      | Load, Parse, Execute         |  Execute       |
-|-------------------------------|----------------------|------------------------------|----------------|
+
 
 ## Code Splitting: a complimentary tool.
 
