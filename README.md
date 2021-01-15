@@ -187,6 +187,8 @@ function Foo() {
 }
 ```
 
+The above is only for demonstrative purposes. It does not address making the child imports of the lazy modules also lazy, or resolve conflicts where a child of a lazy module may be imported and executed eagerly.
+
 ## Impact on execution order
 
 TODO: Add description here
