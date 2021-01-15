@@ -12,17 +12,24 @@ Stage: 0
 
 JS applications can get pretty large. It gets to the point that loading them incurs a significant performance cost, and usually, this happens later in an application's life span -- often requiring invasive changes to make it more performant.
 
-Lazy loading is a common solution to this problem and modules present a natural boundary for loading,
+Introducing "laziness" – deferring non-essential work until later – is a common solution to this problem and modules present a natural boundary,
 as they also encapsulate meaningful information about a program. However, the current tools we have
 for this are somewhat cumbersome, and reduce the ergonomics and readibility of code. The best tool
 right now is `import()` but requires that all code relying on a lazily loaded module becomes async.
 
-As a result, several solutions to hide the async nature of lazy loading have been introduced, both
-server-side and client-side. This proposal seeks to explore the problem of loading large applications through this perspective.
+This proposal seeks to explore the problem of loading large applications through this perspective.
 
 ## Background
 
-Lazy loading is a common solution for startup performance. However this is a detail rather
+Prior to the standardization of ES Modules, RequireJS was used by many developers as a module
+system. There was one important difference between requireJS and what we have today, that is --
+requireJS loads modules on demand, whereas ES Modules load them eagerly.
+
+The reasoning for the semantics of ES Modules is well founded. However, in some cases this
+difference in semantics has made it difficult for projects to adopt ES Modules in place of Require.
+Namely, the performance cost of eagerly loading, parsing and evaluating modules is too great.
+
+Lazification is a common solution for startup performance. However this is a detail rather
 meaningful information for programmers, and appears in its most problematic form on projects with
 some complexity seeking additional performance. We can use the following example:
 
@@ -46,45 +53,9 @@ function eventuallyCalled() {
 }
 ```
 
-### Dynamic import: a complimentary tool.
-
-At present, the tool available to developers is dynamic import. And it works really well in a number
-of cases (particularily in frontend frameworks). However when we are looking at large codebases that
-do not rely on a framework, we run into the following problem.
-
-```js
-async function lazyAMethod(...args) {
-   const aMethod = await import("./a.js");
-   return aMethod(...args);
-}
-
-async function rarelyUsedA() {
-  // ...
-  const aMethod = await lazyAMethod();
-}
-
-async function alsoRarelyUsedA() {
-  // ...
-  const aMethod = await lazyAMethod();
-}
-
-// ...
-
-async function eventuallyCalled() {
-  await rarelyUsedA();
-}
-```
-
-This is an issue for a couple of reasons:
-
-1) introduces a large refactoring task, including knockon effects in potentially distant code such
-as `eventuallyCalled` in this example.
-2) introduces information about async work, when the only goal here is to *hint* that something can
-be deferred, not a semantic change to the code.
-
-To elaborate a bit more on point 2, if we consider server side applications, they often are not interested in making a fetch
-request, they are accessing local resources. In the Firefox codebase, [we have dedicated utilities to load files synchronously](https://searchfox.org/mozilla-central/rev/07342ce09126c513540c1c343476e026cfa907bf/js/xpconnect/loader/mozJSComponentLoader.cpp#1184-1298). Attempts to use dynamic import on the other hand, [requires us to manually turn the
-event loop (see lines 249-251)](https://phabricator.services.mozilla.com/D18858), something developers most certainly do not have access to.
+This has partially been solved by code splitting, a technique employed by bundlers and built on top
+of dynamic import.  However, the problem this solves is not the same as the problem that Lazy import would seek to
+solve. Specifically, Dynamic import coupled with code splitting can split I/O cost whereas lazy import can split initialization cost.
 
 ## Description
 
@@ -113,7 +84,10 @@ lazy import * as ns from "y";
 
 ## Semantics
 
-Modules can be simplified to have three points at which laziness can be implemented:
+Lazy import would defer some of the work done eagerly by modules, and only do that work when the module's exported
+object or it's properties are accessed.
+
+So, the question is, at which point do we start deferring work? Modules can be simplified to have three points at which laziness can be implemented:
 
 1) Before Load
 1) Before Parse
@@ -138,11 +112,58 @@ approach taken. However, we can't be certain that we will get desirable performa
 from this alone, or that it will be as useful for client side applications as it might be for
 serverside applications (more on that in the next section). Some [Alternative](./alternatives.md) explorations have been proposed.
 
+## Code Splitting: a complimentary tool.
+
+At present, the tool available to developers is dynamic import, often used as part of a technique
+called code splitting. This technique works really well in a number
+of cases. However, in some cases, it forces code to be async when it may not need to be. For
+example, below any function which relies on `aMethod` which is imported lazily becomes async.
+
+```js
+async function lazyAMethod(...args) {
+   const aMethod = await import("./a.js");
+   return aMethod(...args);
+}
+
+async function rarelyUsedA() {
+  // ...
+  const aMethod = await lazyAMethod();
+}
+
+async function alsoRarelyUsedA() {
+  // ...
+  const aMethod = await lazyAMethod();
+}
+
+// ...
+
+async function eventuallyCalled() {
+  await rarelyUsedA();
+}
+```
+
+In the case that the work that needs to be done is truely async (that is, we need to wait on I/O),
+then this solution and cost makes sense. However, if we are more interested in splitting the cost of
+initialization, it makes less sense.
+
+To use Dynamic import in the case where lazy import would be a more appropriate solution, we come
+to the following issues:
+
+1) It introduces a large refactoring task, including knockon effects in potentially distant code such
+as `eventuallyCalled` in this example.
+2) It introduces information to the programmer that async work is being done, when the only goal here is to *hint* that modules can
+be deferred, not change the meaning of the code to be asynchronous rather than synchronous.
+
+To elaborate a bit more on point 2, if we consider server side applications, they often are not interested in making a fetch
+request, they are accessing local resources. In the Firefox codebase, [we have dedicated utilities to load files synchronously](https://searchfox.org/mozilla-central/rev/07342ce09126c513540c1c343476e026cfa907bf/js/xpconnect/loader/mozJSComponentLoader.cpp#1184-1298). Attempts to use dynamic import on the other hand, [requires us to manually turn the
+event loop (see lines 249-251)](https://phabricator.services.mozilla.com/D18858), something developers most certainly do not have access to.
+
+
 ## Existing workarounds
 
 ### Client-side
 
-Most modern frontend frameworks have a lazy loading solution built-in based off dynamic import. One characteristic is that
+Most modern frontend frameworks have a solution built-in based off dynamic import. One characteristic is that
 they all mask the async nature of the code for the benefit of the programmer. This example is from vue:
 
 ```js
@@ -162,7 +183,10 @@ quite good. However a language feature providing this benefit would likely be we
 those not working in frameworks. This works well with code splitting -- where bundlers such as
 webpack parse files for `import(..)` and create additional files that can be loaded async.
 
-#### Lazy load it, but hide the async-ness
+As mentioned above, there may be cases in which dynamic import is used, where dynamic initialization
+might be more appropriate.
+
+#### Lazy-load it, but hide the async-ness
 
 This strategy involves a hook that the developer can add that is called by the framework. The
 framework has an update loop that is async, but the developer's code for the most part still
@@ -205,7 +229,7 @@ function rarelyUsedA() {
 
 function alsoRarelyUsedA() {
   // ...
-  const aMethod =lazyAMethod();
+  const aMethod = lazyAMethod();
 }
 
 // ...
@@ -249,6 +273,12 @@ exports.defineLazyModuleGetter = function(object, name, resource, symbol) {
 
 This is only possible due to an exposed function, `ChromeUtils.import` which allows us to
 synchronously load the file.
+
+Speaking to the Firefox case specifically, it was reported on DevTools that our most significant cost was
+the full parsing and evaluation of the modules. At present, our custom solution excludes the ability
+to use certain tooling, such as typescript, to validate our code and also restricts the
+optimizations that we can perform. In an ideal world, we would transition all of our frontend code
+to ES modules, rather than implementing a custom solution.
 
 ## Known issues
 
@@ -299,7 +329,7 @@ websites, this is not necessarily true - network speeds can significantly slow t
 has also resulted in a delayed adoption of ESMs for performance sensitive code.
 
 This said, the solution may lie in the same space. The batch preloading presentation by Dan Ehrenberg in the
-[November 2020 meeting](https://github.com/tc39/notes/blob/master/meetings/2020-11/nov-19.md#batch-preloading-and-javascript) pointed a direction for JS bundles, which would offer a delivery mechanism. This would mean that the modules may be available on disk for quick access. This would mean that the same technique used for server side applications would also work for web applications.
+[November 2020 meeting](https://github.com/tc39/notes/blob/master/meetings/2020-11/nov-19.md#batch-preloading-and-javascript) pointed a direction for JS bundles, which would offer a delivery mechanism. This would mean that the modules may be available on disk for quick access. This would mean that the same technique used for server side applications would also work for web applications.  Alternatively, HTTP2 servers could push resources eagerly to a client.
 
 ## Other Languages
 
