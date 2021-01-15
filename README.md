@@ -180,10 +180,10 @@ function MyModule() {
 export default ModuleWrapper({}, "MyModule", MyModule);
 
 // parent.js
-import { MyModule } from "./module";
+import wrappedModule from "./module";
 
 function Foo() {
-  MyModule.bar() // first use
+  wrappedModule.MyModule.bar() // first use
 }
 ```
 
