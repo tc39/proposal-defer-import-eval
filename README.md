@@ -12,10 +12,10 @@ Stage: 0
 
 JS applications can get pretty large. It gets to the point that loading them incurs a significant performance cost, and usually, this happens later in an application's life span -- often requiring invasive changes to make it more performant.
 
-Introducing "laziness" – deferring non-essential work until later – is a common solution to this problem and modules present a natural boundary,
+Introducing "laziness" – deferring non-essential work until later – is a common solution to this problem and modules present a natural boundary for loading,
 as they also encapsulate meaningful information about a program. However, the current tools we have
 for this are somewhat cumbersome, and reduce the ergonomics and readibility of code. The best tool
-right now is `import()` but requires that all code relying on a lazily loaded module becomes async.
+right now is `import()` but it forces all code relying on a lazily loaded module to become async.
 
 This proposal seeks to explore the problem of loading large applications through this perspective.
 
@@ -116,12 +116,12 @@ object or it's properties are accessed.
 
 So, the question is, at which point do we start deferring work? Modules can be simplified to have three points at which laziness can be implemented:
 
-1) Before Load
-1) Before Parse
+1) Before Load (i.e. do not fetch the target module)
+1) Before Parse (i.e. fetch but do not parse the target module)
 
     1) Note: after Parse, if an import statement is found, go to beginning for that resource. Repeat for all imports.
 
-1) Before Evaluate
+1) Before Evaluate (i.e. parse the module graph - the target and its children - but do not evaluate any of it)
 
 In existing polyfills for this behavior, some implement laziness at point 1. This would mean that we do not fully build the module graph at load time. Implementing laziness at point 1 would invalidate run-to-completion semantics and require pausing in sync code.
 
@@ -137,7 +137,7 @@ currently do, which will evaluate the top level of the module eagerly.
 The proposal in it's simplest form will pause at point 3, and for the present moment this is the
 approach taken. However, we can't be certain that we will get desirable performance characteristics
 from this alone, or that it will be as useful for client side applications as it might be for
-serverside applications (more on that in the next section). Some [Alternative](./alternatives.md) explorations have been proposed.
+server-side applications (more on that in the next section). Some [Alternative](./alternatives.md) explorations have been proposed.
 
 ## Code Splitting: a complimentary tool.
 
@@ -230,7 +230,7 @@ with the framework handling the rest.
 This strategy is closer in many ways to what server-side applications are able to do. This is a form
 of a "co-routine". Effectively, the framework uses a loop with a try/catch, which continuously
 throws until the promise resolves. The only framework currently exploring this technique is React,
-with is ["suspense" and "lazy" components](https://reactjs.org/docs/concurrent-mode-suspense.html).
+with its ["suspense" and "lazy" components](https://reactjs.org/docs/concurrent-mode-suspense.html).
 Simplified example [here](https://gist.github.com/sebmarkbage/2c7acb6210266045050632ea611aebee).
 
 This work also points to a potential lack of dynamic import for all cases on the front end. This
@@ -353,10 +353,10 @@ Or something like this.
 The solution described here assumes that the largest cost paid at start up is in building the
 Abstract Syntax Tree and in evaluation, but this is only true if loading the file is fast. For
 websites, this is not necessarily true - network speeds can significantly slow the performance. It
-has also resulted in a delayed adoption of ESMs for performance sensitive code.
+has also resulted in a delayed adoption of ES Modules for performance-sensitive code.
 
 This said, the solution may lie in the same space. The batch preloading presentation by Dan Ehrenberg in the
-[November 2020 meeting](https://github.com/tc39/notes/blob/master/meetings/2020-11/nov-19.md#batch-preloading-and-javascript) pointed a direction for JS bundles, which would offer a delivery mechanism. This would mean that the modules may be available on disk for quick access. This would mean that the same technique used for server side applications would also work for web applications.  Alternatively, HTTP2 servers could push resources eagerly to a client.
+[November 2020 meeting](https://github.com/tc39/notes/blob/master/meetings/2020-11/nov-19.md#batch-preloading-and-javascript) pointed a direction for JS bundles, which would offer a delivery mechanism. This would mean that the modules may be available on disk for quick access. This would mean that the same technique used for server-side applications would also work for web applications.  Alternatively, HTTP2 servers could push resources eagerly to a client.
 
 ## Other Languages
 
