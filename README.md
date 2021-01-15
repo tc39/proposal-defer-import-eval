@@ -171,7 +171,7 @@ export default function ModuleWrapper(object, name, lambda) {
 }
 
 // module.js
-immport ModuleWrapper from "./ModuleWrapper";
+import ModuleWrapper from "./ModuleWrapper";
 
 function MyModule() {
  // ... all of the work of the module
