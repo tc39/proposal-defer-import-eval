@@ -29,9 +29,9 @@ The reasoning for the semantics of ES Modules is well founded. However, in some 
 difference in semantics has made it difficult for projects to adopt ES Modules in place of Require.
 Namely, the performance cost of eagerly loading, parsing and evaluating modules is too great.
 
-Lazification is a common solution for startup performance. However this is a detail rather
-meaningful information for programmers, and appears in its most problematic form on projects with
-some complexity seeking additional performance. We can use the following example:
+Lazification is a common solution for startup performance. At present, the only solution here
+is dynamic loading, which carries with it an additional cost of async-ifying everything.
+We can use the following example:
 
 ```js
 import aMethod from "a.js";
@@ -53,9 +53,36 @@ function eventuallyCalled() {
 }
 ```
 
-This has partially been solved by code splitting, a technique employed by bundlers and built on top
-of dynamic import.  However, the problem this solves is not the same as the problem that Lazy import would seek to
-solve. Specifically, Dynamic import coupled with code splitting can split I/O cost whereas lazy import can split initialization cost.
+And consider a naive implementation with dynamic import:
+
+```js
+async function lazyAMethod(...args) {
+   const aMethod = await import("./a.js");
+   return aMethod(...args);
+}
+
+async function rarelyUsedA() {
+  // ...
+  const aMethod = await lazyAMethod();
+}
+
+async function alsoRarelyUsedA() {
+  // ...
+  const aMethod = await lazyAMethod();
+}
+
+// ...
+
+async function eventuallyCalled() {
+  await rarelyUsedA();
+}
+```
+
+The goal of the programmer is likely _not_ to make everything lazy, but instead to allow work to be
+deferred in return for performance.
+
+This problem space has partially been solved by code splitting, a technique employed by bundlers and built on top
+of dynamic import. The two techniques are complimentary. Specifically, Dynamic import coupled with code splitting can reduce startup I/O cost whereas lazy import can reduce initialization cost.
 
 ## Description
 
