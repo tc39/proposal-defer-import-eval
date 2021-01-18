@@ -15,81 +15,35 @@ Stage: 0
 JS applications can get pretty large. It gets to the point that loading them incurs a significant performance cost, and usually, this happens later in an application's life span -- often requiring invasive changes to make it more performant.
 
 Introducing "laziness" – deferring non-essential work until later – is a common solution to this problem and modules present a natural boundary for loading,
-as they also encapsulate meaningful information about a program. However, the current tools we have
-for this are somewhat cumbersome, and reduce the ergonomics and readibility of code. The best tool
-right now is `import()` but it forces all code relying on a lazily loaded module to become async.
+as they also encapsulate meaningful information about a program. The best tool
+right now is `import()` but it forces all code relying on a lazily loaded module to become async,
+without necessarily reflecting the intention of the programmer.
 
-This proposal seeks to explore the problem of loading large applications, but focus on a different aspect with is deferring evaluation of modules.
+In some cases, a programmer way want to sacrifice some performance to guarentee that the modules
+they are working with are sync. This is where deferring module evaluation comes in. Since a module
+can be deferred, some optimizations such as a preparse might be applied to get further startup
+speedups.
 
 ## Background
 
-Prior to the standardization of ES Modules, RequireJS was used by many developers as a module
-system. There was one important difference between requireJS and what we have today, that is --
-requireJS loads modules on demand, whereas ES Modules load them eagerly.
+Prior to the standardization of ES Modules, CommonJS, and later RequireJS was used by many developers as a module
+system. There was one important difference between CommonJS/RequireJS and what we have today, that is --
+the former load modules on demand, whereas the ES Modules system loads them eagerly. This change was
+an important one to make modules possible on the web.
 
-The reasoning for the semantics of ES Modules is well founded. However, in some cases this
-difference in semantics has made it difficult for projects to adopt ES Modules in place of Require.
-Namely, the performance cost of eagerly loading, parsing and evaluating modules is too great.
+In some cases this difference in semantics has made it difficult for projects to adopt ES Modules in place of CommonJS.
+Namely, the performance cost of eagerly loading, parsing and evaluating modules is too great. On the
+client side, this was largely addressed by the introduction of Dynamic Import used as part of code
+splitting. However, it also introduces a few issues. The main one is that it forces a codebase to be
+async. This has two implications: 1) there is a high refactoring cost, and 2) there may be races.
 
-Lazification is a common solution for startup performance. At present, the only solution here
-is dynamic loading, which carries with it an additional cost of async-ifying everything.
-We can use the following example:
-
-```js
-import aMethod from "a.js";
-
-function rarelyUsedA() {
-  // ...
-  aMethod();
-}
-
-function alsoRarelyUsedA() {
-  // ...
-  aMethod();
-}
-
-// ...
-
-function eventuallyCalled() {
-  rarelyUsedA();
-}
-```
-
-And consider a naive implementation with dynamic import:
-
-```js
-async function lazyAMethod(...args) {
-   const aMethod = await import("./a.js");
-   return aMethod(...args);
-}
-
-async function rarelyUsedA() {
-  // ...
-  const aMethod = await lazyAMethod();
-}
-
-async function alsoRarelyUsedA() {
-  // ...
-  const aMethod = await lazyAMethod();
-}
-
-// ...
-
-async function eventuallyCalled() {
-  await rarelyUsedA();
-}
-```
-
-The goal of the programmer is likely _not_ to make everything lazy, but instead to allow work to be
-deferred in return for performance.
-
-This problem space has partially been solved by code splitting, a technique employed by bundlers and built on top
-of dynamic import. The two techniques are complimentary. Specifically, Dynamic import coupled with code splitting can reduce startup I/O cost whereas lazy import can reduce initialization cost.
+This is not to say that dynamic import should be changed. It is, on it's own, a very useful tool and already contributing significantly to production codebases. The two techniques -- code splitting and deferring evaluation, are complimentary. Specifically, Dynamic import coupled with code splitting can reduce startup I/O cost whereas lazy import can reduce initialization cost. Different applications may favor one or the other.
 
 ## Description
 
-Lazy import can defer the evaluation, and a large part of the parsing, of a module for the purposes
-of ergonomic touch ups to performance.
+Deferring the evaluation of a module may be desirable when the intention is not to run a module upon
+loading. This can help startup performance, and may be especially useful when the goal is not to
+load something from the network but to use local resources.
 
 ## Proposed API
 
@@ -111,14 +65,13 @@ lazy import defaultName from "y";
 lazy import * as ns from "y";
 ```
 
-The language needs some bikesheddding, as "Lazy" is often associated with "Lazy Loading", but this is not what is happening here. For now, lacking the right word, "Lazy" will be used, but not in the sense of "lazy-load", rather in the sense of "lazy-eval".
+There are other proposals, but the discussion of the naming may derail the discussion of the
+semantics, which should be agreed on first and would likely guide the design of the API.
+A full writeup of these options can be found in the [Bikeshed](./bikeshed.md).
 
 ## Semantics
 
-Lazy import would defer some of the work done eagerly by modules, and only do that work when the module's exported
-object or it's properties are accessed.
-
-So, the question is, at which point do we start deferring work? Modules can be simplified to have three points at which laziness can be implemented:
+So, the question is, at which point do we start deferring work? Modules can be simplified to have three points at which work can be deferred. Let's take a look at each one.
 
 1) Before Load (i.e. do not fetch the target module)
 1) Before Parse (i.e. fetch but do not parse the target module)
@@ -127,35 +80,53 @@ So, the question is, at which point do we start deferring work? Modules can be s
 
 1) Before Evaluate (i.e. parse the module graph - the target and its children - but do not evaluate any of it)
 
-In existing polyfills for this behavior, some implement laziness at point 1. This would mean that we do not fully build the module graph at load time. Implementing laziness at point 1 would invalidate run-to-completion semantics and require pausing in sync code.
+Starting with **1) Before Load**: At present, we already have a technique for deferring at load, dynamic import. Dynamic
+import must be asynchronous, otherwise we would break run-to-completion semantics. Dynamic import is
+already a powerful tool in use on many applications.
 
-One problematic point to implement laziness is at point 2, due to point 2.i, which builds the rest of the module graph. Without parsing, we will be unable to have a complete module graph. We want the module graph to be present and complete, so that other work can also be
-done.
+If we consider **2) Before Parse**, we see that it is ill-advised to laziness is at this point, due to the note at 2.i. Without parsing, we will be unable to have a complete module graph. We want the module graph to be present and complete, so that other work can also be
+done. So, **we do not want to defer parsing**. However, many engines may implement an optimization
+to only partially parse the module, and find early errors and imports.
 
-Implementing lazy modules at point 3, before evaluation would relinquish some significant
-performance advantages. At the very least implementations would be able to have a light-weight parse step for stage 2, and loading would be required.
+If we consider **3) Before Evaluate**, we would relinquish some significant performance advantages.
+However, if those are important, a developer would be able to fall back on dynamic import, and trade
+in sync code for more performance. Secondly, we would change the evaluation order. Presently, we
+have an invariant that all child modules of a parent module will complete evaluation before their
+parent module completes evaluation. What lazy-eval would introduce is a new concept. We would have a
+subgraph that does not evaluate with the parent, but instead waits untill it is called.
 
-Deferring the evaluation of a lazy module will be semantically different from what "regular" modules
-currently do, which will evaluate the top level of the module eagerly.
+### Impact on execution order
+
+|                                | Static Import        | Dynamic Import               | "Lazy" Import  |
+|--------------------------------|----------------------|------------------------------|----------------|
+| Top level exectution of module | Load, Parse, Execute |                              |  Load, Parse   |
+| First use                      |                      | Load, Parse, Execute         |  Execute       |
 
 The proposal in it's simplest form will pause at point 3, and for the present moment this is the
 approach taken. However, we can't be certain that we will get desirable performance characteristics
 from this alone, or that it will be as useful for client side applications as it might be for
-server-side applications (more on that in the next section). Some [Alternative](./alternatives.md) explorations have been proposed.
+server-side applications (more on that in the next section).
 
-Roughly, the semantics would be similar to wrapping a module's code in a function, wrappingg that in a getter which replaces the name with the "function" once it is accessed for the first time, and exporting that. For example:
+### Rough sketch
+
+If we split out the components of Module loading and initialization, we could roughly sketch out the
+intended semantics:
 
 ```js
-// moduleWrapper.js
-export default function ModuleWrapper(object, name, lambda) {
+// LazyModuleLoader.js
+async function loadModuleAndDependencies(name) {
+  const loadedModule = await import.load(`./${name}.js`); // load is async, and needs to be awaited
+  const parsedModule = loadedModule.parse();
+  await Promise.all(parsedModule.imports.map(loadModuleAndDependencies)); // load all dependencies
+  return parsedModule;
+}
+
+export default async function lazyModule(object, name) {
+  const module = await loadModuleAndDependencies(name);
   Object.defineProperty(object, name, {
     get: function() {
-      // Redefine this accessor property as a data property.
-      // Delete it first, to rule out "too much recursion" in case object is
-      // a proxy whose defineProperty handler might unwittingly trigger this
-      // getter again.
       delete object[name];
-      const value = lambda.apply(object);
+      const value = module.eval();
       Object.defineProperty(object, name, {
         value,
         writable: true,
@@ -167,45 +138,65 @@ export default function ModuleWrapper(object, name, lambda) {
     configurable: true,
     enumerable: true,
   });
+
   return object;
 }
 
+// myModule.js
+import foo from "./bar";
+
+etc.
+
 // module.js
-import ModuleWrapper from "./ModuleWrapper";
-
-function MyModule() {
- // ... all of the work of the module
-}
-
-export default ModuleWrapper({}, "MyModule", MyModule);
-
-// parent.js
-import wrappedModule from "./module";
+import LazyModule from "./LazyModuleLoader";
+await LazyModule(globalThis, "myModule");
 
 function Foo() {
-  wrappedModule.MyModule.bar() // first use
+  myModule.doWork() // first use
 }
 ```
-
-The above is only for demonstrative purposes. It does not address making the child imports of the lazy modules also lazy, or resolve conflicts where a child of a lazy module may be imported and executed eagerly.
-
-## Impact on execution order
-
-TODO: Add description here
-
-
-|                               | Static Import        | Dynamic Import               | "Lazy" Import  |
-|-------------------------------|----------------------|------------------------------|----------------|
-| Top level exectuion of module | Load, Parse, Execute |                              |  Load, Parse,  |
-| First use                     |                      | Load, Parse, Execute         |  Execute       |
-
 
 ## Code Splitting: a complimentary tool.
 
 At present, the tool available to developers is dynamic import, often used as part of a technique
 called code splitting. This technique works really well in a number
-of cases. However, in some cases, it forces code to be async when it may not need to be. For
-example, below any function which relies on `aMethod` which is imported lazily becomes async.
+of cases.
+
+Most modern frontend frameworks have a solution built-in based off dynamic import. One characteristic is that
+they all mask the async nature of the code for the benefit of the programmer. This example is from vue:
+
+```js
+// file1.js
+export default {
+  components: {
+    lazyComponent: () => import('Component.vue')
+  }
+}
+
+// file2.js, lazy component is loaded based on a given trigger like scrolling or clicking a button.
+<lazy-component v-if="false" />
+```
+
+For frontend developers working with a framework, the solutions provided by the framework are often
+quite good. However a language feature providing this benefit would likely be welcome especially by
+those not working in frameworks. This works well with code splitting -- where bundlers such as
+webpack parse files for `import(..)` and create additional files that can be loaded async.
+
+This strategy involves a hook that the developer can add that is called by the framework. The
+framework has an update loop that is async, but the developer's code for the most part still
+"appears" sync. This effectively allows the developer to write their code as though it was sync,
+with the framework handling the rest.
+
+- [angular](https://angular.io/guide/lazy-loading-ngmodules)
+- [vue](https://vueschool.io/articles/vuejs-tutorials/lazy-loading-and-code-splitting-in-vue-js/)
+- [ember](https://medium.com/zonky-developers/lazy-loading-modules-in-emberjs-e4f880b15aa0)
+- [react has a hook "use effect" -- but this is primarily for data](https://www.robinwieruch.de/react-hooks-fetch-data)
+
+
+This is a great solution in a lot of cases. Sometimes though, it introduces more problems than solutions.
+It forces code to be async which could cause hard to find bugs. It may also be that deferring
+loading is not very important. For example, below any function which relies on
+`aMethod` which is imported lazily becomes async.
 
 ```js
 async function lazyAMethod(...args) {
@@ -234,13 +225,14 @@ In the case that the work that needs to be done is truely async (that is, we nee
 then this solution and cost makes sense. However, if we are more interested in splitting the cost of
 initialization, it makes less sense.
 
-To use Dynamic import in the case where lazy import would be a more appropriate solution, we come
+To use Dynamic import in the case where lazy-eval import would be a more appropriate solution, we come
 to the following issues:
 
 1) It introduces a large refactoring task, including knockon effects in potentially distant code such
 as `eventuallyCalled` in this example.
 2) It introduces information to the programmer that async work is being done, when the only goal here is to *hint* that modules can
 be deferred, not change the meaning of the code to be asynchronous rather than synchronous.
+3) It introduces sometimes hard to debug race conditions.
 
 To elaborate a bit more on point 2, if we consider server side applications, they often are not interested in making a fetch
 request, they are accessing local resources. In the Firefox codebase, [we have dedicated utilities to load files synchronously](https://searchfox.org/mozilla-central/rev/07342ce09126c513540c1c343476e026cfa907bf/js/xpconnect/loader/mozJSComponentLoader.cpp#1184-1298). Attempts to use dynamic import on the other hand, [requires us to manually turn the
@@ -251,57 +243,27 @@ event loop (see lines 249-251)](https://phabricator.services.mozilla.com/D18858)
 
 ### Client-side
 
-Most modern frontend frameworks have a solution built-in based off dynamic import. One characteristic is that
-they all mask the async nature of the code for the benefit of the programmer. This example is from vue:
+There is some evidence on the front end, that the async nature of dynamic import can be problematic,
+and that a sync solution is necessary. The best known example comes from react.
 
-```js
-// file1.js
-export default {
-  components: {
-    lazyComponent: () => import('Component.vue')
-  }
-}
-
-// file2.js, lazy component is loaded based on a given trigger like scrolling or clicking a button.
-<lazy-component v-if="false" />
-```
-
-For frontend developers working with a framework, the solutions provided by the framework are often
-quite good. However a language feature providing this benefit would likely be welcome especially by
-those not working in frameworks. This works well with code splitting -- where bundlers such as
-webpack parse files for `import(..)` and create additional files that can be loaded async.
-
-As mentioned above, there may be cases in which dynamic import is used, where dynamic initialization
-might be more appropriate.
-
-#### Lazy-load it, but hide the async-ness
-
-This strategy involves a hook that the developer can add that is called by the framework. The
-framework has an update loop that is async, but the developer's code for the most part still
-"appears" sync. This effectively allows the developer to write their code as though it was sync,
-with the framework handling the rest.
-
-- [angular](https://angular.io/guide/lazy-loading-ngmodules)
-- [vue](https://vueschool.io/articles/vuejs-tutorials/lazy-loading-and-code-splitting-in-vue-js/)
-- [ember](https://medium.com/zonky-developers/lazy-loading-modules-in-emberjs-e4f880b15aa0)
-- [react has a hook "use effect" -- but this is primarily for data](https://www.robinwieruch.de/react-hooks-fetch-data)
-
-#### Sync-Async
-
-This strategy is closer in many ways to what server-side applications are able to do. This is a form
-of a "co-routine". Effectively, the framework uses a loop with a try/catch, which continuously
+Effectively, the framework uses a loop with a try/catch, which continuously
 throws until the promise resolves. The only framework currently exploring this technique is React,
 with its ["suspense" and "lazy" components](https://reactjs.org/docs/concurrent-mode-suspense.html).
 Simplified example [here](https://gist.github.com/sebmarkbage/2c7acb6210266045050632ea611aebee).
 
-This work also points to a potential lack of dynamic import for all cases on the front end. This
-requires more investigation, but it looks like lazy import and dynamic import are complimentary on
-the frontend as well as serverside.
+This is resource intensive. It may also result in some unexpected behavior. As described in the
+documentation for suspense, this has its best application in cases where you really want things to be sync,
+but there is a performance issue. A situation like this may very well benefit from a different technique than dynamic import.
+For example, a server can eagerly push resources via HTTP/2 to the client, and they can be loaded via lazy-eval import rather
+than via dynamic import, as the cost for the load would be lower and the trade off may be worth it.
 
-## Server-side and JS Applications
+### JS Applications
 
-For JavaScript that runs locally and outside of a browser context, the story is a bit different.
-There has been a great deal of inertia in moving away from requireJS due to the performance impact.
+For JavaScript that runs locally and outside of a browser context, the story is a bit different. In
+the case of server side applications, having a slow start may not have a significant impact. On the
+other hand, for tools on the CLI, or startup sensitive applits, it is a rather significant issue.
+
+As a result, there has been some inertia in moving away from requireJS due to the performance impact.
 Loading sync with require is by default, so the following is possible:
 
 ```js
@@ -327,7 +289,7 @@ function eventuallyCalled() {
 }
 ```
 
-In the case of Firefox DevTools, we have several implementations of the following:
+In the case of Firefox DevTools, we have several variations of the following:
 
 ```js
 function defineLazyGetter(object, name, lambda) {
@@ -407,12 +369,14 @@ the effect of:
 import { item } from "./file" assert { sync: true } with { lazyInit: true }
 ```
 
-Or something like this.
+Another solution here, would be to eagerly evaluate any async modules, while leaving the rest of the
+lazy graph, lazy. The lazy graph will in any case have some already-evaluated nodes, as other parts
+off the module graph may share a resource with it.
 
 ### Impact on web related code
 
 The solution described here assumes that the largest cost paid at start up is in building the
-Abstract Syntax Tree and in evaluation, but this is only true if loading the file is fast. For
+AST and in evaluation, but this is only true if loading the file is fast. For
 websites, this is not necessarily true - network speeds can significantly slow the performance. It
 has also resulted in a delayed adoption of ES Modules for performance-sensitive code.
 
@@ -436,4 +400,52 @@ None so far.
 
 ## Q&A
 
-TODO.
+Q: what can we do in current JS to approximate this behavior?
+
+A: The closest we can get is the following:
+
+```js
+// moduleWrapper.js
+export default function ModuleWrapper(object, name, lambda) {
+  Object.defineProperty(object, name, {
+    get: function() {
+      // Redefine this accessor property as a data property.
+      // Delete it first, to rule out "too much recursion" in case object is
+      // a proxy whose defineProperty handler might unwittingly trigger this
+      // getter again.
+      delete object[name];
+      const value = lambda.apply(object);
+      Object.defineProperty(object, name, {
+        value,
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      });
+      return value;
+    },
+    configurable: true,
+    enumerable: true,
+  });
+  return object;
+}
+
+// module.js
+import ModuleWrapper from "./ModuleWrapper";
+// any imports would need to be wrapped as well
+
+function MyModule() {
+ // ... all of the work of the module
+}
+
+export default ModuleWrapper({}, "MyModule", MyModule);
+
+// parent.js
+import wrappedModule from "./module";
+
+function Foo() {
+  wrappedModule.MyModule.bar() // first use
+}
+```
+
+However, this solution doesn't cover deferring the loading of submodules of a lazy graph, and would
+not acheive the characteristics we are looking for.

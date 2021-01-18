@@ -4,6 +4,67 @@ This section exists to document potential alternatives, however at present the p
 on the more minimal approach of pausing before evaluation. If that fails, we may need to discuss
 these in more detail.
 
+## Access to individual module steps
+
+Rather than introduce a new form of module import, we could expose the steps of dynamic import. This
+would allow developers to write their own libraries specific to their needs. For example, if a
+developer wishes to only load the file asynchronously, but evaluate the module
+synchronously later. If we have the methods `import.load`, `import.parse`, and `import.eval`, a developer could writer a wrapper like this:
+
+```js
+// LazyModuleLoader.js
+async function loadModuleAndDependencies(name) {
+  const loadedModule = await import.load(`./${name}.js`); // load is async, and needs to be awaited
+  const parsedModule = loadedModule.parse();
+  await Promise.all(parsedModule.imports.map(loadModuleAndDependencies)); // load all dependencies
+  return parsedModule;
+}
+
+export default async function lazyModule(object, name) {
+  const module = await loadModuleAndDependencies(name);
+  Object.defineProperty(object, name, {
+    get: function() {
+      delete object[name];
+      const value = module.eval();
+      Object.defineProperty(object, name, {
+        value,
+        writable: true,
+        configurable: true,
+        enumerable: true,
+      });
+      return value;
+    },
+    configurable: true,
+    enumerable: true,
+  });
+
+  return object;
+}
+
+// myModule.js
+import foo from "./bar";
+
+etc.
+
+// module.js
+import LazyModule from "./LazyModuleLoader";
+await LazyModule(globalThis, "myModule");
+
+function Foo() {
+  myModule.doWork() // first use
+}
+```
+
+`load` and `parse` cannot really be separated, as they are intrinsically linked. But, that
+flexibility can be given to the developer in theory. However, if we link the two steps, then we end
+up with functioonally the same capability as the main proposal, but with a different syntax. So, for
+this reason, exposing the low level constructs doesn't really make sense.
+
+# Less likely solutions
+
+The following is a record of some ideas which are less likely to be used, but are recorded so we
+remember what we thought of.
+
 ## Co-routines
 
 The inspiration here comes from React's use of try/catch.
