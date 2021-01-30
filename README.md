@@ -10,7 +10,7 @@ Author(s): *Yulia Startsev and others*
 
 Stage: 1
 
-[Stage 1 Slides](https://github.com/tc39/proposal-defer-import-eval/issues/5#issuecomment-770208479)
+[Stage 1 Slides](https://docs.google.com/presentation/d/17NsxHzAC2RlP5rB3wrns9O2Z-NduSpcm2_GOVo2TnKE/edit#slide=id.gb79361ecb1_0_87)
 
 ## Motivation
 
