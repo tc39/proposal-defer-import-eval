@@ -102,7 +102,8 @@ subgraph that does not evaluate with the parent, but instead waits untill it is 
 |                                | Static Import        | Dynamic Import               | "Lazy" Import  |
 |--------------------------------|----------------------|------------------------------|----------------|
 | Top level exectution of module | Load, Parse, Execute |                              |  Load, Parse   |
-| First use                      |                      | Load, Parse, Execute         |  Execute       |
+| runtime import                 | --                   | Load, Parse, Execute         |  --            |
+| First use                      |                      |                              |  Execute       |
 
 The proposal in it's simplest form will pause at point 3, and for the present moment this is the
 approach taken. However, we can't be certain that we will get desirable performance characteristics
