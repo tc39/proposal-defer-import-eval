@@ -10,6 +10,8 @@ Author(s): *Yulia Startsev and others*
 
 Stage: 1
 
+[Stage 1 Slides](https://github.com/tc39/proposal-defer-import-eval/issues/5#issuecomment-770208479)
+
 ## Motivation
 
 JS applications can get pretty large. It gets to the point that loading them incurs a significant performance cost, and usually, this happens later in an application's life span -- often requiring invasive changes to make it more performant.
