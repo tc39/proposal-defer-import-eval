@@ -11,7 +11,7 @@ The api can take a couple of forms, here are some suggestions:
 
 ### Using import attributes
 
-Example using a hypothetical import attribute named "lazyInit" (subject to discussion):
+Example using a hypothetical import attribute named "lazyInit" (subject to discussion, some alternatives below):
 
 ```js
 import {x} from "y" with { lazyInit: true }
@@ -29,6 +29,11 @@ Drawbacks:
 
 * requires the import attributes proposal
 * per-use basis -- if you import a file lazily, you may want to import it lazily everywhere.
+
+Alternative names:
+
+* `... with { preferLazy: true}`
+* `... with { lazyHint: true}`
 
 ### Using a custom Keyword
 
