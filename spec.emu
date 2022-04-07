@@ -14,10 +14,10 @@ contributors: Your Name(s) Here
   <p>This is an algorithm:</p>
   <emu-alg>
     1. Let _proposal_ be *undefined*.
-    1. If IsAccepted(_proposal_),
-      1. Let _stage_ be *0*.
+    1. If IsAccepted(_proposal_), then
+      1. Let _stage_ be *0*<sub>ℤ</sub>.
     1. Else,
-      1. Let _stage_ be *-1*.
+      1. Let _stage_ be *-1*<sub>ℤ</sub>.
     1. Return ? ToString(_proposal_).
   </emu-alg>
 </emu-clause>
