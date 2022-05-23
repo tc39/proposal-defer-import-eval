@@ -12,24 +12,25 @@ Please ensure the following:
 ## Create your proposal repo
 
 Follow these steps:
-  1.  Click the green ["use this template"](https://github.com/tc39/template-for-proposals/generate) button in the repo header. (Note: Do not fork this repo in GitHub's web interface, as that will later prevent transfer into the TC39 organization)
-  1.  Go to your repo settings “Options” page, under “GitHub Pages”, and set the source to the **main branch** under the root (and click Save, if it does not autosave this setting)
+  1. Click the green ["use this template"](https://github.com/tc39/template-for-proposals/generate) button in the repo header. (Note: Do not fork this repo in GitHub's web interface, as that will later prevent transfer into the TC39 organization)
+  1. Update the biblio to the latest version: `npm install --save-dev --save-exact @tc39/ecma262-biblio@latest`.
+  1. Go to your repo settings “Options” page, under “GitHub Pages”, and set the source to the **main branch** under the root (and click Save, if it does not autosave this setting)
       1. check "Enforce HTTPS"
       1. On "Options", under "Features", Ensure "Issues" is checked, and disable "Wiki", and "Projects" (unless you intend to use Projects)
       1. Under "Merge button", check "automatically delete head branches"
 <!--
-  1.  Avoid merge conflicts with build process output files by running:
+  1. Avoid merge conflicts with build process output files by running:
       ```sh
       git config --local --add merge.output.driver true
       git config --local --add merge.output.driver true
       ```
-  1.  Add a post-rewrite git hook to auto-rebuild the output on every commit:
+  1. Add a post-rewrite git hook to auto-rebuild the output on every commit:
       ```sh
       cp hooks/post-rewrite .git/hooks/post-rewrite
       chmod +x .git/hooks/post-rewrite
       ```
 -->
-  3.  ["How to write a good explainer"][explainer] explains how to make a good first impression.
+  3. ["How to write a good explainer"][explainer] explains how to make a good first impression.
 
       > Each TC39 proposal should have a `README.md` file which explains the purpose
       > of the proposal and its shape at a high level.
