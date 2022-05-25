@@ -21,7 +21,7 @@ as they also encapsulate meaningful information about a program. The best tool
 right now is `import()` but it forces all code relying on a lazily loaded module to become async,
 without necessarily reflecting the intention of the programmer.
 
-In some cases, a programmer way want to sacrifice some performance to guarentee that the modules
+In some cases, a programmer may want to sacrifice some performance to guarentee that the modules
 they are working with are sync. This is where deferring module evaluation comes in. Since a module
 can be deferred, some optimizations such as a preparse might be applied to get further startup
 speedups.
