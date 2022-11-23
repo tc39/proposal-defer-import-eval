@@ -33,7 +33,7 @@ in Node.js applications is to refactor code to dynamically require as needed:
 ```js
 const operation = require('operation');
 
-export function doSomething (target) {
+exports.doSomething = function (target) {
   return operation(target);
 }
 ```
@@ -41,7 +41,7 @@ export function doSomething (target) {
 being rewritten as a performance optimization into:
 
 ```js
-export function doSomething (target) {
+exports.doSomething = function (target) {
   const operation = require('operation');
   return operation(target);
 }
@@ -79,6 +79,10 @@ number of problems with this technique:
 Deferring the synchronous evaluation of a module may be desirable new primitive to avoid unnecessary
 CPU work during application initialization, without requiring any changes from a module API consumer
 perspective.
+
+Dynamic import does not properly solve this problem, since it must often be coupled with a preload step,
+and enforces the unnecessary asyncification of all functions, without providing the ability to only defer
+the synchronous evaluation work.
 
 ## Proposal
 
@@ -200,6 +204,13 @@ The standard libraries of these programming languages includes related functiona
 - Most LISP environments
 
 Our approach is pretty similar to the Emacs Lisp approach, and it's clear from a manual analysis of billions of Stack Overflow posts that this is the most straightforward to ordinary developers.
+
+#### Why not have a higher level sync evaluation API?
+
+A compartment instrumentation may offer an API for synchronous evaluation of modules, which could be compatible with
+this approach of deferred evaluation, but by having a clear syntactical solution for this use case,
+it can be supported across dependency boundaries and in bundlers to bring the full benefits of avoiding unnecessary
+initialization work to the JS ecosystem.
 
 #### What is the problem with supporting top-level await?
 
