@@ -186,6 +186,28 @@ None so far.
 
 ## Q&A
 
+#### What happened to the direct lazy bindings?
+
+The initial version of this proposal included direct binding access for deferred evaluation via
+named exports:
+
+```js
+import { feature } from './lib' with { lazyInit: true }
+
+export function doSomething (param) {
+  return feature(param);
+}
+```
+
+where the deferred evaluation would only happen on _access_ of the `feature` binding.
+
+There are a number of complexities to this approach, as it introduces a novel
+type of execution point in the language, which would need to be worked through.
+
+This approach may still be investigated in various ways within this proposal or an extension of it,
+but by focusing on the `DeferredModuleNamespace` accessor approach first, it keeps the semantics
+simple and in-line with standard JS techniques.
+
 #### Is there really a benefit to optimizing execution, when surely loading is the bottleneck?
 
 While it is true that loading time is the most dominant factor on the web, it is important to consider that many
@@ -205,12 +227,13 @@ The standard libraries of these programming languages includes related functiona
 
 Our approach is pretty similar to the Emacs Lisp approach, and it's clear from a manual analysis of billions of Stack Overflow posts that this is the most straightforward to ordinary developers.
 
-#### Why not have a higher level sync evaluation API?
+#### Why not support a synchronous evaluation API on ModuleInstance
 
-A compartment instrumentation may offer an API for synchronous evaluation of modules, which could be compatible with
-this approach of deferred evaluation, but by having a clear syntactical solution for this use case,
-it can be supported across dependency boundaries and in bundlers to bring the full benefits of avoiding unnecessary
-initialization work to the JS ecosystem.
+A synchronous evaluation API on the module expression and compartments [ModuleInstance](https://github.com/tc39/proposal-compartments/blob/master/0-module-and-module-source.md#module-instances)
+object could offer an API for synchronous evaluation of modules, which could be compatible with
+this approach of deferred evaluation, but it is only in having a clear syntactical solution for this use case,
+that it can be supported across dependency boundaries and in bundlers to bring the full benefits of avoiding unnecessary
+initialization work to the wider JS ecosystem.
 
 #### What is the problem with supporting top-level await?
 
