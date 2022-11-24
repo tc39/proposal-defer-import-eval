@@ -4,9 +4,9 @@ previously known as "Lazy Module Initialization"
 
 ## Status
 
-Champion(s): *Yulia Startsev and others*
+Champion(s): *Yulia Startsev*
 
-Author(s): *Yulia Startsev and others*
+Author(s): *Yulia Startsev and Guy Bedford*
 
 Stage: 1
 
