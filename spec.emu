@@ -9,15 +9,1059 @@ stage: -1
 contributors: Your Name(s) Here
 </pre>
 
-<emu-clause id="sec-demo-clause">
-  <h1>This is an emu-clause</h1>
-  <p>This is an algorithm:</p>
-  <emu-alg>
-    1. Let _proposal_ be *undefined*.
-    1. If IsAccepted(_proposal_), then
-      1. Let _stage_ be *0*<sub>ℤ</sub>.
-    1. Else,
-      1. Let _stage_ be *-1*<sub>ℤ</sub>.
-    1. Return ? ToString(_proposal_).
-  </emu-alg>
+<emu-clause id="sec-cyclic-module-records">
+  <h1>Cyclic Module Records</h1>
+  <p>A <dfn id="cyclic-module-record" variants="Cyclic Module Records">Cyclic Module Record</dfn> is used to represent information about a module that can participate in dependency cycles with other modules that are subclasses of the Cyclic Module Record type. Module Records that are not subclasses of the Cyclic Module Record type must not participate in dependency cycles with Source Text Module Records.</p>
+  <p>In addition to the fields defined in <emu-xref href="#table-module-record-fields"></emu-xref> Cyclic Module Records have the additional fields listed in <emu-xref href="#table-cyclic-module-fields"></emu-xref></p>
+  <emu-table id="table-cyclic-module-fields" caption="Additional Fields of Cyclic Module Records">
+    <table>
+      <tr>
+        <th>
+          Field Name
+        </th>
+        <th>
+          Value Type
+        </th>
+        <th>
+          Meaning
+        </th>
+      </tr>
+      <tr>
+        <td>
+          [[Status]]
+        </td>
+        <td>
+          ~new~, ~unlinked~, ~linking~, ~linked~, ~evaluating~, ~evaluating-async~, or ~evaluated~
+        </td>
+        <td>
+          Initially ~new~. Transitions to ~unlinked~, ~linking~, ~linked~, ~evaluating~, possibly ~evaluating-async~, ~evaluated~ (in that order) as the module progresses throughout its lifecycle. ~evaluating-async~ indicates this module is queued to execute on completion of its asynchronous dependencies or it is a module whose [[HasTLA]] field is *true* that has been executed and is pending top-level completion.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[EvaluationError]]
+        </td>
+        <td>
+          a throw completion or ~empty~
+        </td>
+        <td>
+          A throw completion representing the exception that occurred during evaluation. *undefined* if no exception occurred or if [[Status]] is not ~evaluated~.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[DFSIndex]]
+        </td>
+        <td>
+          an integer or ~empty~
+        </td>
+        <td>
+          Auxiliary field used during Link and Evaluate only. If [[Status]] is either ~linking~ or ~evaluating~, this non-negative number records the point at which the module was first visited during the depth-first traversal of the dependency graph.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[DFSAncestorIndex]]
+        </td>
+        <td>
+          an integer or ~empty~
+        </td>
+        <td>
+          Auxiliary field used during Link and Evaluate only. If [[Status]] is either ~linking~ or ~evaluating~, this is either the module's own [[DFSIndex]] or that of an "earlier" module in the same strongly connected component.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[RequestedModules]]
+        </td>
+        <td>
+          a List of Strings
+        </td>
+        <td>
+          A List of all the |ModuleSpecifier| strings used by the module represented by this record to request the importation of a module. The List is in source text occurrence order.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[LoadedModules]]
+        </td>
+        <td>
+          a List of Records with fields [[Specifier]] (a String) and [[Module]] (a Module Record)
+        </td>
+        <td>
+          A map from the specifier strings used by the module represented by this record to request the importation of a module to the resolved Module Record. The list does not contain two different Records with the same [[Specifier]].
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[CycleRoot]]
+        </td>
+        <td>
+          a Cyclic Module Record or ~empty~
+        </td>
+        <td>
+          The first visited module of the cycle, the root DFS ancestor of the strongly connected component. For a module not in a cycle, this would be the module itself. Once Evaluate has completed, a module's [[DFSAncestorIndex]] is the [[DFSIndex]] of its [[CycleRoot]].
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[HasTLA]]
+        </td>
+        <td>
+          a Boolean
+        </td>
+        <td>
+          Whether this module is individually asynchronous (for example, if it's a Source Text Module Record containing a top-level await). Having an asynchronous dependency does not mean this field is *true*. This field must not change after the module is parsed.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[AsyncEvaluation]]
+        </td>
+        <td>
+          a Boolean
+        </td>
+        <td>
+          Whether this module is either itself asynchronous or has an asynchronous dependency. Note: The order in which this field is set is used to order queued executions, see <emu-xref href="#sec-async-module-execution-fulfilled"></emu-xref>.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[TopLevelCapability]]
+        </td>
+        <td>
+          a PromiseCapability Record or ~empty~
+        </td>
+        <td>
+          If this module is the [[CycleRoot]] of some cycle, and Evaluate() was called on some module in that cycle, this field contains the PromiseCapability Record for that entire evaluation. It is used to settle the Promise object that is returned from the Evaluate() abstract method. This field will be ~empty~ for any dependencies of that module, unless a top-level Evaluate() has been initiated for some of those dependencies.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[AsyncParentModules]]
+        </td>
+        <td>
+          a List of Cyclic Module Records
+        </td>
+        <td>
+          If this module or a dependency has [[HasTLA]] *true*, and execution is in progress, this tracks the parent importers of this module for the top-level execution job. These parent modules will not start executing before this module has successfully completed execution.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[PendingAsyncDependencies]]
+        </td>
+        <td>
+          an integer or ~empty~
+        </td>
+        <td>
+          If this module has any asynchronous dependencies, this tracks the number of asynchronous dependency modules remaining to execute for this module. A module with asynchronous dependencies will be executed when this field reaches 0 and there are no execution errors.
+        </td>
+      </tr>
+    </table>
+  </emu-table>
+  <p>In addition to the methods defined in <emu-xref href="#table-abstract-methods-of-module-records"></emu-xref> Cyclic Module Records have the additional methods listed in <emu-xref href="#table-cyclic-module-methods"></emu-xref></p>
+  <emu-table id="table-cyclic-module-methods" caption="Additional Abstract Methods of Cyclic Module Records">
+    <table>
+      <tr>
+        <th>
+          Method
+        </th>
+        <th>
+          Purpose
+        </th>
+      </tr>
+      <tr>
+        <td>
+          InitializeEnvironment()
+        </td>
+        <td>
+          Initialize the Environment Record of the module, including resolving all imported bindings, and create the module's execution context.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          ExecuteModule( [ _promiseCapability_ ] )
+        </td>
+        <td>
+          Evaluate the module's code within its execution context. If this module has *true* in [[HasTLA]], then a PromiseCapability Record is passed as an argument, and the method is expected to resolve or reject the given capability. In this case, the method must not throw an exception, but instead reject the PromiseCapability Record if necessary.
+        </td>
+      </tr>
+    </table>
+  </emu-table>
+
+  <p>A <dfn id="graphloadingstate-record" variants="GraphLoadingState Records">GraphLoadingState Record</dfn> is a Record that contains information about the loading process of a module graph. It's used to continue loading after a call to HostLoadImportedModule. Each GraphLoadingState Record has the fields defined in <emu-xref href="#table-graphloadingstate-record-fields"></emu-xref>:</p>
+  <emu-table id="table-graphloadingstate-record-fields" caption="GraphLoadingState Record Fields">
+    <table>
+      <tr>
+        <th>
+          Field Name
+        </th>
+        <th>
+          Value Type
+        </th>
+        <th>
+          Meaning
+        </th>
+      </tr>
+      <tr>
+        <td>
+          [[PromiseCapability]]
+        </td>
+        <td>
+          a PromiseCapability Record
+        </td>
+        <td>
+          The promise to resolve when the loading process finishes.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[IsLoading]]
+        </td>
+        <td>
+          a Boolean
+        </td>
+        <td>
+          It is true if the loading process has not finished yet, neither successfully nor with an error.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[PendingModulesCount]]
+        </td>
+        <td>
+          a non-negative integer
+        </td>
+        <td>
+          It tracks the number of pending HostLoadImportedModule calls.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[Visited]]
+        </td>
+        <td>
+          a List of Cyclic Module Records
+        </td>
+        <td>
+          It is a list of the Cyclic Module Records that have been already loaded by the current loading process, to avoid infinite loops with circular dependencies.
+        </td>
+      </tr>
+      <tr>
+        <td>
+          [[HostDefined]]
+        </td>
+        <td>
+          anything (default value is ~empty~)
+        </td>
+        <td>
+          It contains host-defined data to pass from the LoadRequestedModules caller to HostLoadImportedModule.
+        </td>
+      </tr>
+    </table>
+  </emu-table>
+
+  <emu-clause id="sec-LoadRequestedModules" type="concrete method">
+    <h1>
+      LoadRequestedModules (
+        optional _hostDefined_: anything,
+      ): a Promise
+    </h1>
+    <dl class="header">
+      <dt>for</dt>
+      <dd>a Cyclic Module Record _module_</dd>
+
+      <dt>description</dt>
+      <dd>It populates the [[LoadedModules]] of all the Module Records in the dependency graph of _module_ (most of the work is done by the auxiliary function InnerModuleLoading). It takes an optional _hostDefined_ parameter that is passed to the HostLoadImportedModule hook.</dd>
+    </dl>
+
+    <emu-alg>
+      1. If _hostDefined_ is not present, let _hostDefined_ be ~empty~.
+      1. Let _pc_ be ! NewPromiseCapability(%Promise%).
+      1. Let _state_ be the GraphLoadingState Record { [[IsLoading]]: *true*, [[PendingModulesCount]]: 1, [[Visited]]: « », [[PromiseCapability]]: _pc_, [[HostDefined]]: _hostDefined_ }.
+      1. Perform InnerModuleLoading(_state_, _module_).
+      1. Return _pc_.[[Promise]].
+    </emu-alg>
+
+    <emu-note>
+      The _hostDefined_ parameter can be used to pass additional information necessary to fetch the imported modules. It is used, for example, by HTML to set the correct fetch destination for <code>&lt;link rel="preload" as="..."&gt;</code> tags.
+      <code>import()</code> expressions never set the _hostDefined_ parameter.
+    </emu-note>
+
+    <emu-clause id="sec-InnerModuleLoading" type="abstract operation">
+      <h1>
+        InnerModuleLoading (
+          _state_: a GraphLoadingState Record,
+          _module_: a Module Record,
+        ): ~unused~
+      </h1>
+      <dl class="header">
+        <dt>description</dt>
+        <dd>It is used by LoadRequestedModules to recursively perform the actual loading process for _module_'s dependency graph.</dd>
+      </dl>
+
+      <emu-alg>
+        1. Assert: _state_.[[IsLoading]] is *true*.
+        1. If _module_ is a Cyclic Module Record, _module_.[[Status]] is ~new~, and _state_.[[Visited]] does not contain _module_, then
+          1. Append _module_ to _state_.[[Visited]].
+          1. Let _requestedModulesCount_ be the number of elements in _module_.[[RequestedModules]].
+          1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] + _requestedModulesCount_.
+          1. For each String _required_ of _module_.[[RequestedModules]], do
+            1. If _module_.[[LoadedModules]] contains a Record whose [[Specifier]] is _required_, then
+              1. Let _record_ be that Record.
+              1. Perform InnerModuleLoading(_state_, _record_.[[Module]]).
+            1. Else,
+              1. Perform HostLoadImportedModule(_module_, _required_, _state_.[[HostDefined]], _state_).
+              1. NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.
+            1. If _state_.[[IsLoading]] is *false*, return ~unused~.
+        1. Assert: _state_.[[PendingModulesCount]] ≥ 1.
+        1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] - 1.
+        1. If _state_.[[PendingModulesCount]] = 0, then
+          1. Set _state_.[[IsLoading]] to *false*.
+          1. For each Cyclic Module Record _loaded_ of _state_.[[Visited]], do
+            1. If _loaded_.[[Status]] is ~new~, set _loaded_.[[Status]] to ~unlinked~.
+          1. Perform ! Call(_state_.[[PromiseCapability]].[[Resolve]], *undefined*, « *undefined* »).
+        1. Return ~unused~.
+      </emu-alg>
+    </emu-clause>
+
+    <emu-clause id="sec-ContinueModuleLoading" type="abstract operation">
+      <h1>
+        ContinueModuleLoading (
+          _state_: a GraphLoadingState Record,
+          _moduleCompletion_: either a normal completion containing a Module Record or a throw completion,
+        ): ~unused~
+      </h1>
+      <dl class="header">
+        <dt>description</dt>
+        <dd>It is used to re-enter the loading process after a call to HostLoadImportedModule.</dd>
+      </dl>
+
+      <emu-alg>
+        1. If _state_.[[IsLoading]] is *false*, return ~unused~.
+        1. If _moduleCompletion_ is a normal completion, then
+          1. Perform InnerModuleLoading(_state_, _moduleCompletion_.[[Value]]).
+        1. Else,
+          1. Set _state_.[[IsLoading]] to *false*.
+          1. Perform ! Call(_state_.[[PromiseCapability]].[[Reject]], *undefined*, « _moduleCompletion_.[[Value]] »).
+        1. Return ~unused~.
+      </emu-alg>
+    </emu-clause>
+  </emu-clause>
+
+  <emu-clause id="sec-moduledeclarationlinking" type="concrete method" oldids="sec-moduledeclarationinstantiation">
+    <h1>Link ( ): either a normal completion containing ~unused~ or a throw completion</h1>
+    <dl class="header">
+      <dt>for</dt>
+      <dd>a Cyclic Module Record _module_</dd>
+
+      <dt>description</dt>
+      <dd>On success, Link transitions this module's [[Status]] from ~unlinked~ to ~linked~. On failure, an exception is thrown and this module's [[Status]] remains ~unlinked~. (Most of the work is done by the auxiliary function InnerModuleLinking.)</dd>
+    </dl>
+
+    <emu-alg>
+      1. Assert: _module_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.
+      1. Let _stack_ be a new empty List.
+      1. Let _result_ be Completion(InnerModuleLinking(_module_, _stack_, 0)).
+      1. If _result_ is an abrupt completion, then
+        1. For each Cyclic Module Record _m_ of _stack_, do
+          1. Assert: _m_.[[Status]] is ~linking~.
+          1. Set _m_.[[Status]] to ~unlinked~.
+        1. Assert: _module_.[[Status]] is ~unlinked~.
+        1. Return ? _result_.
+      1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
+      1. Assert: _stack_ is empty.
+      1. Return ~unused~.
+    </emu-alg>
+
+    <emu-clause id="sec-InnerModuleLinking" type="abstract operation" oldids="sec-innermoduleinstantiation">
+      <h1>
+        InnerModuleLinking (
+          _module_: a Module Record,
+          _stack_: a List of Cyclic Module Records,
+          _index_: a non-negative integer,
+        ): either a normal completion containing a non-negative integer or a throw completion
+      </h1>
+      <dl class="header">
+        <dt>description</dt>
+        <dd>It is used by Link to perform the actual linking process for _module_, as well as recursively on all other modules in the dependency graph. The _stack_ and _index_ parameters, as well as a module's [[DFSIndex]] and [[DFSAncestorIndex]] fields, keep track of the depth-first search (DFS) traversal. In particular, [[DFSAncestorIndex]] is used to discover strongly connected components (SCCs), such that all modules in an SCC transition to ~linked~ together.</dd>
+      </dl>
+
+      <emu-alg>
+        1. If _module_ is not a Cyclic Module Record, then
+          1. Perform ? _module_.Link().
+          1. Return _index_.
+        1. If _module_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~, then
+          1. Return _index_.
+        1. Assert: _module_.[[Status]] is ~unlinked~.
+        1. Set _module_.[[Status]] to ~linking~.
+        1. Set _module_.[[DFSIndex]] to _index_.
+        1. Set _module_.[[DFSAncestorIndex]] to _index_.
+        1. Set _index_ to _index_ + 1.
+        1. Append _module_ to _stack_.
+        1. For each String _required_ of _module_.[[RequestedModules]], do
+          1. Let _requiredModule_ be GetImportedModule(_module_, _required_).
+          1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
+          1. If _requiredModule_ is a Cyclic Module Record, then
+            1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
+            1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
+            1. If _requiredModule_.[[Status]] is ~linking~, then
+              1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+        1. Perform ? _module_.InitializeEnvironment().
+        1. Assert: _module_ occurs exactly once in _stack_.
+        1. Assert: _module_.[[DFSAncestorIndex]] ≤ _module_.[[DFSIndex]].
+        1. If _module_.[[DFSAncestorIndex]] = _module_.[[DFSIndex]], then
+          1. Let _done_ be *false*.
+          1. Repeat, while _done_ is *false*,
+            1. Let _requiredModule_ be the last element of _stack_.
+            1. Remove the last element of _stack_.
+            1. Assert: _requiredModule_ is a Cyclic Module Record.
+            1. Set _requiredModule_.[[Status]] to ~linked~.
+            1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
+        1. Return _index_.
+      </emu-alg>
+    </emu-clause>
+  </emu-clause>
+
+  <emu-clause id="sec-moduleevaluation" type="concrete method">
+    <h1>Evaluate ( ): a Promise</h1>
+    <dl class="header">
+      <dt>for</dt>
+      <dd>a Cyclic Module Record _module_</dd>
+
+      <dt>description</dt>
+      <dd>Evaluate transitions this module's [[Status]] from ~linked~ to either ~evaluating-async~ or ~evaluated~. The first time it is called on a module in a given strongly connected component, Evaluate creates and returns a Promise which resolves when the module has finished evaluating. This Promise is stored in the [[TopLevelCapability]] field of the [[CycleRoot]] for the component. Future invocations of Evaluate on any module in the component return the same Promise. (Most of the work is done by the auxiliary function InnerModuleEvaluation.)</dd>
+    </dl>
+
+    <emu-alg>
+      1. Assert: This call to Evaluate is not happening at the same time as another call to Evaluate within the surrounding agent.
+      1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
+      1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, set _module_ to _module_.[[CycleRoot]].
+      1. If _module_.[[TopLevelCapability]] is not ~empty~, then
+        1. Return _module_.[[TopLevelCapability]].[[Promise]].
+      1. Let _stack_ be a new empty List.
+      1. Let _capability_ be ! NewPromiseCapability(%Promise%).
+      1. Set _module_.[[TopLevelCapability]] to _capability_.
+      1. Let _result_ be Completion(InnerModuleEvaluation(_module_, _stack_, 0)).
+      1. If _result_ is an abrupt completion, then
+        1. For each Cyclic Module Record _m_ of _stack_, do
+          1. Assert: _m_.[[Status]] is ~evaluating~.
+          1. Set _m_.[[Status]] to ~evaluated~.
+          1. Set _m_.[[EvaluationError]] to _result_.
+        1. Assert: _module_.[[Status]] is ~evaluated~.
+        1. Assert: _module_.[[EvaluationError]] is _result_.
+        1. Perform ! Call(_capability_.[[Reject]], *undefined*, « _result_.[[Value]] »).
+      1. Else,
+        1. Assert: _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
+        1. Assert: _module_.[[EvaluationError]] is ~empty~.
+        1. If _module_.[[AsyncEvaluation]] is *false*, then
+          1. Assert: _module_.[[Status]] is ~evaluated~.
+          1. Perform ! Call(_capability_.[[Resolve]], *undefined*, « *undefined* »).
+        1. Assert: _stack_ is empty.
+      1. Return _capability_.[[Promise]].
+    </emu-alg>
+
+    <emu-clause id="sec-innermoduleevaluation" type="abstract operation">
+      <h1>
+        InnerModuleEvaluation (
+          _module_: a Module Record,
+          _stack_: a List of Cyclic Module Records,
+          _index_: a non-negative integer,
+        ): either a normal completion containing a non-negative integer or a throw completion
+      </h1>
+      <dl class="header">
+        <dt>description</dt>
+        <dd>It is used by Evaluate to perform the actual evaluation process for _module_, as well as recursively on all other modules in the dependency graph. The _stack_ and _index_ parameters, as well as _module_'s [[DFSIndex]] and [[DFSAncestorIndex]] fields, are used the same way as in InnerModuleLinking.</dd>
+      </dl>
+
+      <emu-alg>
+        1. If _module_ is not a Cyclic Module Record, then
+          1. Let _promise_ be ! _module_.Evaluate().
+          1. Assert: _promise_.[[PromiseState]] is not ~pending~.
+          1. If _promise_.[[PromiseState]] is ~rejected~, then
+            1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
+          1. Return _index_.
+        1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
+          1. If _module_.[[EvaluationError]] is ~empty~, return _index_.
+          1. Otherwise, return ? _module_.[[EvaluationError]].
+        1. If _module_.[[Status]] is ~evaluating~, return _index_.
+        1. Assert: _module_.[[Status]] is ~linked~.
+        1. Set _module_.[[Status]] to ~evaluating~.
+        1. Set _module_.[[DFSIndex]] to _index_.
+        1. Set _module_.[[DFSAncestorIndex]] to _index_.
+        1. Set _module_.[[PendingAsyncDependencies]] to 0.
+        1. Set _index_ to _index_ + 1.
+        1. Append _module_ to _stack_.
+        1. For each String _required_ of _module_.[[RequestedModules]], do
+          1. Let _requiredModule_ be GetImportedModule(_module_, _required_).
+          1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
+          1. If _requiredModule_ is a Cyclic Module Record, then
+            1. Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.
+            1. Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.
+            1. If _requiredModule_.[[Status]] is ~evaluating~, then
+              1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+            1. Else,
+              1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
+              1. Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
+              1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
+            1. If _requiredModule_.[[AsyncEvaluation]] is *true*, then
+              1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
+              1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
+        1. If _module_.[[PendingAsyncDependencies]] > 0 or _module_.[[HasTLA]] is *true*, then
+          1. Assert: _module_.[[AsyncEvaluation]] is *false* and was never previously set to *true*.
+          1. Set _module_.[[AsyncEvaluation]] to *true*.
+          1. NOTE: The order in which module records have their [[AsyncEvaluation]] fields transition to *true* is significant. (See <emu-xref href="#sec-async-module-execution-fulfilled"></emu-xref>.)
+          1. If _module_.[[PendingAsyncDependencies]] = 0, perform ExecuteAsyncModule(_module_).
+        1. Otherwise, perform ? <emu-meta effects="user-code">_module_.ExecuteModule()</emu-meta>.
+        1. Assert: _module_ occurs exactly once in _stack_.
+        1. Assert: _module_.[[DFSAncestorIndex]] ≤ _module_.[[DFSIndex]].
+        1. If _module_.[[DFSAncestorIndex]] = _module_.[[DFSIndex]], then
+          1. Let _done_ be *false*.
+          1. Repeat, while _done_ is *false*,
+            1. Let _requiredModule_ be the last element of _stack_.
+            1. Remove the last element of _stack_.
+            1. Assert: _requiredModule_ is a Cyclic Module Record.
+            1. If _requiredModule_.[[AsyncEvaluation]] is *false*, set _requiredModule_.[[Status]] to ~evaluated~.
+            1. Otherwise, set _requiredModule_.[[Status]] to ~evaluating-async~.
+            1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
+            1. Set _requiredModule_.[[CycleRoot]] to _module_.
+        1. Return _index_.
+      </emu-alg>
+      <emu-note>
+        <p>A module is ~evaluating~ while it is being traversed by InnerModuleEvaluation. A module is ~evaluated~ on execution completion or ~evaluating-async~ during execution if its [[HasTLA]] field is *true* or if it has asynchronous dependencies.</p>
+      </emu-note>
+      <emu-note>
+        <p>Any modules depending on a module of an asynchronous cycle when that cycle is not ~evaluating~ will instead depend on the execution of the root of the cycle via [[CycleRoot]]. This ensures that the cycle state can be treated as a single strongly connected component through its root module state.</p>
+      </emu-note>
+    </emu-clause>
+
+    <emu-clause id="sec-execute-async-module" type="abstract operation">
+      <h1>
+        ExecuteAsyncModule (
+          _module_: a Cyclic Module Record,
+        ): ~unused~
+      </h1>
+      <dl class="header">
+      </dl>
+
+      <emu-alg>
+        1. Assert: _module_.[[Status]] is either ~evaluating~ or ~evaluating-async~.
+        1. Assert: _module_.[[HasTLA]] is *true*.
+        1. Let _capability_ be ! NewPromiseCapability(%Promise%).
+        1. Let _fulfilledClosure_ be a new Abstract Closure with no parameters that captures _module_ and performs the following steps when called:
+          1. Perform AsyncModuleExecutionFulfilled(_module_).
+          1. Return *undefined*.
+        1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledClosure_, 0, *""*, « »).
+        1. Let _rejectedClosure_ be a new Abstract Closure with parameters (_error_) that captures _module_ and performs the following steps when called:
+          1. Perform AsyncModuleExecutionRejected(_module_, _error_).
+          1. Return *undefined*.
+        1. Let _onRejected_ be CreateBuiltinFunction(_rejectedClosure_, 0, *""*, « »).
+        1. Perform PerformPromiseThen(_capability_.[[Promise]], _onFulfilled_, _onRejected_).
+        1. Perform ! <emu-meta effects="user-code">_module_.ExecuteModule</emu-meta>(_capability_).
+        1. Return ~unused~.
+      </emu-alg>
+    </emu-clause>
+
+    <emu-clause id="sec-gather-available-ancestors" type="abstract operation">
+      <h1>
+        GatherAvailableAncestors (
+          _module_: a Cyclic Module Record,
+          _execList_: a List of Cyclic Module Records,
+        ): ~unused~
+      </h1>
+      <dl class="header">
+      </dl>
+      <emu-alg>
+        1. For each Cyclic Module Record _m_ of _module_.[[AsyncParentModules]], do
+          1. If _execList_ does not contain _m_ and _m_.[[CycleRoot]].[[EvaluationError]] is ~empty~, then
+            1. Assert: _m_.[[Status]] is ~evaluating-async~.
+            1. Assert: _m_.[[EvaluationError]] is ~empty~.
+            1. Assert: _m_.[[AsyncEvaluation]] is *true*.
+            1. Assert: _m_.[[PendingAsyncDependencies]] > 0.
+            1. Set _m_.[[PendingAsyncDependencies]] to _m_.[[PendingAsyncDependencies]] - 1.
+            1. If _m_.[[PendingAsyncDependencies]] = 0, then
+              1. Append _m_ to _execList_.
+              1. If _m_.[[HasTLA]] is *false*, perform GatherAvailableAncestors(_m_, _execList_).
+        1. Return ~unused~.
+      </emu-alg>
+      <emu-note>
+        <p>When an asynchronous execution for a root _module_ is fulfilled, this function determines the list of modules which are able to synchronously execute together on this completion, populating them in _execList_.</p>
+      </emu-note>
+    </emu-clause>
+
+    <emu-clause id="sec-async-module-execution-fulfilled" type="abstract operation">
+      <h1>
+        AsyncModuleExecutionFulfilled (
+          _module_: a Cyclic Module Record,
+        ): ~unused~
+      </h1>
+      <dl class="header">
+      </dl>
+      <emu-alg>
+        1. If _module_.[[Status]] is ~evaluated~, then
+          1. Assert: _module_.[[EvaluationError]] is not ~empty~.
+          1. Return ~unused~.
+        1. Assert: _module_.[[Status]] is ~evaluating-async~.
+        1. Assert: _module_.[[AsyncEvaluation]] is *true*.
+        1. Assert: _module_.[[EvaluationError]] is ~empty~.
+        1. Set _module_.[[AsyncEvaluation]] to *false*.
+        1. Set _module_.[[Status]] to ~evaluated~.
+        1. If _module_.[[TopLevelCapability]] is not ~empty~, then
+          1. Assert: _module_.[[CycleRoot]] is _module_.
+          1. Perform ! Call(_module_.[[TopLevelCapability]].[[Resolve]], *undefined*, « *undefined* »).
+        1. Let _execList_ be a new empty List.
+        1. Perform GatherAvailableAncestors(_module_, _execList_).
+        1. Let _sortedExecList_ be a List whose elements are the elements of _execList_, in the order in which they had their [[AsyncEvaluation]] fields set to *true* in InnerModuleEvaluation.
+        1. Assert: All elements of _sortedExecList_ have their [[AsyncEvaluation]] field set to *true*, [[PendingAsyncDependencies]] field set to 0, and [[EvaluationError]] field set to ~empty~.
+        1. For each Cyclic Module Record _m_ of _sortedExecList_, do
+          1. If _m_.[[Status]] is ~evaluated~, then
+            1. Assert: _m_.[[EvaluationError]] is not ~empty~.
+          1. Else if _m_.[[HasTLA]] is *true*, then
+            1. Perform ExecuteAsyncModule(_m_).
+          1. Else,
+            1. Let _result_ be <emu-meta effects="user-code">_m_.ExecuteModule()</emu-meta>.
+            1. If _result_ is an abrupt completion, then
+              1. Perform AsyncModuleExecutionRejected(_m_, _result_.[[Value]]).
+            1. Else,
+              1. Set _m_.[[Status]] to ~evaluated~.
+              1. If _m_.[[TopLevelCapability]] is not ~empty~, then
+                1. Assert: _m_.[[CycleRoot]] is _m_.
+                1. Perform ! Call(_m_.[[TopLevelCapability]].[[Resolve]], *undefined*, « *undefined* »).
+        1. Return ~unused~.
+      </emu-alg>
+    </emu-clause>
+
+    <emu-clause id="sec-async-module-execution-rejected" type="abstract operation">
+      <h1>
+        AsyncModuleExecutionRejected (
+          _module_: a Cyclic Module Record,
+          _error_: an ECMAScript language value,
+        ): ~unused~
+      </h1>
+      <dl class="header">
+      </dl>
+      <emu-alg>
+        1. If _module_.[[Status]] is ~evaluated~, then
+          1. Assert: _module_.[[EvaluationError]] is not ~empty~.
+          1. Return ~unused~.
+        1. Assert: _module_.[[Status]] is ~evaluating-async~.
+        1. Assert: _module_.[[AsyncEvaluation]] is *true*.
+        1. Assert: _module_.[[EvaluationError]] is ~empty~.
+        1. Set _module_.[[EvaluationError]] to ThrowCompletion(_error_).
+        1. Set _module_.[[Status]] to ~evaluated~.
+        1. For each Cyclic Module Record _m_ of _module_.[[AsyncParentModules]], do
+          1. Perform AsyncModuleExecutionRejected(_m_, _error_).
+        1. If _module_.[[TopLevelCapability]] is not ~empty~, then
+          1. Assert: _module_.[[CycleRoot]] is _module_.
+          1. Perform ! Call(_module_.[[TopLevelCapability]].[[Reject]], *undefined*, « _error_ »).
+        1. Return ~unused~.
+      </emu-alg>
+    </emu-clause>
+  </emu-clause>
+
+  <emu-clause id="sec-example-cyclic-module-record-graphs">
+    <h1>Example Cyclic Module Record Graphs</h1>
+
+    <p>This non-normative section gives a series of examples of the linking and evaluation of a few common module graphs, with a specific focus on how errors can occur.</p>
+
+    <p>First consider the following simple module graph:</p>
+
+    <emu-figure id="figure-module-graph-simple" caption="A simple module graph">
+      <img alt="A module graph in which module A depends on module B, and module B depends on module C" width="121" height="211" src="img/module-graph-simple.svg">
+    </emu-figure>
+
+    <p>Let's first assume that there are no error conditions. When a host first calls _A_.LoadRequestedModules(), this will complete successfully by assumption, and recursively load the dependencies of _B_ and _C_ as well (respectively, _C_ and none), and then set _A_.[[Status]] = _B_.[[Status]] = _C_.[[Status]] = ~unlinked~. Then, when the host calls _A_.Link(), it will complete successfully (again by assumption) such that _A_.[[Status]] = _B_.[[Status]] = _C_.[[Status]] = linked. These preparatory steps can be performed at any time. Later, when the host is ready to incur any possible side effects of the modules, it can call _A_.Evaluate(), which will complete successfully, returning a Promise resolving to *undefined* (again by assumption), recursively having evaluated first _C_ and then _B_. Each module's [[Status]] at this point will be ~evaluated~.</p>
+
+    <p>Consider then cases involving linking errors, after a successful call to _A_.LoadRequestedModules(). If InnerModuleLinking of _C_ succeeds but, thereafter, fails for _B_, for example because it imports something that _C_ does not provide, then the original _A_.Link() will fail, and both _A_ and _B_'s [[Status]] remain ~unlinked~. _C_'s [[Status]] has become ~linked~, though.</p>
+
+    <p>Finally, consider a case involving evaluation errors after a successful call to Link(). If InnerModuleEvaluation of _C_ succeeds but, thereafter, fails for _B_, for example because _B_ contains code that throws an exception, then the original _A_.Evaluate() will fail, returning a rejected Promise. The resulting exception will be recorded in both _A_ and _B_'s [[EvaluationError]] fields, and their [[Status]] will become ~evaluated~. _C_ will also become ~evaluated~ but, in contrast to _A_ and _B_, will remain without an [[EvaluationError]], as it successfully completed evaluation. Storing the exception ensures that any time a host tries to reuse _A_ or _B_ by calling their Evaluate() method, it will encounter the same exception. (Hosts are not required to reuse Cyclic Module Records; similarly, hosts are not required to expose the exception objects thrown by these methods. However, the specification enables such uses.)</p>
+
+    <p>Now consider a different type of error condition:</p>
+
+    <emu-figure id="figure-module-graph-missing" caption="A module graph with an unresolvable module">
+      <img alt="A module graph in which module A depends on a missing (unresolvable) module, represented by ???" width="121" height="121" src="img/module-graph-missing.svg">
+    </emu-figure>
+
+    <p>In this scenario, module _A_ declares a dependency on some other module, but no Module Record exists for that module, i.e. HostLoadImportedModule calls FinishLoadingImportedModule with an exception when asked for it. This could occur for a variety of reasons, such as the corresponding resource not existing, or the resource existing but ParseModule returning some errors when trying to parse the resulting source text. Hosts can choose to expose the cause of failure via the completion they pass to FinishLoadingImportedModule. In any case, this exception causes a loading failure, which results in _A_'s [[Status]] remaining ~new~.</p>
+
+    <p>The difference here between loading, linking and evaluation errors is due to the following characteristic:</p>
+    <ul>
+      <li>Evaluation must be only performed once, as it can cause side effects; it is thus important to remember whether evaluation has already been performed, even if unsuccessfully. (In the error case, it makes sense to also remember the exception because otherwise subsequent Evaluate() calls would have to synthesize a new one.)</li>
+      <li>Linking, on the other hand, is side-effect-free, and thus even if it fails, it can be retried at a later time with no issues.</li>
+      <li>Loading closely interacts with the host, and it may be desiderable for some of them to allow users to retry failed loads (for example, if the failure is caused by temporarily bad network conditions).</li>
+    </ul>
+
+    <p>Now, consider a module graph with a cycle:</p>
+
+    <emu-figure id="figure-module-graph-cycle" caption="A cyclic module graph">
+      <img alt="A module graph in which module A depends on module B and C, but module B also depends on module A" width="181" height="121" src="img/module-graph-cycle.svg">
+    </emu-figure>
+
+    <p>Here we assume that the entry point is module _A_, so that the host proceeds by calling _A_.LoadRequestedModules(), which performs InnerModuleLoading on _A_. This in turn calls InnerModuleLoading on _B_ and _C_. Because of the cycle, this again triggers InnerModuleLoading on _A_, but at this point it is a no-op since _A_'s dependencies loading has already been triggered during this LoadRequestedModules process. When all the modules in the graph have been successfully loaded, their [[Status]] transitions from ~new~ to ~unlinked~ at the same time.</p>
+
+    <p>Then the host proceeds by calling _A_.Link(), which performs InnerModuleLinking on _A_. This in turn calls InnerModuleLinking on _B_. Because of the cycle, this again triggers InnerModuleLinking on _A_, but at this point it is a no-op since _A_.[[Status]] is already ~linking~. _B_.[[Status]] itself remains ~linking~ when control gets back to _A_ and InnerModuleLinking is triggered on _C_. After this returns with _C_.[[Status]] being ~linked~, both _A_ and _B_ transition from ~linking~ to ~linked~ together; this is by design, since they form a strongly connected component. It's possible to transition the status of modules in the same SCC at the same time because during this phase the module graph is traversed with a depth-first search.</p>
+
+    <p>An analogous story occurs for the evaluation phase of a cyclic module graph, in the success case.</p>
+
+    <p>Now consider a case where _A_ has a linking error; for example, it tries to import a binding from _C_ that does not exist. In that case, the above steps still occur, including the early return from the second call to InnerModuleLinking on _A_. However, once we unwind back to the original InnerModuleLinking on _A_, it fails during InitializeEnvironment, namely right after _C_.ResolveExport(). The thrown *SyntaxError* exception propagates up to _A_.Link, which resets all modules that are currently on its _stack_ (these are always exactly the modules that are still ~linking~). Hence both _A_ and _B_ become ~unlinked~. Note that _C_ is left as ~linked~.</p>
+
+    <p>Alternatively, consider a case where _A_ has an evaluation error; for example, its source code throws an exception. In that case, the evaluation-time analog of the above steps still occurs, including the early return from the second call to InnerModuleEvaluation on _A_. However, once we unwind back to the original InnerModuleEvaluation on _A_, it fails by assumption. The exception thrown propagates up to _A_.Evaluate(), which records the error in all modules that are currently on its _stack_ (i.e., the modules that are still ~evaluating~) as well as via [[AsyncParentModules]], which form a chain for modules which contain or depend on top-level `await` through the whole dependency graph through the AsyncModuleExecutionRejected algorithm. Hence both _A_ and _B_ become ~evaluated~ and the exception is recorded in both _A_ and _B_'s [[EvaluationError]] fields, while _C_ is left as ~evaluated~ with no [[EvaluationError]].</p>
+
+    <p>Lastly, consider a module graph with a cycle, where all modules complete asynchronously:</p>
+    <emu-figure id="figure-module-graph-cycle-async" caption="An asynchronous cyclic module graph">
+      <img alt="A module graph in which module A depends on module B and C, module B depends on module D, module C depends on module D and E, and module D depends on module A" width="241" height="211" src="img/module-graph-cycle-async.svg">
+    </emu-figure>
+    <p>Loading and linking happen as before, and all modules end up with [[Status]] set to ~linked~.</p>
+
+    <p>Calling _A_.Evaluate() calls InnerModuleEvaluation on _A_, _B_, and _D_, which all transition to ~evaluating~. Then InnerModuleEvaluation is called on _A_ again, which is a no-op because it is already ~evaluating~. At this point, _D_.[[PendingAsyncDependencies]] is 0, so ExecuteAsyncModule(_D_) is called and we call _D_.ExecuteModule with a new PromiseCapability tracking the asynchronous execution of _D_. We unwind back to the InnerModuleEvaluation on _B_, setting _B_.[[PendingAsyncDependencies]] to 1 and _B_.[[AsyncEvaluation]] to *true*. We unwind back to the original InnerModuleEvaluation on _A_, setting _A_.[[PendingAsyncDependencies]] to 1. In the next iteration of the loop over _A_'s dependencies, we call InnerModuleEvaluation on _C_ and thus on _D_ (again a no-op) and _E_. As _E_ has no dependencies and is not part of a cycle, we call ExecuteAsyncModule(_E_) in the same manner as _D_ and _E_ is immediately removed from the stack. We unwind once more to the original InnerModuleEvaluation on _A_, setting _C_.[[AsyncEvaluation]] to *true*. Now we finish the loop over _A_'s dependencies, set _A_.[[AsyncEvaluation]] to *true*, and remove the entire strongly connected component from the stack, transitioning all of the modules to ~evaluating-async~ at once. At this point, the fields of the modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-1"></emu-xref>.</p>
+
+    <emu-table id="table-module-graph-cycle-async-fields-1" class="module-overflow" caption="Module fields after the initial Evaluate() call">
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>[[DFSIndex]]</th>
+            <th>[[DFSAncestorIndex]]</th>
+            <th>[[Status]]</th>
+            <th>[[AsyncEvaluation]]</th>
+            <th>[[AsyncParentModules]]</th>
+            <th>[[PendingAsyncDependencies]]</th>
+          </tr>
+        </thead>
+        <tr>
+          <th>_A_</th>
+          <td>0</td>
+          <td>0</td>
+          <td>~evaluating-async~</td>
+          <td>*true*</td>
+          <td>« »</td>
+          <td>2 (_B_ and _C_)</td>
+        </tr>
+        <tr>
+          <th>_B_</th>
+          <td>1</td>
+          <td>0</td>
+          <td>~evaluating-async~</td>
+          <td>*true*</td>
+          <td>« _A_ »</td>
+          <td>1 (_D_)</td>
+        </tr>
+        <tr>
+          <th>_C_</th>
+          <td>2</td>
+          <td>0</td>
+          <td>~evaluating-async~</td>
+          <td>*true*</td>
+          <td>« _A_ »</td>
+          <td>2 (_D_ and _E_)</td>
+        </tr>
+        <tr>
+          <th>_D_</th>
+          <td>3</td>
+          <td>0</td>
+          <td>~evaluating-async~</td>
+          <td>*true*</td>
+          <td>« _B_, _C_ »</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <th>_E_</th>
+          <td>4</td>
+          <td>4</td>
+          <td>~evaluating-async~</td>
+          <td>*true*</td>
+          <td>« _C_ »</td>
+          <td>0</td>
+        </tr>
+      </table>
+    </emu-table>
+
+    <p>Let us assume that _E_ finishes executing first. When that happens, AsyncModuleExecutionFulfilled is called, _E_.[[Status]] is set to ~evaluated~ and _C_.[[PendingAsyncDependencies]] is decremented to become 1. The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-2"></emu-xref>.</p>
+
+    <emu-table id="table-module-graph-cycle-async-fields-2" class="module-overflow" caption="Module fields after module _E_ finishes executing">
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>[[DFSIndex]]</th>
+            <th>[[DFSAncestorIndex]]</th>
+            <th>[[Status]]</th>
+            <th>[[AsyncEvaluation]]</th>
+            <th>[[AsyncParentModules]]</th>
+            <th>[[PendingAsyncDependencies]]</th>
+          </tr>
+        </thead>
+        <tr>
+          <th>_C_</th>
+          <td>2</td>
+          <td>0</td>
+          <td>~evaluating-async~</td>
+          <td>*true*</td>
+          <td>« _A_ »</td>
+          <td>1 (_D_)</td>
+        </tr>
+        <tr>
+          <th>_E_</th>
+          <td>4</td>
+          <td>4</td>
+          <td>~evaluated~</td>
+          <td>*true*</td>
+          <td>« _C_ »</td>
+          <td>0</td>
+        </tr>
+      </table>
+    </emu-table>
+
+    <p>_D_ is next to finish (as it was the only module that was still executing). When that happens, AsyncModuleExecutionFulfilled is called again and _D_.[[Status]] is set to ~evaluated~. Then _B_.[[PendingAsyncDependencies]] is decremented to become 0, ExecuteAsyncModule is called on _B_, and it starts executing. _C_.[[PendingAsyncDependencies]] is also decremented to become 0, and _C_ starts executing (potentially in parallel to _B_ if _B_ contains an `await`). The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-3"></emu-xref>.</p>
+
+    <emu-table id="table-module-graph-cycle-async-fields-3" class="module-overflow" caption="Module fields after module _D_ finishes executing">
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>[[DFSIndex]]</th>
+            <th>[[DFSAncestorIndex]]</th>
+            <th>[[Status]]</th>
+            <th>[[AsyncEvaluation]]</th>
+            <th>[[AsyncParentModules]]</th>
+            <th>[[PendingAsyncDependencies]]</th>
+          </tr>
+        </thead>
+        <tr>
+          <th>_B_</th>
+          <td>1</td>
+          <td>0</td>
+          <td>~evaluating-async~</td>
+          <td>*true*</td>
+          <td>« _A_ »</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <th>_C_</th>
+          <td>2</td>
+          <td>0</td>
+          <td>~evaluating-async~</td>
+          <td>*true*</td>
+          <td>« _A_ »</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <th>_D_</th>
+          <td>3</td>
+          <td>0</td>
+          <td>~evaluated~</td>
+          <td>*true*</td>
+          <td>« _B_, _C_ »</td>
+          <td>0</td>
+        </tr>
+      </table>
+    </emu-table>
+
+    <p>Let us assume that _C_ finishes executing next. When that happens, AsyncModuleExecutionFulfilled is called again, _C_.[[Status]] is set to ~evaluated~ and _A_.[[PendingAsyncDependencies]] is decremented to become 1. The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-4"></emu-xref>.</p>
+
+    <emu-table id="table-module-graph-cycle-async-fields-4" class="module-overflow" caption="Module fields after module _C_ finishes executing">
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>[[DFSIndex]]</th>
+            <th>[[DFSAncestorIndex]]</th>
+            <th>[[Status]]</th>
+            <th>[[AsyncEvaluation]]</th>
+            <th>[[AsyncParentModules]]</th>
+            <th>[[PendingAsyncDependencies]]</th>
+          </tr>
+        </thead>
+        <tr>
+          <th>_A_</th>
+          <td>0</td>
+          <td>0</td>
+          <td>~evaluating-async~</td>
+          <td>*true*</td>
+          <td>« »</td>
+          <td>1 (_B_)</td>
+        </tr>
+        <tr>
+          <th>_C_</th>
+          <td>2</td>
+          <td>0</td>
+          <td>~evaluated~</td>
+          <td>*true*</td>
+          <td>« _A_ »</td>
+          <td>0</td>
+        </tr>
+      </table>
+    </emu-table>
+
+    <p>Then, _B_ finishes executing. When that happens, AsyncModuleExecutionFulfilled is called again and _B_.[[Status]] is set to ~evaluated~. _A_.[[PendingAsyncDependencies]] is decremented to become 0, so ExecuteAsyncModule is called and it starts executing. The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-5"></emu-xref>.</p>
+
+    <emu-table id="table-module-graph-cycle-async-fields-5" class="module-overflow" caption="Module fields after module _B_ finishes executing">
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>[[DFSIndex]]</th>
+            <th>[[DFSAncestorIndex]]</th>
+            <th>[[Status]]</th>
+            <th>[[AsyncEvaluation]]</th>
+            <th>[[AsyncParentModules]]</th>
+            <th>[[PendingAsyncDependencies]]</th>
+          </tr>
+        </thead>
+        <tr>
+          <th>_A_</th>
+          <td>0</td>
+          <td>0</td>
+          <td>~evaluating-async~</td>
+          <td>*true*</td>
+          <td>« »</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <th>_B_</th>
+          <td>1</td>
+          <td>0</td>
+          <td>~evaluated~</td>
+          <td>*true*</td>
+          <td>« _A_ »</td>
+          <td>0</td>
+        </tr>
+      </table>
+    </emu-table>
+
+    <p>Finally, _A_ finishes executing. When that happens, AsyncModuleExecutionFulfilled is called again and _A_.[[Status]] is set to ~evaluated~. At this point, the Promise in _A_.[[TopLevelCapability]] (which was returned from _A_.Evaluate()) is resolved, and this concludes the handling of this module graph. The fields of the updated module are as given in <emu-xref href="#table-module-graph-cycle-async-fields-6"></emu-xref>.</p>
+
+    <emu-table id="table-module-graph-cycle-async-fields-6" class="module-overflow" caption="Module fields after module _A_ finishes executing">
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>[[DFSIndex]]</th>
+            <th>[[DFSAncestorIndex]]</th>
+            <th>[[Status]]</th>
+            <th>[[AsyncEvaluation]]</th>
+            <th>[[AsyncParentModules]]</th>
+            <th>[[PendingAsyncDependencies]]</th>
+          </tr>
+        </thead>
+        <tr>
+          <th>_A_</th>
+          <td>0</td>
+          <td>0</td>
+          <td>~evaluated~</td>
+          <td>*true*</td>
+          <td>« »</td>
+          <td>0</td>
+        </tr>
+      </table>
+    </emu-table>
+
+    <p>Alternatively, consider a failure case where _C_ fails execution and returns an error before _B_ has finished executing. When that happens, AsyncModuleExecutionRejected is called, which sets _C_.[[Status]] to ~evaluated~ and _C_.[[EvaluationError]] to the error. It then propagates this error to all of the AsyncParentModules by performing AsyncModuleExecutionRejected on each of them. The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-7"></emu-xref>.</p>
+
+    <emu-table id="table-module-graph-cycle-async-fields-7" class="module-overflow" caption="Module fields after module _C_ finishes with an error">
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>[[DFSIndex]]</th>
+            <th>[[DFSAncestorIndex]]</th>
+            <th>[[Status]]</th>
+            <th>[[AsyncEvaluation]]</th>
+            <th>[[AsyncParentModules]]</th>
+            <th>[[PendingAsyncDependencies]]</th>
+            <th>[[EvaluationError]]</th>
+          </tr>
+        </thead>
+        <tr>
+          <th>_A_</th>
+          <td>0</td>
+          <td>0</td>
+          <td>~evaluated~</td>
+          <td>*true*</td>
+          <td>« »</td>
+          <td>1 (_B_)</td>
+          <td>~empty~</td>
+        </tr>
+        <tr>
+          <th>_C_</th>
+          <td>2</td>
+          <td>1</td>
+          <td>~evaluated~</td>
+          <td>*true*</td>
+          <td>« _A_ »</td>
+          <th>0</th>
+          <td>_C_'s evaluation error</td>
+        </tr>
+      </table>
+    </emu-table>
+
+    <p>_A_ will be rejected with the same error as _C_ since _C_ will call AsyncModuleExecutionRejected on _A_ with _C_'s error. _A_.[[Status]] is set to ~evaluated~. At this point the Promise in _A_.[[TopLevelCapability]] (which was returned from _A_.Evaluate()) is rejected. The fields of the updated module are as given in <emu-xref href="#table-module-graph-cycle-async-fields-8"></emu-xref>.</p>
+
+    <emu-table id="table-module-graph-cycle-async-fields-8" class="module-overflow" caption="Module fields after module _A_ is rejected">
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>[[DFSIndex]]</th>
+            <th>[[DFSAncestorIndex]]</th>
+            <th>[[Status]]</th>
+            <th>[[AsyncEvaluation]]</th>
+            <th>[[AsyncParentModules]]</th>
+            <th>[[PendingAsyncDependencies]]</th>
+            <th>[[EvaluationError]]</th>
+          </tr>
+        </thead>
+        <tr>
+          <th>_A_</th>
+          <td>0</td>
+          <td>0</td>
+          <td>~evaluated~</td>
+          <td>*true*</td>
+          <td>« »</td>
+          <td>0</td>
+          <td>_C_'s Evaluation Error</td>
+        </tr>
+      </table>
+    </emu-table>
+
+    <p>Then, _B_ finishes executing without an error. When that happens, AsyncModuleExecutionFulfilled is called again and _B_.[[Status]] is set to ~evaluated~. GatherAvailableAncestors is called on _B_. However, _A_.[[CycleRoot]] is _A_ which has an evaluation error, so it will not be added to the returned _sortedExecList_ and AsyncModuleExecutionFulfilled will return without further processing. Any future importer of _B_ will resolve the rejection of _B_.[[CycleRoot]].[[EvaluationError]] from the evaluation error from _C_ that was set on the cycle root _A_. The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-9"></emu-xref>.</p>
+
+    <emu-table id="table-module-graph-cycle-async-fields-9" class="module-overflow" caption="Module fields after module _B_ finishes executing in an erroring graph">
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>[[DFSIndex]]</th>
+            <th>[[DFSAncestorIndex]]</th>
+            <th>[[Status]]</th>
+            <th>[[AsyncEvaluation]]</th>
+            <th>[[AsyncParentModules]]</th>
+            <th>[[PendingAsyncDependencies]]</th>
+            <th>[[EvaluationError]]</th>
+          </tr>
+        </thead>
+        <tr>
+          <th>_A_</th>
+          <td>0</td>
+          <td>0</td>
+          <td>~evaluated~</td>
+          <td>*true*</td>
+          <td>« »</td>
+          <td>0</td>
+          <td>_C_'s Evaluation Error</td>
+        </tr>
+        <tr>
+          <th>_B_</th>
+          <td>1</td>
+          <td>0</td>
+          <td>~evaluated~</td>
+          <td>*true*</td>
+          <td>« _A_ »</td>
+          <td>0</td>
+          <td>~empty~</td>
+        </tr>
+      </table>
+    </emu-table>
+  </emu-clause>
 </emu-clause>
