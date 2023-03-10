@@ -482,7 +482,7 @@ contributors: Your Name(s) Here
           1. If _promise_.[[PromiseState]] is ~rejected~, then
             1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
           1. Return _index_.
-        1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, Then
+        1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
           1. [id="step-innermoduleevaluation-reset-cycleroot"] <ins>If _module_.[[Status]] is ~evaluated~, set _module_.[[CycleRoot]] to _module_.</ins>
           1. If _module_.[[EvaluationError]] is ~empty~, return _index_.
           1. Otherwise, return ? _module_.[[EvaluationError]].
@@ -531,9 +531,9 @@ contributors: Your Name(s) Here
             1. If _requiredModule_.[[AsyncEvaluation]] is *false*, then
               1. <ins>Assert: _requiredModule_.[[Status]] is ~evaluating~.</ins>
               1. Set _requiredModule_.[[Status]] to ~evaluated~.
-            1. <ins>Otherwise, if _requiredModule_.[[Status]] is ~async-subgraphs-evaluating~, then</ins>
+            1. <ins>Else if _requiredModule_.[[Status]] is ~async-subgraphs-evaluating~, then</ins>
               1. <ins>Set _requiredModule_.[[Status]] to ~async-subgraphs-evaluating-async~.</ins>
-            1. Otherwise,
+            1. Else,
               1. <ins>Assert: _requiredModule_.[[Status]] is ~evaluating~.</ins>
               1. Set _requiredModule_.[[Status]] to ~evaluating-async~.
             1. If _requiredModule_ and _module_ are the same Module Record <ins>and _stack_ does not contain _module_</ins>, set _done_ to *true*.
@@ -581,7 +581,7 @@ contributors: Your Name(s) Here
         </dl>
 
         <emu-note type="editor">
-          The diff highlighted in this abstract operation method is relative to steps 11.c.i-11.c.v of the original <a href="https://tc39.es/ecma262/#sec-innermoduleevaluation">InnerModuleEvaluation</a> abstract operation.
+          The diff highlighted in this abstract operation method is relative to steps <span>11</span>.c.i-11.c.v of the original <a href="https://tc39.es/ecma262/#sec-innermoduleevaluation">InnerModuleEvaluation</a> abstract operation.
         </emu-note>
 
         <emu-alg>
@@ -589,9 +589,9 @@ contributors: Your Name(s) Here
           1. Assert: _requiredModule_.[[Status]] is <ins>~async-subgraphs-evaluating~ or</ins> ~evaluating~ if and only if _stack_ contains _requiredModule_.
           1. If _requiredModule_.[[Status]] is ~evaluating~, <ins>or both _requiredModule_.[[Status]] and _module_.[[Status]] are ~async-subgraphs-evaluating~</ins>, then
             1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
-          1. Else, <ins>if _requiredModule_.[[Status]] is not ~async-subgraphs-evaluating~</ins>,
+          1. Else <ins>if _requiredModule_.[[Status]] is not ~async-subgraphs-evaluating~</ins>,
             1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
-            1. Assert: _requiredModule_.[[Status]] is <del>either</del><ins>one of  ~async-subgraphs-evaluating-async~, ~async-subgraphs-evaluated~,</ins> ~evaluating-async~ or ~evaluated~.
+            1. Assert: _requiredModule_.[[Status]] is <del>either</del><ins>one of ~async-subgraphs-evaluating-async~, ~async-subgraphs-evaluated~,</ins> ~evaluating-async~ or ~evaluated~.
             1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
           1. If _requiredModule_.[[AsyncEvaluation]] is *true*, then
             1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
@@ -622,7 +622,7 @@ contributors: Your Name(s) Here
 
       <emu-alg>
         1. <ins>If _module_ is not a Cyclic Module Record or _module_.[[HasTLA]] is *true*, then</ins>
-          1. <ins>Return InnerModuleEvaluation(_module_, _stack_, _index_).</ins>
+          1. <ins>Return ? InnerModuleEvaluation(_module_, _stack_, _index_).</ins>
         1. <del>If _module_ is not a Cyclic Module Record, then</del>
           1. <del>Let _promise_ be ! _module_.Evaluate().</del>
           1. <del>Assert: _promise_.[[PromiseState]] is not ~pending~.</del>
@@ -675,7 +675,7 @@ contributors: Your Name(s) Here
               1. <ins>Else,</ins>
                 1. <ins>Assert: _requiredModule_.[[Status]] is ~evaluating~.</ins>
                 1. Set _requiredModule_.[[Status]] to ~evaluated~.
-            1. Otherwise,
+            1. Else,
               1. <ins>If _requiredModule_.[[Status]] is ~async-subgraphs-evaluating~, set _requiredModule_.[[Status]] to ~async-subgraphs-evaluating-async~.</ins>
               1. <ins>Else,</ins>
                 1. <ins>Assert: _requiredModule_.[[Status]] is ~evaluating~.</ins>
@@ -775,7 +775,7 @@ contributors: Your Name(s) Here
             1. <ins>If _m_.[[Status]] is ~async-subgraphs-evaluating-async~, then</ins>
               1. <ins>Set _m_.[[Status]] to ~async-subgraphs-evaluated~.</ins>
               1. <ins>Set _success_ to *true*.</ins>
-            1. <ins>Otherwise,</ins>
+            1. <ins>Else,</ins>
               1. Let _result_ be <emu-meta effects="user-code">_m_.ExecuteModule()</emu-meta>.
               1. If _result_ is an abrupt completion, then
                 1. Perform AsyncModuleExecutionRejected(_m_, _result_.[[Value]]).
@@ -786,7 +786,7 @@ contributors: Your Name(s) Here
                   1. <del>Assert: _m_.[[CycleRoot]] is _m_.</del>
                   1. <del>Perform ! Call(_m_.[[TopLevelCapability]].[[Resolve]], *undefined*, « *undefined* »).</del>
             1. <ins>If _success_ is *true*, then</ins>
-              1. <ins>If _m_.[[TopLevelCapability]] is not ~empty~, then<ins>
+              1. <ins>If _m_.[[TopLevelCapability]] is not ~empty~, then</ins>
                 1. <ins>Assert: _m_.[[CycleRoot]] is _m_.</ins>
                 1. <ins>Perform ! Call(_m_.[[TopLevelCapability]].[[Resolve]], *undefined*, « *undefined* »).</ins>
         1. Return ~unused~.
