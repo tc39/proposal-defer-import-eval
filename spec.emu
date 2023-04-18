@@ -2037,12 +2037,12 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ImportClause FromClause `;`</emu-grammar>
         <emu-alg>
-          1. Let _module_ be the sole element of ModuleRequests of |FromClause|.
+          1. Let _module_ be <del>the sole element of ModuleRequests</del><ins>SV</ins> of |FromClause|.
           1. Return ImportEntriesForModule of |ImportClause| with arguments _module_ <ins>and ~full~</ins>.
         </emu-alg>
         <emu-grammar><ins>ImportDeclaration : `import` `defer` ImportClause FromClause `;`</ins></emu-grammar>
         <emu-alg>
-          1. <ins>Let _module_ be the sole element of ModuleRequests of |FromClause|.</ins>
+          1. <ins>Let _module_ be SV of |FromClause|.</ins>
           1. <ins>Return ImportEntriesForModule of |ImportClause| with arguments _module_ and ~defer~.</ins>
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ModuleSpecifier `;`</emu-grammar>
@@ -2111,6 +2111,79 @@ contributors: Nicolò Ribaudo
           1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, <ins>[[Phase]]: _phase_,</ins> [[ImportName]]: _importName_, [[LocalName]]: _localName_ }.
           1. Return « _entry_ ».
         </emu-alg>
+      </emu-clause>
+    </emu-clause>
+
+    <emu-clause id="sec-exports">
+      <h1>Exports</h1>
+
+      <emu-clause id="sec-static-semantics-exportentries" type="sdo" number="4">
+        <h1>Static Semantics: ExportEntries ( ): a List of ExportEntry Records</h1>
+        <dl class="header">
+        </dl>
+        <emu-grammar>Module : [empty]</emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
+        <emu-alg>
+          1. Let _entries1_ be ExportEntries of |ModuleItemList|.
+          1. Let _entries2_ be ExportEntries of |ModuleItem|.
+          1. Return the list-concatenation of _entries1_ and _entries2_.
+        </emu-alg>
+        <emu-grammar>
+          ModuleItem :
+            ImportDeclaration
+            StatementListItem
+        </emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` ExportFromClause FromClause `;`</emu-grammar>
+        <emu-alg>
+          1. Let _module_ be <del>the sole element of ModuleRequests</del><ins>SV</ins> of |FromClause|.
+          1. Return ExportEntriesForModule of |ExportFromClause| with argument _module_.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` NamedExports `;`</emu-grammar>
+        <emu-alg>
+          1. Return ExportEntriesForModule of |NamedExports| with argument *null*.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` VariableStatement</emu-grammar>
+        <emu-alg>
+          1. Let _entries_ be a new empty List.
+          1. Let _names_ be the BoundNames of |VariableStatement|.
+          1. For each element _name_ of _names_, do
+            1. Append the ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: _name_, [[ExportName]]: _name_ } to _entries_.
+          1. Return _entries_.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` Declaration</emu-grammar>
+        <emu-alg>
+          1. Let _entries_ be a new empty List.
+          1. Let _names_ be the BoundNames of |Declaration|.
+          1. For each element _name_ of _names_, do
+            1. Append the ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: _name_, [[ExportName]]: _name_ } to _entries_.
+          1. Return _entries_.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` `default` HoistableDeclaration</emu-grammar>
+        <emu-alg>
+          1. Let _names_ be BoundNames of |HoistableDeclaration|.
+          1. Let _localName_ be the sole element of _names_.
+          1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: _localName_, [[ExportName]]: *"default"* }.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` `default` ClassDeclaration</emu-grammar>
+        <emu-alg>
+          1. Let _names_ be BoundNames of |ClassDeclaration|.
+          1. Let _localName_ be the sole element of _names_.
+          1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: _localName_, [[ExportName]]: *"default"* }.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` `default` AssignmentExpression `;`</emu-grammar>
+        <emu-alg>
+          1. Let _entry_ be the ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: *"\*default\*"*, [[ExportName]]: *"default"* }.
+          1. Return « _entry_ ».
+        </emu-alg>
+        <emu-note>
+          <p>*"\*default\*"* is used within this specification as a synthetic name for anonymous default export values. See <emu-xref href="#note-star-default-star">this note</emu-xref> for more details.</p>
+        </emu-note>
       </emu-clause>
     </emu-clause>
   </emu-clause>
