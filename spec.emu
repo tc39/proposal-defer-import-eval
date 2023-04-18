@@ -731,7 +731,7 @@ contributors: Nicolò Ribaudo
                   1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
                 1. Return _index_.
               1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
-                1. [id="step-innermoduleevaluation-reset-cycleroot"] <ins>If _module_.[[Status]] is ~evaluated~, set _module_.[[CycleRoot]] to _module_.</ins>
+                1. [id="step-innermoduleevaluation-reset-cycleroot"] <ins>If _module_.[[Status]] is ~evaluated~ and _stack_ does not contain _module_, set _module_.[[CycleRoot]] to _module_.</ins>
                 1. If _module_.[[EvaluationError]] is ~empty~, return _index_.
                 1. Otherwise, return ? _module_.[[EvaluationError]].
               1. If _module_.[[Status]] is ~evaluating~, return _index_.
