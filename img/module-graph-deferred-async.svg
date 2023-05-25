@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 121 211">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 181 211">
 <style>
   rect {
     fill: white;
@@ -32,26 +32,32 @@
 <rect x="60.5" y="0.5" width="60" height="30"/>
 <text x="90.5" y="15.5">A</text>
 
-<rect x="60.5" y="90.5" width="60" height="30"/>
-<text x="90.5" y="105.5">B</text>
+<rect x="0.5" y="90.5" width="60" height="30"/>
+<text x="30.5" y="105.5">B</text>
 
-<rect x="60.5" y="180.5" width="60" height="30"/>
-<text x="90.5" y="195.5">C<tspan style="font-size:67%;dominant-baseline:text-after-edge;font-family:serif">TLA</tspan></text>
+<rect x="0.5" y="180.5" width="60" height="30"/>
+<text x="30.5" y="195.5">C<tspan style="font-size:67%;dominant-baseline:text-after-edge;font-family:serif">TLA</tspan></text>
 
-<line x1="90.5" y1="30.5" x2="90.5" y2="90.5" class="dashed"/>
-<line x1="90.5" y1="120.5" x2="90.5" y2="180.5"/>
+<rect x="120.5" y="90.5" width="60" height="30"/>
+<text x="150.5" y="105.5">D</text>
+
+<line x1="90.5" y1="30.5" x2="30.5" y2="90.5" class="dashed"/>
+<line x1="30.5" y1="120.5" x2="30.5" y2="180.5"/>
+<line x1="90.5" y1="30.5" x2="150.5" y2="90.5"/>
 
 <!--
 Nodes:
 
  A
- B
- C
+B C
+D
+
 
 Edges:
 
 A -> B
-B -> C
+B -> D
+A -> C
 
 
 https://jsbin.com/qopeye

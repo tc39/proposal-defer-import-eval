@@ -76,9 +76,9 @@ contributors: Nicolò Ribaudo
           1. Let _exports_ be _O_.[[Exports]].
           1. If _exports_ does not contain _P_, return *undefined*.
           1. Let _m_ be _O_.[[Module]].
-          1. <ins>TODO: The following assertion is probably not true if this [[Get]] happens while evaluating a module.</ins>
-          1. <ins>Assert: _m_.[[Status]] is ~async-subgraphs-evaluated~ or ~evaluated~.</ins>
-          1. <ins>If _m_.[[Status]] is ~async-subgraphs-evaluated~, then</ins>
+          1. <ins>If _m_.[[Status]] is ~linked~, then</ins>
+            1. <ins>TODO: The following assertion is probably not true if this [[Get]] happens while evaluating a module.</ins>
+            1. <ins>Assert: Every transitive dependency of _m_ whose [[HasTLA]] is *true* has [[Status]] set to ~evaluated~.</ins>
             1. <ins>Let _promise_ be _m_.Evaluate().</ins>
             1. <ins>Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~, because all of _m_'s asynchronous dependencies have already been evaluated.</ins>
             1. <ins>If _promise_.[[PromiseState]] is ~rejected~, then</ins>
@@ -276,10 +276,10 @@ contributors: Nicolò Ribaudo
                 [[Status]]
               </td>
               <td>
-                ~new~, ~unlinked~, ~linking~, ~linked~, ~async-subgraphs-searching~, ~async-subgraphs-evaluating-async~, ~async-subgraphs-evaluated~, ~evaluating~, ~evaluating-async~, or ~evaluated~
+                ~new~, ~unlinked~, ~linking~, ~linked~, ~evaluating~, ~evaluating-async~, or ~evaluated~
               </td>
               <td>
-                Initially ~new~. Transitions to ~unlinked~, ~linking~, ~linked~, <ins>possibly to ~async-subgraphs-searching~, ~async-subgraphs-evaluating-async~ and ~async-subgraphs-evaluated~, then to</ins> ~evaluating~, possibly ~evaluating-async~, ~evaluated~ (in that order) as the module progresses throughout its lifecycle. ~evaluating-async~ indicates this module is queued to execute on completion of its asynchronous dependencies or it is a module whose [[HasTLA]] field is *true* that has been executed and is pending top-level completion.
+                Initially ~new~. Transitions to ~unlinked~, ~linking~, ~linked~, ~evaluating~, possibly ~evaluating-async~, ~evaluated~ (in that order) as the module progresses throughout its lifecycle. ~evaluating-async~ indicates this module is queued to execute on completion of its asynchronous dependencies or it is a module whose [[HasTLA]] field is *true* that has been executed and is pending top-level completion.
               </td>
             </tr>
             <tr>
@@ -608,7 +608,7 @@ contributors: Nicolò Ribaudo
           </dl>
 
           <emu-alg>
-            1. Assert: _module_.[[Status]] is one of ~unlinked~, ~linked~, <ins>~async-subgraphs-evaluating-async~, ~async-subgraphs-evaluated~,</ins> ~evaluating-async~, or ~evaluated~.
+            1. Assert: _module_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.
             1. Let _stack_ be a new empty List.
             1. Let _result_ be Completion(InnerModuleLinking(_module_, _stack_, 0)).
             1. If _result_ is an abrupt completion, then
@@ -639,7 +639,7 @@ contributors: Nicolò Ribaudo
               1. If _module_ is not a Cyclic Module Record, then
                 1. Perform ? _module_.Link().
                 1. Return _index_.
-              1. If _module_.[[Status]] is one of ~linking~, ~linked~, <ins>~async-subgraphs-evaluating-async~, ~async-subgraphs-evaluated~,</ins> ~evaluating-async~, or ~evaluated~, then
+              1. If _module_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~, then
                 1. Return _index_.
               1. Assert: _module_.[[Status]] is ~unlinked~.
               1. Set _module_.[[Status]] to ~linking~.
@@ -652,7 +652,7 @@ contributors: Nicolò Ribaudo
                 1. Let _requiredModule_ be GetImportedModule(_module_, _required_<ins>.[[Specifier]]</ins>).
                 1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
                 1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, <ins>~async-subgraphs-evaluating-async~, ~async-subgraphs-evaluated~,</ins> ~evaluating-async~, or ~evaluated~.
+                  1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
                   1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
                   1. If _requiredModule_.[[Status]] is ~linking~, then
                     1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
@@ -684,7 +684,7 @@ contributors: Nicolò Ribaudo
 
           <emu-alg>
             1. Assert: This call to Evaluate is not happening at the same time as another call to Evaluate within the surrounding agent.
-            1. Assert: _module_.[[Status]] is one of ~linked~, <ins>~async-subgraphs-evaluating-async~, ~async-subgraphs-evaluated~,</ins> ~evaluating-async~, or ~evaluated~.
+            1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
             1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, set _module_ to _module_.[[CycleRoot]].
             1. If _module_.[[TopLevelCapability]] is not ~empty~, then
               1. Return _module_.[[TopLevelCapability]].[[Promise]].
@@ -694,7 +694,7 @@ contributors: Nicolò Ribaudo
             1. Let _result_ be Completion(InnerModuleEvaluation(_module_, _stack_, 0)).
             1. If _result_ is an abrupt completion, then
               1. For each Cyclic Module Record _m_ of _stack_, do
-                1. Assert: _m_.[[Status]] is <ins>either ~async-subgraphs-searching~ or</ins> ~evaluating~.
+                1. Assert: _m_.[[Status]] is ~evaluating~.
                 1. Set _m_.[[Status]] to ~evaluated~.
                 1. Set _m_.[[EvaluationError]] to _result_.
               1. Assert: _module_.[[Status]] is ~evaluated~.
@@ -731,45 +731,46 @@ contributors: Nicolò Ribaudo
                   1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
                 1. Return _index_.
               1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
-                1. [id="step-innermoduleevaluation-reset-cycleroot"] <ins>If _module_.[[Status]] is ~evaluated~ and _stack_ does not contain _module_, set _module_.[[CycleRoot]] to _module_.</ins>
                 1. If _module_.[[EvaluationError]] is ~empty~, return _index_.
                 1. Otherwise, return ? _module_.[[EvaluationError]].
               1. If _module_.[[Status]] is ~evaluating~, return _index_.
-              1. Assert: _module_.[[Status]] is <ins>one of</ins> ~linked~, <ins>~async-subgraphs-searching~, ~async-subgraphs-evaluating-async~, or ~async-subgraphs-evaluated~</ins>.
+              1. Assert: _module_.[[Status]] is ~linked~.
               1. Set _module_.[[Status]] to ~evaluating~.
               1. Set _module_.[[DFSIndex]] to _index_.
               1. Set _module_.[[DFSAncestorIndex]] to _index_.
               1. Set _module_.[[PendingAsyncDependencies]] to 0.
-              1. [id="step-innermoduleevaluation-reset-asyncevaluation"] <ins>Set _module_.[[AsyncEvaluation]] to *false*.</ins>
               1. Set _index_ to _index_ + 1.
+              1. <ins>Let _evaluationList_ be a new empty List.</ins>
+              1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
+                1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).</ins>
+                1. <ins>If _required_.[[Phase]] is ~defer~, then</ins>
+                  1. <ins>Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _evaluationList_).</ins>
+                1. <ins>Else if _evaluationList_ does not contain _requiredModule_, then</ins>
+                  1. <ins>Append _requiredModule_ to _evaluationList_.</ins>
               1. Append _module_ to _stack_.
               1. <del>For each String _required_ of _module_.[[RequestedModules]], do</del>
-              1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
-                1. Let _requiredModule_ be GetImportedModule(_module_, _required_<ins>.[[Specifier]]</ins>).
-                1. <ins>If _required_.[[Phase]] is ~defer~, then</ins>
-                  1. <ins>Set _index_ to ? InnerAsyncSubgraphsEvaluation(_requiredModule_, _stack_, _index_).</ins>
-                1. <ins>Else,</ins>
-                  1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
+                1. <del>Let _requiredModule_ be GetImportedModule(_module_, _required_).</del>
+              1. <ins>For each Module Record _requiredModule_ of _evaluationList_, do</ins>
+                1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
                 1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. <ins>Perform ? AfterCyclicModuleRecordEvaluation(_module_, _requiredModule_, _stack_).</ins>
-                  1. <del>Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.</del>
-                  1. <del>Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.</del>
-                  1. <del>If _requiredModule_.[[Status]] is ~evaluating~, then</del>
-                    1. <del>Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).</del>
-                  1. <del>Else,</del>
-                    1. <del>Set _requiredModule_ to _requiredModule_.[[CycleRoot]].</del>
-                    1. <del>Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.</del>
-                    1. <del>If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].</del>
-                  1. <del>If _requiredModule_.[[AsyncEvaluation]] is *true*, then</del>
-                    1. <del>Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.</del>
-                    1. <del>Append _module_ to _requiredModule_.[[AsyncParentModules]].</del>
+                  1. Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.
+                  1. Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.
+                  1. If _requiredModule_.[[Status]] is ~evaluating~, then
+                    1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+                  1. Else,
+                    1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
+                    1. Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
+                    1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
+                  1. If _requiredModule_.[[AsyncEvaluation]] is *true*, then
+                    1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
+                    1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
               1. If _module_.[[PendingAsyncDependencies]] > 0 or _module_.[[HasTLA]] is *true*, then
-                1. Assert: _module_.[[AsyncEvaluation]] is *false* <del>and was never previously set to *true*</del>.
+                1. Assert: _module_.[[AsyncEvaluation]] is *false*.
                 1. Set _module_.[[AsyncEvaluation]] to *true*.
                 1. NOTE: The order in which module records have their [[AsyncEvaluation]] fields transition to *true* is significant. (See <emu-xref href="#sec-async-module-execution-fulfilled"></emu-xref>.)
                 1. If _module_.[[PendingAsyncDependencies]] = 0, perform ExecuteAsyncModule(_module_).
               1. Otherwise, perform ? <emu-meta effects="user-code">_module_.ExecuteModule()</emu-meta>.
-              1. Assert: _module_ occurs <del>exactly once</del> in _stack_.
+              1. Assert: _module_ occurs exactly once in _stack_.
               1. Assert: _module_.[[DFSAncestorIndex]] ≤ _module_.[[DFSIndex]].
               1. If _module_.[[DFSAncestorIndex]] = _module_.[[DFSIndex]], then
                 1. Let _done_ be *false*.
@@ -778,23 +779,11 @@ contributors: Nicolò Ribaudo
                   1. Remove the last element of _stack_.
                   1. Assert: _requiredModule_ is a Cyclic Module Record.
                   1. If _requiredModule_.[[AsyncEvaluation]] is *false*, then
-                    1. <ins>Assert: _requiredModule_.[[Status]] is ~evaluating~.</ins>
                     1. Set _requiredModule_.[[Status]] to ~evaluated~.
-                  1. <ins>Else if _requiredModule_.[[Status]] is ~async-subgraphs-searching~, then</ins>
-                    1. <ins>Set _requiredModule_.[[Status]] to ~async-subgraphs-evaluating-async~.</ins>
                   1. Else,
-                    1. <ins>Assert: _requiredModule_.[[Status]] is ~evaluating~.</ins>
                     1. Set _requiredModule_.[[Status]] to ~evaluating-async~.
-                  1. If _requiredModule_ and _module_ are the same Module Record <ins>and _stack_ does not contain _module_</ins>, set _done_ to *true*.
+                  1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
                   1. Set _requiredModule_.[[CycleRoot]] to _module_.
-                1. <ins>Set _done_ to *false*.</ins>
-                1. [id="step-innermoduleevaluation-stack-cleanup"] <ins>Repeat, while _done_ is *false* and _stack_ is not empty,</ins>
-                  1. <ins>Let _requiredModule_ be the last element of _stack_.</ins>
-                  1. <ins>If _requiredModule_.[[Status]] is ~evaluated~ or ~evaluating-async~, then</ins>
-                    1. <ins>NOTE: _requiredModule_ has transitioned to ~evaluated~ or ~evaluating-async~ in the above loop. It was inserted twice in _stack_, first by InnerAsyncSubgraphsEvaluation and then by InnerModuleEvaluation.</ins>
-                    1. <ins>Remove the last element of _stack_.</ins>
-                  1. <ins>Else,</ins>
-                    1. <ins>Set _done_ to *true*.</ins>
               1. Return _index_.
             </emu-alg>
             <emu-note>
@@ -803,28 +792,16 @@ contributors: Nicolò Ribaudo
             <emu-note>
               <p>Any modules depending on a module of an asynchronous cycle when that cycle is not ~evaluating~ will instead depend on the execution of the root of the cycle via [[CycleRoot]]. This ensures that the cycle state can be treated as a single strongly connected component through its root module state.</p>
             </emu-note>
-            <emu-note>
-              <p><ins>Step <emu-xref href="#step-innermoduleevaluation-reset-cycleroot"></emu-xref> is necessary when re-traversing cycles that have been already partially evaluated due to async modules in deferred subgraphs.</ins></p>
-              <p><ins>See the example described at <emu-xref href="#figure-module-graph-deferred-async-cycle-root"></emu-xref>.</ins></p>
-            </emu-note>
-            <emu-note>
-              <p><ins>Step <emu-xref href="#step-innermoduleevaluation-reset-asyncevaluation"></emu-xref> is necessary when evaluating deferred modules that have asynchronous dependencies. [[AsyncEvaluation]] will be *true* while eagerly evaluating their dependencies, and *false* when later evaluating the module itself.</ins></p>
-              <p><ins>See the example described at <emu-xref href="#figure-module-graph-deferred-async"></emu-xref>.</ins></p>
-            </emu-note>
-            <emu-note>
-              <p><ins>Step <emu-xref href="#step-innermoduleevaluation-stack-cleanup"></emu-xref> is necessary when a module in a cycle is first imported lazily, and then eagerly by one of its asynchronous dependencies.</ins></p>
-              <p><ins>See the example described at <emu-xref href="#figure-module-graph-deferred-async-cycle-deferred"></emu-xref>.</ins></p>
-            </emu-note>
           </emu-clause>
 
           <emu-clause id="sec-InnerAsyncSubgraphsEvaluation" type="abstract operation">
             <h1>
               <ins>
-                InnerAsyncSubgraphsEvaluation (
+                GatherAsynchronousTransitiveDependencies (
                   _module_: a Module Record,
-                  _stack_: a List of Cyclic Module Records,
-                  _index_: a non-negative integer,
-                ): either a normal completion containing a non-negative integer or a throw completion
+                  _result_: a List of Module Records,
+                  optional _seen_: a List of Module Records
+                ): ~unused~
               </ins>
             </h1>
             <dl class="header">
@@ -832,242 +809,18 @@ contributors: Nicolò Ribaudo
               <dd></dd>
             </dl>
 
-            <emu-note type="editor">
-              The diff highlighted in this abstract operation method is relative to the original <a href="https://tc39.es/ecma262/#sec-innermoduleevaluation">InnerModuleEvaluation</a> abstract operation.
-            </emu-note>
-
             <emu-alg>
-              1. <ins>If _module_ is not a Cyclic Module Record or _module_.[[HasTLA]] is *true*, then</ins>
-                1. <ins>Return ? InnerModuleEvaluation(_module_, _stack_, _index_).</ins>
-              1. <del>If _module_ is not a Cyclic Module Record, then</del>
-                1. <del>Let _promise_ be ! _module_.Evaluate().</del>
-                1. <del>Assert: _promise_.[[PromiseState]] is not ~pending~.</del>
-                1. <del>If _promise_.[[PromiseState]] is ~rejected~, then</del>
-                  1. <del>Return ThrowCompletion(_promise_.[[PromiseResult]]).</del>
-                1. <del>Return _index_.</del>
-              1. If _module_.[[Status]] is <del>either</del><ins>one of ~async-subgraphs-evaluating-async~, ~async-subgraphs-evaluated~,</ins> ~evaluating-async~ or ~evaluated~, then
-                1. If _module_.[[EvaluationError]] is ~empty~, return _index_.
-                1. Otherwise, return ? _module_.[[EvaluationError]].
-              1. If _module_.[[Status]] is <ins>~async-subgraphs-searching~ or</ins> ~evaluating~, return _index_.
-              1. Assert: _module_.[[Status]] is ~linked~.
-              1. Set _module_.[[Status]] to <del>~evaluating~</del><ins>~async-subgraphs-searching~</ins>.
-              1. Set _module_.[[DFSIndex]] to _index_.
-              1. Set _module_.[[DFSAncestorIndex]] to _index_.
-              1. Set _module_.[[PendingAsyncDependencies]] to 0.
-              1. Set _index_ to _index_ + 1.
-              1. Append _module_ to _stack_.
-              1. <del>For each String _required_ of _module_.[[RequestedModules]], do</del>
-              1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
-                1. Let _requiredModule_ be GetImportedModule(_module_, _required_<ins>.[[Specifier]]</ins>).
-                1. Set _index_ to ? <del>InnerModuleEvaluation</del><ins>InnerAsyncSubgraphsEvaluation</ins>(_requiredModule_, _stack_, _index_).
-                1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. <ins>Perform ? AfterCyclicModuleRecordEvaluation(_requiredModule_, _stack_, _index_).</ins>
-                  1. <del>Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.</del>
-                  1. <del>Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.</del>
-                  1. <del>If _requiredModule_.[[Status]] is ~evaluating~, then</del>
-                    1. <del>Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).</del>
-                  1. <del>Else,</del>
-                    1. <del>Set _requiredModule_ to _requiredModule_.[[CycleRoot]].</del>
-                    1. <del>Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.</del>
-                    1. <del>If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].</del>
-                  1. <del>If _requiredModule_.[[AsyncEvaluation]] is *true*, then</del>
-                    1. <del>Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.</del>
-                    1. <del>Append _module_ to _requiredModule_.[[AsyncParentModules]].</del>
-              1. If _module_.[[PendingAsyncDependencies]] > 0 <del>or _module_.[[HasTLA]] is *true*</del>, then
-                1. Assert: _module_.[[AsyncEvaluation]] is *false* <del>and was never previously set to *true*</del>.
-                1. Set _module_.[[AsyncEvaluation]] to *true*.
-                1. NOTE: The order in which module records have their [[AsyncEvaluation]] fields transition to *true* is significant. (See <emu-xref href="#sec-async-module-execution-fulfilled"></emu-xref>.)
-                1. <del>If _module_.[[PendingAsyncDependencies]] = 0, perform ExecuteAsyncModule(_module_).</del>
-              1. <del>Otherwise, perform ? _module_.ExecuteModule().</del>
-              1. Assert: _module_ occurs <del>exactly once</del> in _stack_.
-              1. Assert: _module_.[[DFSAncestorIndex]] ≤ _module_.[[DFSIndex]].
-              1. If _module_.[[DFSAncestorIndex]] = _module_.[[DFSIndex]], then
-                1. Let _done_ be *false*.
-                1. Repeat, while _done_ is *false*,
-                  1. Let _requiredModule_ be the last element of _stack_.
-                  1. Remove the last element of _stack_.
-                  1. Assert: _requiredModule_ is a Cyclic Module Record.
-                  1. If _requiredModule_.[[AsyncEvaluation]] is *false*, then
-                    1. <ins>If _requiredModule_.[[Status]] is ~async-subgraphs-searching~, set _requiredModule_.[[Status]] to ~async-subgraphs-evaluated~.</ins>
-                    1. <ins>Else,</ins>
-                      1. <ins>Assert: _requiredModule_.[[Status]] is ~evaluating~.</ins>
-                      1. Set _requiredModule_.[[Status]] to ~evaluated~.
-                  1. Else,
-                    1. <ins>If _requiredModule_.[[Status]] is ~async-subgraphs-searching~, set _requiredModule_.[[Status]] to ~async-subgraphs-evaluating-async~.</ins>
-                    1. <ins>Else,</ins>
-                      1. <ins>Assert: _requiredModule_.[[Status]] is ~evaluating~.</ins>
-                      1. Set _requiredModule_.[[Status]] to ~evaluating-async~.
-                  1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
-                  1. Set _requiredModule_.[[CycleRoot]] to _module_.
-              1. Return _index_.
-            </emu-alg>
-          </emu-clause>
-
-          <emu-clause id="sec-AfterCyclicModuleRecordEvaluation" type="abstract operation">
-            <h1>
-              <ins>
-                AfterCyclicModuleRecordEvaluation (
-                  _module_: a Cyclic Module Record,
-                  _requiredModule_: a Cyclic Module Record,
-                  _stack_: a List of Cyclic Module Records,
-                ): either a normal completion containing ~unused~ or a throw completion
-              </ins>
-            </h1>
-            <dl class="header">
-              <dt>description</dt>
-              <dd></dd>
-            </dl>
-
-            <emu-note type="editor">
-              The diff highlighted in this abstract operation method is relative to steps <span>11</span>.c.i-11.c.v of the original <a href="https://tc39.es/ecma262/#sec-innermoduleevaluation">InnerModuleEvaluation</a> abstract operation.
-            </emu-note>
-
-            <emu-alg>
-              1. Assert: _requiredModule_.[[Status]] is one of <ins>~async-subgraphs-searching~, ~async-subgraphs-evaluating-async~, ~async-subgraphs-evaluated~,</ins> ~evaluating~, ~evaluating-async~, or ~evaluated~.
-              1. Assert: _requiredModule_.[[Status]] is <ins>~async-subgraphs-searching~ or</ins> ~evaluating~ if and only if _stack_ contains _requiredModule_.
-              1. If _requiredModule_.[[Status]] is ~evaluating~, <ins>or both _requiredModule_.[[Status]] and _module_.[[Status]] are ~async-subgraphs-searching~</ins>, then
-                1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
-              1. Else <ins>if _requiredModule_.[[Status]] is not ~async-subgraphs-searching~</ins>,
-                1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
-                1. Assert: _requiredModule_.[[Status]] is <del>either</del><ins>one of ~async-subgraphs-evaluating-async~, ~async-subgraphs-evaluated~,</ins> ~evaluating-async~ or ~evaluated~.
-                1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
-              1. If _requiredModule_.[[AsyncEvaluation]] is *true*, then
-                1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
-                1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
-              1. <ins>Return ~unused~.</ins>
-            </emu-alg>
-          </emu-clause>
-
-          <emu-clause id="sec-execute-async-module" type="abstract operation">
-            <h1>
-              ExecuteAsyncModule (
-                _module_: a Cyclic Module Record,
-              ): ~unused~
-            </h1>
-            <dl class="header">
-            </dl>
-
-            <emu-alg>
-              1. Assert: _module_.[[Status]] is either ~evaluating~ or ~evaluating-async~.
-              1. Assert: _module_.[[HasTLA]] is *true*.
-              1. Let _capability_ be ! NewPromiseCapability(%Promise%).
-              1. Let _fulfilledClosure_ be a new Abstract Closure with no parameters that captures _module_ and performs the following steps when called:
-                1. Perform AsyncModuleExecutionFulfilled(_module_).
-                1. Return *undefined*.
-              1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledClosure_, 0, *""*, « »).
-              1. Let _rejectedClosure_ be a new Abstract Closure with parameters (_error_) that captures _module_ and performs the following steps when called:
-                1. Perform AsyncModuleExecutionRejected(_module_, _error_).
-                1. Return *undefined*.
-              1. Let _onRejected_ be CreateBuiltinFunction(_rejectedClosure_, 0, *""*, « »).
-              1. Perform PerformPromiseThen(_capability_.[[Promise]], _onFulfilled_, _onRejected_).
-              1. Perform ! <emu-meta effects="user-code">_module_.ExecuteModule</emu-meta>(_capability_).
-              1. Return ~unused~.
-            </emu-alg>
-          </emu-clause>
-
-          <emu-clause id="sec-gather-available-ancestors" type="abstract operation">
-            <h1>
-              GatherAvailableAncestors (
-                _module_: a Cyclic Module Record,
-                _execList_: a List of Cyclic Module Records,
-              ): ~unused~
-            </h1>
-            <dl class="header">
-            </dl>
-            <emu-alg>
-              1. For each Cyclic Module Record _m_ of _module_.[[AsyncParentModules]], do
-                1. <ins>TODO: Check if this change can be reverded.</ins>
-                1. If _execList_ does not contain _m_ and _m_.[[CycleRoot]].[[EvaluationError]] is ~empty~ <ins>and _m_.[[Status]] is not ~evaluated~</ins>, then
-                  1. Assert: _m_.[[Status]] is <ins>either ~async-subgraphs-evaluating-async~ or</ins> ~evaluating-async~.
-                  1. Assert: _m_.[[EvaluationError]] is ~empty~.
-                  1. Assert: _m_.[[AsyncEvaluation]] is *true*.
-                  1. Assert: _m_.[[PendingAsyncDependencies]] > 0.
-                  1. Set _m_.[[PendingAsyncDependencies]] to _m_.[[PendingAsyncDependencies]] - 1.
-                  1. If _m_.[[PendingAsyncDependencies]] = 0, then
-                    1. Append _m_ to _execList_.
-                    1. If _m_.[[HasTLA]] is *false*, perform GatherAvailableAncestors(_m_, _execList_).
-              1. Return ~unused~.
-            </emu-alg>
-            <emu-note>
-              <p>When an asynchronous execution for a root _module_ is fulfilled, this function determines the list of modules which are able to synchronously execute together on this completion, populating them in _execList_.</p>
-            </emu-note>
-          </emu-clause>
-
-          <emu-clause id="sec-async-module-execution-fulfilled" type="abstract operation">
-            <h1>
-              AsyncModuleExecutionFulfilled (
-                _module_: a Cyclic Module Record,
-              ): ~unused~
-            </h1>
-            <dl class="header">
-            </dl>
-            <emu-alg>
-              1. If _module_.[[Status]] is ~evaluated~, then
-                1. Assert: _module_.[[EvaluationError]] is not ~empty~.
+              1. If _seen_ is not specified, let _seen_ be a new empty List.
+              1. If _seen_ contains _module_, return ~unused~.
+              1. Append _module_ to _seen_.
+              1. If _module_ is not a Cyclic Module Record, return ~unused~.
+              1. If _module_.[[Status]] is either ~evaluating~ or ~evaluated~, return ~unused~.
+              1. If _module_.[[HasTA]] is *true*, then
+                1. If _result_ does not contain _module_, append _module_ to _result_.
                 1. Return ~unused~.
-              1. Assert: _module_.[[Status]] is ~evaluating-async~.
-              1. Assert: _module_.[[AsyncEvaluation]] is *true*.
-              1. Assert: _module_.[[EvaluationError]] is ~empty~.
-              1. Set _module_.[[AsyncEvaluation]] to *false*.
-              1. Set _module_.[[Status]] to ~evaluated~.
-              1. If _module_.[[TopLevelCapability]] is not ~empty~, then
-                1. Assert: _module_.[[CycleRoot]] is _module_.
-                1. Perform ! Call(_module_.[[TopLevelCapability]].[[Resolve]], *undefined*, « *undefined* »).
-              1. Let _execList_ be a new empty List.
-              1. Perform GatherAvailableAncestors(_module_, _execList_).
-              1. Let _sortedExecList_ be a List whose elements are the elements of _execList_, in the order in which they had their [[AsyncEvaluation]] fields <ins>last</ins> set to *true* in InnerModuleEvaluation <ins>or InnerAsyncSubgraphsEvaluation</ins>.
-              1. Assert: All elements of _sortedExecList_ have their [[AsyncEvaluation]] field set to *true*, [[PendingAsyncDependencies]] field set to 0, and [[EvaluationError]] field set to ~empty~.
-              1. For each Cyclic Module Record _m_ of _sortedExecList_, do
-                1. If _m_.[[Status]] is ~evaluated~, then
-                  1. Assert: _m_.[[EvaluationError]] is not ~empty~.
-                1. Else if _m_.[[HasTLA]] is *true*, then
-                  1. Perform ExecuteAsyncModule(_m_).
-                1. <ins>Else,</ins>
-                  1. <ins>Let _success_ be *false*.</ins>
-                  1. <ins>If _m_.[[Status]] is ~async-subgraphs-evaluating-async~, then</ins>
-                    1. <ins>Set _m_.[[Status]] to ~async-subgraphs-evaluated~.</ins>
-                    1. <ins>Set _success_ to *true*.</ins>
-                  1. <ins>Else,</ins>
-                    1. Let _result_ be <emu-meta effects="user-code">_m_.ExecuteModule()</emu-meta>.
-                    1. If _result_ is an abrupt completion, then
-                      1. Perform AsyncModuleExecutionRejected(_m_, _result_.[[Value]]).
-                    1. Else,
-                      1. Set _m_.[[Status]] to ~evaluated~.
-                      1. <ins>Set _success_ to *true*.</ins>
-                      1. <del>If _m_.[[TopLevelCapability]] is not ~empty~, then</del>
-                        1. <del>Assert: _m_.[[CycleRoot]] is _m_.</del>
-                        1. <del>Perform ! Call(_m_.[[TopLevelCapability]].[[Resolve]], *undefined*, « *undefined* »).</del>
-                  1. <ins>If _success_ is *true*, then</ins>
-                    1. <ins>If _m_.[[TopLevelCapability]] is not ~empty~, then</ins>
-                      1. <ins>Assert: _m_.[[CycleRoot]] is _m_.</ins>
-                      1. <ins>Perform ! Call(_m_.[[TopLevelCapability]].[[Resolve]], *undefined*, « *undefined* »).</ins>
-              1. Return ~unused~.
-            </emu-alg>
-          </emu-clause>
-
-          <emu-clause id="sec-async-module-execution-rejected" type="abstract operation">
-            <h1>
-              AsyncModuleExecutionRejected (
-                _module_: a Cyclic Module Record,
-                _error_: an ECMAScript language value,
-              ): ~unused~
-            </h1>
-            <dl class="header">
-            </dl>
-            <emu-alg>
-              1. If _module_.[[Status]] is ~evaluated~, then
-                1. Assert: _module_.[[EvaluationError]] is not ~empty~.
-                1. Return ~unused~.
-              1. Assert: _module_.[[Status]] is ~evaluating-async~.
-              1. Assert: _module_.[[AsyncEvaluation]] is *true*.
-              1. Assert: _module_.[[EvaluationError]] is ~empty~.
-              1. Set _module_.[[EvaluationError]] to ThrowCompletion(_error_).
-              1. Set _module_.[[Status]] to ~evaluated~.
-              1. For each Cyclic Module Record _m_ of _module_.[[AsyncParentModules]], do
-                1. Perform AsyncModuleExecutionRejected(_m_, _error_).
-              1. If _module_.[[TopLevelCapability]] is not ~empty~, then
-                1. Assert: _module_.[[CycleRoot]] is _module_.
-                1. Perform ! Call(_module_.[[TopLevelCapability]].[[Reject]], *undefined*, « _error_ »).
+              1. For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do
+                1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).
+                1. Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _result_, _seen_).
               1. Return ~unused~.
             </emu-alg>
           </emu-clause>
@@ -1485,18 +1238,18 @@ contributors: Nicolò Ribaudo
             <p>Consider the following graph, assuming that all the modules have already their [[Status]] set to ~linked~:</p>
 
             <emu-figure id="figure-module-graph-deferred-simple" caption="A simple module graph with a deferred import">
-              <img alt="A module graph in which module A depends on module B with a deferred import, and module B depends on module C" width="121" height="211" src="img/module-graph-deferred-simple.svg">
+              <img alt="A module graph in which module A depends on module B with a deferred import, and module B depends on module C" width="181" height="211" src="img/module-graph-deferred-simple.svg">
             </emu-figure>
 
-            <p>Calling _A_.Evaluate() calls InnerModuleEvaluation _A_, which transitions _A_.[[Status]] to ~evaluating~ and then calls InnerAsyncSubgraphsEvaluation on _B_ and _C_, transitioning their status first to ~async-subgraphs-searching~ and then to ~async-subgraphs-evaluated~ without executing them. Then the InnerModuleEvaluation call on _A_ calls _A_.ExecuteModule(): if _A_'s execution triggers _B_.Evaluate(), then InnerModuleEvaluation will be called on _B_ and _C_ executing them and transitioning their [[Status]] to ~evaluated~. Finally, _A_.[[Status]] transitions to ~evaluated~.</p>
+            <p>Calling _A_.Evaluate() calls InnerModuleEvaluation _A_, which transitions _A_.[[Status]] to ~evaluating~. _A_ has a deferred import for _B_, so it performs GatherAsynchronousTransitiveDependencies(_B_). _B_ doesn't have any transitive dependency using top-level await, so that AO doesn't collect any module. _A_ also imports _D_, so the list of modules that _A_'s evaluation depends on is « _D_ »: the InnerModuleEvaluation algorithm run on _A_ performs InnerModuleEvaluation on _D_, transitioning its [[Status]] to ~evaluating~ and then ~evaluated~, and then it calls _A_.ExecuteModule(). If _A_'s execution triggers _B_.Evaluate(), then InnerModuleEvaluation will be called on _B_ and _C_ executing them and transitioning their [[Status]] to ~evaluated~. Finally, _A_.[[Status]] transitions to ~evaluated~.</p>
 
             <p>Consider the same graph, but with _C_ using top-level await:</p>
 
             <emu-figure id="figure-module-graph-deferred-async" caption="A simple module graph with a deferred import and a transitive asynchronous dependency">
-              <img alt="A module graph in which module A depends on module B with a deferred import, and module B depends on module C, which uses top-level await." width="121" height="211" src="img/module-graph-deferred-async.svg">
+              <img alt="A module graph in which module A depends on module B with a deferred import, and module B depends on module C, which uses top-level await." width="181" height="211" src="img/module-graph-deferred-async.svg">
             </emu-figure>
 
-            <p>Calling _A_.Evaluate() calls InnerModuleEvaluation _A_, which transitions _A_.[[Status]] to ~evaluating~ and then calls InnerAsyncSubgraphsEvaluation on _B_, which transitions _B_.[[Status]] to ~async-subgraphs-searching~ and then calls InnerAsyncSubgraphsEvaluation on _C_. Since _C_.[[HasTLA]] is *true*, InnerAsyncSubgraphsEvaluation will call InnerModuleEvaluation on _C_, which transitions _C_.[[Status]] to ~async-evaluating~ and since _C_ has no asynchronous dependencies it performs ExecuteAsyncModule(_C_). This has the effect of transitioning _B_.[[Status]] to ~async-subgraphs-evalauting-async~ and _A_.[[Status]] to ~evalauting-async~. At this point, the fields of the modules are given in <emu-xref href="#table-module-graph-deferred-async-fields-1"></emu-xref>:</p>
+            <p>Calling _A_.Evaluate() calls InnerModuleEvaluation _A_, which transitions _A_.[[Status]] to ~evaluating~. It then performs GatherAsynchronousTransitiveDependencies(_B_), finding the module _C_: the list of modules whose evaluation _A_'s evaluation depends on is « _C_, _D_ ». It then calls InnerModuleEvaluation on _C_ and _D_, transitioning their [[Status]] respectively to ~evaluating-async~ and ~evaluated~ and registering _A_'s evaluation as pending on the asynchronous dependency _C_. At this point, the fields of the modules are given in <emu-xref href="#table-module-graph-deferred-async-fields-1"></emu-xref>:</p>
 
             <emu-table id="table-module-graph-deferred-async-fields-1" class="module-overflow" caption="Module fields after the initial Evaluate() call">
               <table>
@@ -1514,26 +1267,33 @@ contributors: Nicolò Ribaudo
                   <td>~evaluating-async~</td>
                   <td>*true*</td>
                   <td>« »</td>
-                  <td>1 (_B_)</td>
+                  <td>1 (_C_)</td>
                 </tr>
                 <tr>
                   <th>_B_</th>
-                  <td>~async-subgraphs-evaluating-async~</td>
-                  <td>*true*</td>
-                  <td>« _A_ »</td>
-                  <td>1 (_C_)</td>
+                  <td>~linked~</td>
+                  <td>*false*</td>
+                  <td>« »</td>
+                  <td>0</td>
                 </tr>
                 <tr>
                   <th>_C_</th>
                   <td>~evaluating-async~</td>
                   <td>*true*</td>
-                  <td>« _B_ »</td>
+                  <td>« _A_ »</td>
+                  <td>0</td>
+                </tr>
+                <tr>
+                  <th>_D_</th>
+                  <td>~evaluated~</td>
+                  <td>*false*</td>
+                  <td>« »</td>
                   <td>0</td>
                 </tr>
               </table>
             </emu-table>
 
-            <p>Let us assume that _C_ succesfully finishes evaluating. When that happens, AsyncModuleExecutionFulfilled(_C_) is called, _C_.[[Status]] is set to ~evaluated~, _B_.[[Status]] is set to ~async-subgraphs-evaluated~, _A_.ExecuteModule() is called and upon successful completion _A_.[[Status]] is set to ~evaluted~. The fields of the modules are now as given in <emu-xref href="#table-module-graph-deferred-async-fields-2"></emu-xref>:</p>
+            <p>Let us assume that _C_ succesfully finishes evaluating. When that happens, AsyncModuleExecutionFulfilled(_C_) is called, _C_.[[Status]] is set to ~evaluated~, _A_.ExecuteModule() is called and upon successful completion _A_.[[Status]] is set to ~evaluted~. The fields of the modules are now as given in <emu-xref href="#table-module-graph-deferred-async-fields-2"></emu-xref>:</p>
 
             <emu-table id="table-module-graph-deferred-async-fields-2" class="module-overflow" caption="Module fields after _C_ finishes executing">
               <table>
@@ -1555,24 +1315,31 @@ contributors: Nicolò Ribaudo
                 </tr>
                 <tr>
                   <th>_B_</th>
-                  <td>~async-subgraphs-evaluated~</td>
-                  <td>*true*</td>
-                  <td>« _A_ »</td>
+                  <td>~linked~</td>
+                  <td>*false*</td>
+                  <td>« »</td>
                   <td>0</td>
                 </tr>
                 <tr>
                   <th>_C_</th>
                   <td>~evaluated~</td>
                   <td>*true*</td>
-                  <td>« _B_ »</td>
+                  <td>« _A_ »</td>
+                  <td>0</td>
+                </tr>
+                <tr>
+                  <th>_D_</th>
+                  <td>~evaluated~</td>
+                  <td>*false*</td>
+                  <td>« »</td>
                   <td>0</td>
                 </tr>
               </table>
             </emu-table>
 
-            <p>If later _B_.Evaluate() is called, then the InnerModuleEvaluation call on _B_ will reset _B_.[[AsyncEvaluation]] to *false* and call InnerModuleEvaluation on _C_. Since at this point _C_.[[Status]] is already ~evaluated~, _B_.ExecuteModule() will be called synchronously and _B_.[[Status]] will synchronously transition to ~evaluated~.</p>
+            <p>If later _B_.Evaluate() is called, then the InnerModuleEvaluation call on _B_ will transition _B_.[[Status]] to ~evaluating~ and will call InnerModuleEvaluation on _C_. Since at this point _C_.[[Status]] is already ~evaluated~, _B_.ExecuteModule() will be called synchronously and _B_.[[Status]] will synchronously transition to ~evaluated~.</p>
 
-            <p>Alternatively, consider a failure case where _C_ fails to execute with an exception _error_. When that happens, AsyncModuleExecutionRejected(_C_, _error_) is called, it sets _C_.[[Status]] = _B_.[[Status]] = _A_.[[Status]] to ~evaluated~ and _C_.[[EvaluationError]] = _B_.[[EvaluationError]] = _A_.[[EvaluationError]] to ThrowCompletion(_error_). The fields of the modules are this as given in <emu-xref href="#table-module-graph-deferred-async-fields-3"></emu-xref>:</p>
+            <p>Alternatively, consider a failure case where _C_ fails to execute with an exception _error_. When that happens, AsyncModuleExecutionRejected(_C_, _error_) is called, it sets _C_.[[Status]] = _A_.[[Status]] to ~evaluated~ and _C_.[[EvaluationError]] = _A_.[[EvaluationError]] to ThrowCompletion(_error_). The fields of the modules are this as given in <emu-xref href="#table-module-graph-deferred-async-fields-3"></emu-xref>:</p>
 
             <emu-table id="table-module-graph-deferred-async-fields-3" class="module-overflow" caption="Module fields after _C_ finishes executing with an exception">
               <table>
@@ -1591,16 +1358,16 @@ contributors: Nicolò Ribaudo
                   <td>~evaluated~</td>
                   <td>*true*</td>
                   <td>« »</td>
-                  <td>1 (_B_)</td>
+                  <td>1 (_C_)</td>
                   <td>_error_</td>
                 </tr>
                 <tr>
                   <th>_B_</th>
-                  <td>~evaluated~</td>
-                  <td>*true*</td>
-                  <td>« _A_ »</td>
-                  <td>1 (_C_)</td>
-                  <td>_error_</td>
+                  <td>~linked~</td>
+                  <td>*false*</td>
+                  <td>« »</td>
+                  <td>0</td>
+                  <td>~empty~</td>
                 </tr>
                 <tr>
                   <th>_C_</th>
@@ -1610,16 +1377,26 @@ contributors: Nicolò Ribaudo
                   <td>0</td>
                   <td>_error_</td>
                 </tr>
+                <tr>
+                  <th>_D_</th>
+                  <td>~evaluated~</td>
+                  <td>*false*</td>
+                  <td>« »</td>
+                  <td>0</td>
+                  <td>~empty~</td>
+                </tr>
               </table>
             </emu-table>
 
-            <p>Consider now a similar graph, with an additional dependency of _C_ on _A_, and assume that the evaluation of _A_ calls _B_.Evaluate():</p>
+            <p>If at any later point in time _B_.Evaluate() is called, it will perform InnerModuleEvaluation on _C_ which immediately returns with ThrowCompletion(_error_), transitioning _B_.[[Status]] to ~evalauted~ and setting _B_.[[EvaluationError]] to _error_.</p>
+
+            <p>Consider now a graph with a deferred import taking part in a dependencies cycle, and assume that the evaluation of _A_ calls _B_.Evaluate():</p>
 
             <emu-figure id="figure-module-graph-deferred-async-cycle-root" caption="A module graph with a deferred import and a cycle back to the root">
               <img alt="A module graph in which module A depends on module B with a deferred import, module B depends on module C, which uses top-level await and depends on A" width="181" height="121" src="img/module-graph-deferred-async-cycle-root.svg">
             </emu-figure>
 
-            <p>As in the previous example, calling _A_.Evaluate() calls InnerModuleEvaluation on _A_, InnerAsyncSubgraphsEvaluation on _B_, and InnerModuleEvaluation on _C_, transitioning their [[Status]] respectively to ~evaluating-async~, ~async-subgraphs-evaluating-async~, and ~evaluating-async~. When InnerModuleEvaluation iterates over _C_'s dependencies, it finds _A_ and sets _A_.[[CycleRoot]] = _B_.[[CycleRoot]] = _C_.[[CycleRoot]] = _A_. At this point, the fields of the modules are given in <emu-xref href="#table-module-graph-deferred-async-cycle-root-fields-1"></emu-xref>:</p>
+            <p>As in the previous example, calling _A_.Evaluate() calls InnerModuleEvaluation on _A_, GatherAsynchronousTransitiveDependencies on _B_ will find _C_ and thus it performs InnerModuleEvaluation on _C_, transitioning their _A_ and _C_'s [[Status]] to ~evaluating-async~. When InnerModuleEvaluation iterates over _C_'s dependencies, it finds _A_ and sets _A_.[[CycleRoot]] = _C_.[[CycleRoot]] = _A_. At this point, the fields of the modules are given in <emu-xref href="#table-module-graph-deferred-async-cycle-root-fields-1"></emu-xref>:</p>
 
             <emu-table id="table-module-graph-deferred-async-cycle-root-fields-1" class="module-overflow" caption="Module fields after the initial Evaluate() call">
               <table>
@@ -1638,29 +1415,29 @@ contributors: Nicolò Ribaudo
                   <td>~evaluating-async~</td>
                   <td>*true*</td>
                   <td>« »</td>
-                  <td>1 (_B_)</td>
+                  <td>1 (_C_)</td>
                   <td>_A_</td>
                 </tr>
                 <tr>
                   <th>_B_</th>
-                  <td>~async-subgraphs-evaluating-async~</td>
-                  <td>*true*</td>
-                  <td>« _A_ »</td>
-                  <td>1 (_C_)</td>
-                  <td>_A_</td>
+                  <td>~linked~</td>
+                  <td>*false*</td>
+                  <td>« »</td>
+                  <td>0</td>
+                  <td>~empty~</td>
                 </tr>
                 <tr>
                   <th>_C_</th>
                   <td>~evaluating-async~</td>
                   <td>*true*</td>
-                  <td>« _B_ »</td>
+                  <td>« _A_ »</td>
                   <td>0</td>
                   <td>_A_</td>
                 </tr>
               </table>
             </emu-table>
 
-            <p>Assume now that _C_ succesfully finishes evaluating. When that happens AsyncModuleExecutionFulfilled(_C_) is called, it sets _C_.[[Status]] to ~evaluated~ and _B_.[[Status]] to ~async-singraphs-evaluated~, and it performs _A_.ExecuteModule(). As stated, _A_'s execution causes a call to _B_.Evaluate(), which calls InnerModuleEvaluation on _B_ and on _C_. Since _C_.[[Status]] is ~evaluated~, _B_'s evaluation must not be blocked by the evaluation of the original cycle that _C_ is part of (_A_), thus InnerModuleEvaluation resets _C_.[[CycleRoot]] to _C_ and returns. InnerModuleEvaluation then synchronously calls _B_.ExecuteModule() and, assuming it completes succesfully, transitions _B_.[[Status]] to ~evaluated~. At this point, the fields of the modules are given in <emu-xref href="#table-module-graph-deferred-async-cycle-root-fields-2"></emu-xref>:</p>
+            <p>Assume now that _C_ succesfully finishes evaluating. When that happens AsyncModuleExecutionFulfilled(_C_) is called, it sets _C_.[[Status]] to ~evaluated~, and it performs _A_.ExecuteModule(). As stated, _A_'s execution causes a call to _B_.Evaluate(), which calls InnerModuleEvaluation on _B_ and on _C_. Since _C_.[[Status]] is ~evaluated~, _B_.ExecuteModule() is called synchronously and, assuming it completes succesfully, transitions _B_.[[Status]] to ~evaluated~. At this point, the fields of the modules are given in <emu-xref href="#table-module-graph-deferred-async-cycle-root-fields-2"></emu-xref>:</p>
 
             <emu-table id="table-module-graph-deferred-async-cycle-root-fields-2" class="module-overflow" caption="Module fields after the _B_.ExecuteModule() call">
               <table>
@@ -1686,134 +1463,22 @@ contributors: Nicolò Ribaudo
                   <th>_B_</th>
                   <td>~evaluated~</td>
                   <td>*false*</td>
-                  <td>« _A_ »</td>
+                  <td>« »</td>
                   <td>0</td>
-                  <td>_A_</td>
+                  <td>_B_</td>
                 </tr>
                 <tr>
                   <th>_C_</th>
                   <td>~evaluated~</td>
                   <td>*true*</td>
-                  <td>« _B_ »</td>
+                  <td>« _A_ »</td>
                   <td>0</td>
-                  <td>_C_</td>
+                  <td>_A_</td>
                 </tr>
               </table>
             </emu-table>
 
             <p>Once the call to _A_.ExecuteModule() completes, _A_.[[Status]] transitions to ~evaluated~.</p>
-
-            <p>Finally, let us consider the case in which an async module (_C_) eagerly depends on a module whose execution would be otherwise deferred (_B_):</p>
-
-            <emu-figure id="figure-module-graph-deferred-async-cycle-deferred" caption="A module graph with a cycle between a module first imported as deferred and an async module">
-              <img alt="A module graph in which module A depends on module B with a deferred import, module B depends on module C, which uses top-level await and depends on B" width="121" height="211" src="img/module-graph-deferred-async-cycle-deferred.svg">
-            </emu-figure>
-
-            <p>As in the previous examples, calling _A_.Evaluate() calls InnerModuleEvaluation on _A_, which transitions _A_.[[Status]] to ~evaluating~ and calls InnerAsyncSubgraphsEvaluation on _B_, which transitions _B_.[[Status]] to ~async-subgraphs-searching~, and on _C_. Since _C_.[[HasTLA]] is *true*, InnerAsyncSubgraphsEvaluation then calls InnerModuleEvaluation on _C_, which sets _C_.[[Status]] to ~evaluating~. At this point, the _stack_ shared by the InnerModuleEvaluation and InnerAsyncSubgraphsEvaluation calls is « _A_, _B_, _C_ », and the fields of the modules are given in <emu-xref href="#table-module-graph-deferred-async-cycle-deferred-fields-1"></emu-xref>:</p>
-
-            <emu-table id="table-module-graph-deferred-async-cycle-deferred-fields-1" class="module-overflow" caption="Module fields after the initial evaluation has traversed _A_, _B_, and _C_">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Module</th>
-                    <th>[[DFSIndex]]</th>
-                    <th>[[DFSAncestorIndex]]</th>
-                    <th>[[Status]]</th>
-                    <th>[[AsyncEvaluation]]</th>
-                    <th>[[AsyncParentModules]]</th>
-                    <th>[[PendingAsyncDependencies]]</th>
-                    <th>[[CycleRoot]]</th>
-                  </tr>
-                </thead>
-                <tr>
-                  <th>_A_</th>
-                  <td>0</td>
-                  <td>0</td>
-                  <td>~evaluating~</td>
-                  <td>*false*</td>
-                  <td>« »</td>
-                  <td>0</td>
-                  <td>~empty~</td>
-                </tr>
-                <tr>
-                  <th>_B_</th>
-                  <td>1</td>
-                  <td>1</td>
-                  <td>~async-subgraphs-searching~</td>
-                  <td>*false*</td>
-                  <td>« »</td>
-                  <td>0</td>
-                  <td>~empty~</td>
-                </tr>
-                <tr>
-                  <th>_C_</th>
-                  <td>2</td>
-                  <td>2</td>
-                  <td>~evaluating~</td>
-                  <td>*false*</td>
-                  <td>« »</td>
-                  <td>0</td>
-                  <td>~empty~</td>
-                </tr>
-              </table>
-            </emu-table>
-
-            <p>InnerModuleEvaluation then iterates over _C_'s dependencies, calling InnerModuleEvaluation on _B_: it transitions _B_.[[Status]] from ~async-subgraphs-searching~ to ~evaluating~, it sets _B_.[[DFSIndex]] and _B_.[[DFSAncestorIndex]] to the current _index_, and _stack_ becomes « _A_, _B_, _C_, _B_ ». Note that _stack_ contains _B_ twice: this only happens when a module is first visited setting its [[Status]] to ~async-subgraphs-searching~, and then due to a cycle it's visited again setting its [[Status]] to ~evaluating~. This behaviour is equivalent to the case in which _C_ depends on a <em>different</em> module <var>B'</var>, which has not been visited yet, and which circularly depends on _C_:</p>
-
-            <emu-figure id="figure-module-graph-deferred-async-cycle-deferred-2" caption="A module graph with a deferred module that depends on a cycle whose root is an async module">
-              <img alt="A module graph in which module A depends on module B with a deferred import, module B depends on module C, which uses top-level await and circularly depends on a module B'" width="181" height="211" src="img/module-graph-deferred-async-cycle-deferred-2.svg">
-            </emu-figure>
-
-            <p>When then iterating over _B_/<var>B'</var>'s dependencies, InnerModuleEvaluation iterates over _C_ whose [[Status]] is ~evaluating~, and thus sets _B_/<var>B'</var>.[[DFSAncestorIndex]] to _C_.[[DFSAncestorIndex]]. Then, it calls _B_/<var>B'</var>.ExecuteModule(), sets _B_/<var>B'</var>.[[Status]] to ~evaluated~ and gives back control to the InnerModuleEvaluation call on _C_. It performs ExecuteAsyncModule(_C_) and sets _C_.[[Status]] to ~evaluating-async~, removes the second _B_ and _C_ from the _stack_ and sets their [[CycleRoot]] to _C_. Then it removes the first _B_ from the _stack_, since its [[Status]] is already _evaluated_. The InnerModuleEvaluation call on _A_ then updates _A_'s fields related to the asynchronous execution of its dependencies, and appends _A_ to _B_.[[CycleRoot]].[[AsyncParentModules]]. At this point, _stack_ is empty and the fields of the modules are given in <emu-xref href="#table-module-graph-deferred-async-cycle-deferred-fields-2"></emu-xref>:</p>
-
-            <emu-table id="table-module-graph-deferred-async-cycle-deferred-fields-2" class="module-overflow" caption="Module fields after the first Evaluate() call">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Module</th>
-                    <th>[[DFSIndex]]</th>
-                    <th>[[DFSAncestorIndex]]</th>
-                    <th>[[Status]]</th>
-                    <th>[[AsyncEvaluation]]</th>
-                    <th>[[AsyncParentModules]]</th>
-                    <th>[[PendingAsyncDependencies]]</th>
-                    <th>[[CycleRoot]]</th>
-                  </tr>
-                </thead>
-                <tr>
-                  <th>_A_</th>
-                  <td>0</td>
-                  <td>0</td>
-                  <td>~evaluating-async~</td>
-                  <td>*true*</td>
-                  <td>« »</td>
-                  <td>1 (_C_)</td>
-                  <td>~empty~</td>
-                </tr>
-                <tr>
-                  <th>_B_</th>
-                  <td>3</td>
-                  <td>2</td>
-                  <td>~evaluated~</td>
-                  <td>*false*</td>
-                  <td>« »</td>
-                  <td>0</td>
-                  <td>_C_</td>
-                </tr>
-                <tr>
-                  <th>_C_</th>
-                  <td>2</td>
-                  <td>2</td>
-                  <td>~evaluating-async~</td>
-                  <td>*true*</td>
-                  <td>« _A_ »</td>
-                  <td>0</td>
-                  <td>_C_</td>
-                </tr>
-              </table>
-            </emu-table>
-
-            <p>When _C_ finishes evaluating AsyncModuleExecutionFulfilled(_C_) is called, transitioning its status to ~evaluated~ and calling _A_.ExecuteModule().</p>
           </emu-clause>
         </emu-clause>
       </emu-clause>
