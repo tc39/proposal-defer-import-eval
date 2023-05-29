@@ -189,7 +189,7 @@ contributors: Nicolò Ribaudo
                   [[Phase]]
                 </td>
                 <td>
-                  ~defer~ or ~full~
+                  ~defer~ or ~evaluation~
                 </td>
                 <td>
                   The target import phase
@@ -224,10 +224,9 @@ contributors: Nicolò Ribaudo
           1. <ins>For each ModuleRequest Record _mr_ of _additionalRequests_, do</ins>
             1. <ins>Let _found_ be *false*.</ins>
             1. <ins>For each ModuleRequest Record _mr2_ of _requests_, do</ins>
-              1. <ins>If _mr_.[[Specifer]] is _mr2_.[[Specifer]], then</ins>
+              1. <ins>If _mr_.[[Specifer]] is _mr2_.[[Specifer]] and _mr_.[[Phase]] is _mr2_.[[Phase]], then</ins>
                 1. <ins>Assert: _found_ is *false*.</ins>
                 1. <ins>Set _found_ to *true*.</ins>
-                1. <ins>If _mr2_.[[Phase]] is ~defer~ and _mr_.[[Phase]] is ~full~, set _mr2_.[[Phase]] to ~full~.</ins>
             1. <del>If _moduleNames_ does not contain _name_, then</del>
             1. <ins>If _found_ is *false*, then</ins>
               1. Append <del>_name_</del><ins>_mr_</ins> to <del>_moduleNames_</del><ins>_requests_</ins>.
@@ -243,7 +242,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. <del>Return ModuleRequests of |FromClause|.</del>
           1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~full~ }.</ins>
+          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~evaluation~ }.</ins>
         </emu-alg>
         <emu-grammar>
           <ins>ImportDeclaration : `import` `defer` ImportClause FromClause `;`</ins>
@@ -262,7 +261,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. <del>Return ModuleRequests of |FromClause|.</del>
           1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~full~ }.</ins>
+          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~evaluation~ }.</ins>
         </emu-alg>
         <emu-grammar>
           ExportDeclaration :
@@ -347,7 +346,7 @@ contributors: Nicolò Ribaudo
                 a List of <del>Strings</del><ins>ModuleRequest Records</ins>
               </td>
               <td>
-                A List of all the |ModuleSpecifier| strings used by the module represented by this record to request the importation of a module, <ins>alongside with their maximum specified import phase (~defer~ or ~full~)</ins>. The List is in source text occurrence order.
+                A List of all the |ModuleSpecifier| strings used by the module represented by this record to request the importation of a module, <ins>alongside with their maximum specified import phase (~defer~ or ~evaluation~)</ins>. The List is in source text occurrence order.
               </td>
             </tr>
             <tr>
@@ -1594,7 +1593,7 @@ contributors: Nicolò Ribaudo
         <emu-grammar>ImportDeclaration : `import` ImportClause FromClause `;`</emu-grammar>
         <emu-alg>
           1. Let _module_ be <del>the sole element of ModuleRequests</del><ins>SV</ins> of |FromClause|.
-          1. Return ImportEntriesForModule of |ImportClause| with arguments _module_ <ins>and ~full~</ins>.
+          1. Return ImportEntriesForModule of |ImportClause| with arguments _module_ <ins>and ~evaluation~</ins>.
         </emu-alg>
         <emu-grammar><ins>ImportDeclaration : `import` `defer` ImportClause FromClause `;`</ins></emu-grammar>
         <emu-alg>
@@ -1611,7 +1610,7 @@ contributors: Nicolò Ribaudo
         <h1>
           Static Semantics: ImportEntriesForModule (
             _module_: a String,
-            <ins>_phase_: ~defer~ or ~full~,</ins>
+            <ins>_phase_: ~defer~ or ~evaluation~,</ins>
           ): a List of ImportEntry Records
         </h1>
         <dl class="header">
@@ -1630,7 +1629,7 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ImportedDefaultBinding : ImportedBinding</emu-grammar>
         <emu-alg>
-          1. <ins>Assert: _phase_ is ~full~.</ins>
+          1. <ins>Assert: _phase_ is ~evaluation~.</ins>
           1. Let _localName_ be the sole element of BoundNames of |ImportedBinding|.
           1. Let _defaultEntry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, <ins>[[Phase]]: _phase_,</ins> [[ImportName]]: *"default"*, [[LocalName]]: _localName_ }.
           1. Return « _defaultEntry_ ».
@@ -1647,21 +1646,21 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ImportsList : ImportsList `,` ImportSpecifier</emu-grammar>
         <emu-alg>
-          1. <ins>Assert: _phase_ is ~full~.</ins>
+          1. <ins>Assert: _phase_ is ~evaluation~.</ins>
           1. Let _specs1_ be the ImportEntriesForModule of |ImportsList| with arguments _module_ <ins>and _phase_</ins>.
           1. Let _specs2_ be the ImportEntriesForModule of |ImportSpecifier| with arguments _module_ <ins>and _phase_</ins>.
           1. Return the list-concatenation of _specs1_ and _specs2_.
         </emu-alg>
         <emu-grammar>ImportSpecifier : ImportedBinding</emu-grammar>
         <emu-alg>
-          1. <ins>Assert: _phase_ is ~full~.</ins>
+          1. <ins>Assert: _phase_ is ~evaluation~.</ins>
           1. Let _localName_ be the sole element of BoundNames of |ImportedBinding|.
           1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, <ins>[[Phase]]: _phase_,</ins> [[ImportName]]: _localName_, [[LocalName]]: _localName_ }.
           1. Return « _entry_ ».
         </emu-alg>
         <emu-grammar>ImportSpecifier : ModuleExportName `as` ImportedBinding</emu-grammar>
         <emu-alg>
-          1. <ins>Assert: _phase_ is ~full~.</ins>
+          1. <ins>Assert: _phase_ is ~evaluation~.</ins>
           1. Let _importName_ be the StringValue of |ModuleExportName|.
           1. Let _localName_ be the StringValue of |ImportedBinding|.
           1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, <ins>[[Phase]]: _phase_,</ins> [[ImportName]]: _importName_, [[LocalName]]: _localName_ }.
