@@ -92,8 +92,8 @@ of being execution-ready before the module graph is considered loaded.
 
 _Only when accessing a property of this module, would the execution operations be performed (if needed)._
 
-This way, `DeferredModuleNamespace` acts like a proxy to the evaluation of the module, effectively
-with getter functions that trigger synchronous idempotent evaluation before returning the defined bindings.
+This way, the module namespace exotic object acts like a proxy to the evaluation of the module, effectively
+with [[Get]] behavior that triggers synchronous evaluation before returning the defined bindings.
 
 The API will use the below syntax, following the phases model established by the
 [source phase imports](https://github.com/tc39/proposal-source-phase-imports) proposal:
@@ -113,6 +113,9 @@ not already been performed, a new top-level execution would be initiated for tha
 
 In this way, a deferred module evaluation import acts as a new top-level execution node
 in the execution graph, just like a dynamic import does, except executing synchronously.
+
+There are possible extensions under consideration, such as deferred re-exports, but they are not
+included in the current version of the proposal.
 
 ### Top-level await
 
@@ -171,7 +174,7 @@ await 0;
 
 </td></tr></table>
 
-Since `d` uses top-level await, `d` and its dependencies cannot be deferred. The initial evaluation will execute `b`, `e`, `d` and `a`. Later, the `c.value` access will trigger the execution of `f` and `c`.
+Since `d` uses top-level await, `d` and its dependencies cannot be deferred: the initial evaluation will execute `b`, `e`, `d` and `a`. Later, the `c.value` access will trigger the execution of `f` and `c`.
 
 ### Rough sketch
 
@@ -255,7 +258,7 @@ There are a number of complexities to this approach, as it introduces a novel
 type of execution point in the language, which would need to be worked through.
 
 This approach may still be investigated in various ways within this proposal or an extension of it,
-but by focusing on the `DeferredModuleNamespace` accessor approach first, it keeps the semantics
+but by focusing on the module namespace exotic object approach first, it keeps the semantics
 simple and in-line with standard JS techniques.
 
 #### Is there really a benefit to optimizing execution, when surely loading is the bottleneck?
