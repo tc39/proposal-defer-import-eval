@@ -174,7 +174,9 @@ await 0;
 
 </td></tr></table>
 
-Since `d` uses top-level await, `d` and its dependencies cannot be deferred: the initial evaluation will execute `b`, `e`, `d` and `a`. Later, the `c.value` access will trigger the execution of `f` and `c`.
+Since `d` uses top-level await, `d` and its dependencies cannot be deferred:
+- The initial evaluation will execute `b`, `e`, `d` and `a`.
+- Later, the `c.value` access will trigger the execution of `f` and `c`.
 
 ### Rough sketch
 
