@@ -68,7 +68,7 @@ number of problems with this technique:
    request in such a scenario would usually be a performance regression and not an improvement.
    A separate network preloading step would therefore still be desirable to achieve efficient
    deferred execution while avoiding triggering a waterfall of requests.
-  
+
 2. It forces all functions and their callers into an asynchronous programming model,
    without necessarily reflecting the real intention of the program. This leads to all call
    sites having to be updated into a new model, and cannot be made without a breaking API
@@ -86,55 +86,104 @@ the synchronous evaluation work.
 
 ## Proposal
 
-The proposal is to have a new syntactical import form which will only ever return an object binding
-to a new exotic object - a `DeferredModuleNamespace`.
-
+The proposal is to have a new syntactical import form which will only ever return a namespace exotic object.
 When used, the module and its dependencies would not be executed, but would be fully loaded to the point
 of being execution-ready before the module graph is considered loaded.
 
 _Only when accessing a property of this module, would the execution operations be performed (if needed)._
 
-This way, `DeferredModuleNamespace` acts like a proxy to the evaluation of the module, effectively
-with getter functions that trigger synchronous idempotent evaluation before returning the defined bindings.
+This way, the module namespace exotic object acts like a proxy to the evaluation of the module, effectively
+with [[Get]] behavior that triggers synchronous evaluation before returning the defined bindings.
 
-The API can take a couple of forms, here are some suggestions:
+The API will use the below syntax, following the phases model established by the
+[source phase imports](https://github.com/tc39/proposal-source-phase-imports) proposal:
 
 ```js
-// using import attributes (`lazyInit` to illustrated, but it could also be `deferEval`, say)
-import lazyModuleNamespace from "y" with { lazyInit: true }
-
-// with an explicit "*" to indiciate the namespace form
-import * as lazyModuleNamespace from "y" with { lazyInit: true }
-
 // or with a custom keyword:
-lazy import * as yNs from "y";
+import defer * as yNamespace from "y";
 ```
-
-There are other proposals, but the discussion of the naming may derail the discussion of the
-semantics, which should be agreed on first and would likely guide the design of the API.
 
 ## Semantics
 
-The semantics would be similar to import reflection, in that the deferred module namespace can be
-thought of as a leaf node that does not add further branches to the execution graph.
-
 The imports would still participate in deep graph loading so that they are fully populated into
-the module cache prior to execution.
+the module cache prior to execution, however it the imported module will not be evaluated yet.
 
-When a property of a `DeferredModuleNamespace` is accessed, if the execution has not already
-been performed, a new top-level execution would be initiated for that module.
+When a property of the resulting module namespace object is accessed, if the execution has
+not already been performed, a new top-level execution would be initiated for that module.
 
 In this way, a deferred module evaluation import acts as a new top-level execution node
 in the execution graph, just like a dynamic import does, except executing synchronously.
 
-If accessing a graph subject to top-level await, an error would be thrown. Eager execution of the
-asynchronous components of top-level await graphs could be a possible option for enabling these
-use cases as well.
+There are possible extensions under consideration, such as deferred re-exports, but they are not
+included in the current version of the proposal.
+
+### Top-level await
+
+Property access on the namespace object of a deferred module must be synchronous, and it's thus
+impossible to defer evaluation of modules that use top-level await. When a module is imported
+using the `import defer` syntax, its asynchronous dependencies together with their own transitive
+dependencies are eagerly evaluated, and only the synchronous parts of the graph are deferred.
+
+Consider the following example, where `a` is the top-level entry point:
+<table><tr><td>
+
+```js
+// a
+import "b";
+import defer * as c from "c"
+
+setTimeout(() => {
+  c.value
+}, 1000);
+```
+
+</td><td>
+
+```js
+// b
+```
+
+</td><td>
+
+```js
+// c
+import "d"
+import "f"
+export let value = 2;
+```
+
+</td></tr><tr><td>
+
+```js
+// d
+import "e"
+await 0;
+```
+
+</td><td>
+
+```js
+// e
+```
+
+</td><td>
+
+```js
+// f
+```
+
+</td></tr></table>
+
+Since `d` uses top-level await, `d` and its dependencies cannot be deferred:
+- The initial evaluation will execute `b`, `e`, `d` and `a`.
+- Later, the `c.value` access will trigger the execution of `f` and `c`.
 
 ### Rough sketch
 
 If we split out the components of Module loading and initialization, we could roughly sketch out the
 intended semantics:
+
+> ⚠️ The following example does not take cycles into account
 
 ```js
 // LazyModuleLoader.js
@@ -145,12 +194,18 @@ async function loadModuleAndDependencies(name) {
   return parsedModule;
 }
 
+async function executeAsyncSubgraphs(module) {
+  if (module.hasTLA) return module.evaluate();
+  return Promise.all(module.importedModules.map(executeAsyncSubgraphs));
+}
+
 export default async function lazyModule(object, name) {
   const module = await loadModuleAndDependencies(name);
+  await executeAsyncSubgraphs(module);
   Object.defineProperty(object, name, {
     get: function() {
       delete object[name];
-      const value = module.eval();
+      const value = module.evaluateSync();
       Object.defineProperty(object, name, {
         value,
         writable: true,
@@ -182,7 +237,7 @@ function Foo() {
 
 ## Implementations
 
-None so far.
+- engine262: https://github.com/nicolo-ribaudo/engine262/tree/defer-eval
 
 ## Q&A
 
@@ -205,7 +260,7 @@ There are a number of complexities to this approach, as it introduces a novel
 type of execution point in the language, which would need to be worked through.
 
 This approach may still be investigated in various ways within this proposal or an extension of it,
-but by focusing on the `DeferredModuleNamespace` accessor approach first, it keeps the semantics
+but by focusing on the module namespace exotic object approach first, it keeps the semantics
 simple and in-line with standard JS techniques.
 
 #### Is there really a benefit to optimizing execution, when surely loading is the bottleneck?
@@ -234,37 +289,6 @@ object could offer an API for synchronous evaluation of modules, which could be 
 this approach of deferred evaluation, but it is only in having a clear syntactical solution for this use case,
 that it can be supported across dependency boundaries and in bundlers to bring the full benefits of avoiding unnecessary
 initialization work to the wider JS ecosystem.
-
-#### What is the problem with supporting top-level await?
-
-Top Level Await introdues a wrench into the works. If evaluation is delayed until a module is used,
-then a module with top level await may evaluate in the context of sync code, for example:
-
-```js
-// module.js
-// ...
-const data = await fetch("./data");
-
-export { data };
-
-// main.js
-import mod from "./module.js" with { lazyInit: true };
-
-function run() {
-  doSomeProcessing(mod.data);
-}
-```
-
-In order for this to work, we would need to pause in the middle of `run`, a sync function. However,
-this is not allowed by the run to completion invariant.
-
-There are two possibilities for how to handle this case:
-1) Throw an error if we come across an async module during the parse step
-2) Preemptively execute the async components of a deferred import -- possibly with a warning
-
-The lazy graph will in any case have some already-evaluated nodes, as other parts of
-the module graph may have been part of separate top-level evaluation graphs.
-
 
 #### What can we do in current JS to approximate this behavior?
 
