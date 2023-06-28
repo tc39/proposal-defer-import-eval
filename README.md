@@ -10,7 +10,9 @@ Author(s): *Yulia Startsev and Guy Bedford*
 
 Stage: 1
 
-[Stage 1 Slides](https://docs.google.com/presentation/d/17NsxHzAC2RlP5rB3wrns9O2Z-NduSpcm2_GOVo2TnKE/edit#slide=id.p)
+Slides:
+- 2021-01 - [Stage 1](https://docs.google.com/presentation/d/17NsxHzAC2RlP5rB3wrns9O2Z-NduSpcm2_GOVo2TnKE)
+- 2022-11 - [Take two: Defer Module Evaluation](https://docs.google.com/presentation/d/10cn4SfVY20no6JmtWL72JLD6rmJ-dnafIfh8XmmC7mA)
 
 ## Background
 
