@@ -4,15 +4,16 @@ previously known as "Lazy Module Initialization"
 
 ## Status
 
-Champion(s): *Yulia Startsev*
+Champion(s): *Yulia Startsev and Nicolò Ribaudo*
 
-Author(s): *Yulia Startsev and Guy Bedford*
+Author(s): *Yulia Startsev, Nicolò Ribaudo and Guy Bedford*
 
-Stage: 1
+Stage: 2
 
 Slides:
 - 2021-01 - [Stage 1](https://docs.google.com/presentation/d/17NsxHzAC2RlP5rB3wrns9O2Z-NduSpcm2_GOVo2TnKE)
 - 2022-11 - [Take two: Defer Module Evaluation](https://docs.google.com/presentation/d/10cn4SfVY20no6JmtWL72JLD6rmJ-dnafIfh8XmmC7mA)
+- 2023-07 - [Deferred import evaluation for Stage 2](https://docs.google.com/presentation/d/1rSsVsFsnXQZ8pEGFwAGiVbVqndr4DHEUqTGEM9Au0_4)
 
 ## Background
 

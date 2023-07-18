@@ -4,8 +4,8 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
 <script src="./spec.js"></script>
 <pre class="metadata">
-title: Deferred Imports Evaluation Algorithm
-stage: -1
+title: Deferred Imports Evaluation
+stage: 2
 contributors: Nicolò Ribaudo
 </pre>
 
