@@ -1611,81 +1611,14 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ImportDeclaration : `import` ImportClause FromClause `;`</emu-grammar>
+        <emu-grammar>ImportDeclaration : `import` `defer`? ImportClause FromClause `;`</emu-grammar>
         <emu-alg>
           1. Let _module_ be <del>the sole element of ModuleRequests</del><ins>SV</ins> of |FromClause|.
-          1. Return ImportEntriesForModule of |ImportClause| with arguments _module_ <ins>and ~evaluation~</ins>.
-        </emu-alg>
-        <emu-grammar><ins>ImportDeclaration : `import` `defer` ImportClause FromClause `;`</ins></emu-grammar>
-        <emu-alg>
-          1. <ins>Let _module_ be SV of |FromClause|.</ins>
-          1. <ins>Return ImportEntriesForModule of |ImportClause| with arguments _module_ and ~defer~.</ins>
+          1. Return ImportEntriesForModule of |ImportClause| with arguments _module_.
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ModuleSpecifier `;`</emu-grammar>
         <emu-alg>
           1. Return a new empty List.
-        </emu-alg>
-      </emu-clause>
-
-      <emu-clause id="sec-static-semantics-importentriesformodule" type="sdo">
-        <h1>
-          Static Semantics: ImportEntriesForModule (
-            _module_: a String,
-            <ins>_phase_: ~defer~ or ~evaluation~,</ins>
-          ): a List of ImportEntry Records
-        </h1>
-        <dl class="header">
-        </dl>
-        <emu-grammar>ImportClause : ImportedDefaultBinding `,` NameSpaceImport</emu-grammar>
-        <emu-alg>
-          1. Let _entries1_ be ImportEntriesForModule of |ImportedDefaultBinding| with arguments _module_ <ins>and _phase_</ins>.
-          1. Let _entries2_ be ImportEntriesForModule of |NameSpaceImport| with arguments _module_ <ins>and _phase_</ins>.
-          1. Return the list-concatenation of _entries1_ and _entries2_.
-        </emu-alg>
-        <emu-grammar>ImportClause : ImportedDefaultBinding `,` NamedImports</emu-grammar>
-        <emu-alg>
-          1. Let _entries1_ be ImportEntriesForModule of |ImportedDefaultBinding| with arguments _module_ <ins>and _phase_</ins>.
-          1. Let _entries2_ be ImportEntriesForModule of |NamedImports| with arguments _module_ <ins>and _phase_</ins>.
-          1. Return the list-concatenation of _entries1_ and _entries2_.
-        </emu-alg>
-        <emu-grammar>ImportedDefaultBinding : ImportedBinding</emu-grammar>
-        <emu-alg>
-          1. <ins>Assert: _phase_ is ~evaluation~.</ins>
-          1. Let _localName_ be the sole element of BoundNames of |ImportedBinding|.
-          1. Let _defaultEntry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, <ins>[[Phase]]: _phase_,</ins> [[ImportName]]: *"default"*, [[LocalName]]: _localName_ }.
-          1. Return « _defaultEntry_ ».
-        </emu-alg>
-        <emu-grammar>NameSpaceImport : `*` `as` ImportedBinding</emu-grammar>
-        <emu-alg>
-          1. Let _localName_ be the StringValue of |ImportedBinding|.
-          1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, <ins>[[Phase]]: _phase_,</ins> [[ImportName]]: ~namespace-object~, [[LocalName]]: _localName_ }.
-          1. Return « _entry_ ».
-        </emu-alg>
-        <emu-grammar>NamedImports : `{` `}`</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>ImportsList : ImportsList `,` ImportSpecifier</emu-grammar>
-        <emu-alg>
-          1. <ins>Assert: _phase_ is ~evaluation~.</ins>
-          1. Let _specs1_ be the ImportEntriesForModule of |ImportsList| with arguments _module_ <ins>and _phase_</ins>.
-          1. Let _specs2_ be the ImportEntriesForModule of |ImportSpecifier| with arguments _module_ <ins>and _phase_</ins>.
-          1. Return the list-concatenation of _specs1_ and _specs2_.
-        </emu-alg>
-        <emu-grammar>ImportSpecifier : ImportedBinding</emu-grammar>
-        <emu-alg>
-          1. <ins>Assert: _phase_ is ~evaluation~.</ins>
-          1. Let _localName_ be the sole element of BoundNames of |ImportedBinding|.
-          1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, <ins>[[Phase]]: _phase_,</ins> [[ImportName]]: _localName_, [[LocalName]]: _localName_ }.
-          1. Return « _entry_ ».
-        </emu-alg>
-        <emu-grammar>ImportSpecifier : ModuleExportName `as` ImportedBinding</emu-grammar>
-        <emu-alg>
-          1. <ins>Assert: _phase_ is ~evaluation~.</ins>
-          1. Let _importName_ be the StringValue of |ModuleExportName|.
-          1. Let _localName_ be the StringValue of |ImportedBinding|.
-          1. Let _entry_ be the ImportEntry Record { [[ModuleRequest]]: _module_, <ins>[[Phase]]: _phase_,</ins> [[ImportName]]: _importName_, [[LocalName]]: _localName_ }.
-          1. Return « _entry_ ».
         </emu-alg>
       </emu-clause>
     </emu-clause>
