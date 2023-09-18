@@ -261,6 +261,14 @@ contributors: Nicolò Ribaudo
           1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~evaluation~ }.</ins>
         </emu-alg>
         <emu-grammar>
+          <ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins>
+        </emu-grammar>
+        <emu-alg>
+          1. <ins>Assert: |ExportFromClause| matches |NamedNamespaceExport|.</ins>
+          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
+          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~defer~ }.</ins>
+        </emu-alg>
+        <emu-grammar>
           ExportDeclaration :
             `export` NamedExports `;`
             `export` VariableStatement
@@ -1626,6 +1634,142 @@ contributors: Nicolò Ribaudo
     <emu-clause id="sec-exports">
       <h1>Exports</h1>
 
+      <h2>Syntax</h2>
+      <emu-grammar type="definition">
+        ExportDeclaration :
+          `export` <ins>`defer`?</ins> ExportFromClause FromClause `;`
+          `export` NamedExports `;`
+          `export` VariableStatement[~Yield, +Await]
+          `export` Declaration[~Yield, +Await]
+          `export` `default` HoistableDeclaration[~Yield, +Await, +Default]
+          `export` `default` ClassDeclaration[~Yield, +Await, +Default]
+          `export` `default` [lookahead &notin; { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`
+
+        ExportFromClause :
+          `*`
+          <del>`*` `as` ModuleExportName</del>
+          <ins>NamedNamespaceExport</ins>
+          NamedExports
+
+        <ins>
+        NamedNamespaceExport :
+          `*` `as` ModuleExportName
+        </ins>
+
+        NamedExports :
+          `{` `}`
+          `{` ExportsList `}`
+          `{` ExportsList `,` `}`
+
+        ExportsList :
+          ExportSpecifier
+          ExportsList `,` ExportSpecifier
+
+        ExportSpecifier :
+          ModuleExportName
+          ModuleExportName `as` ModuleExportName
+      </emu-grammar>
+
+      <emu-clause id="sec-exports-static-semantics-early-errors">
+        <h1>Static Semantics: Early Errors</h1>
+        <emu-grammar>ExportDeclaration : `export` NamedExports `;`</emu-grammar>
+        <ul>
+          <li>
+            It is a Syntax Error if ReferencedBindings of |NamedExports| contains any |StringLiteral|s.
+          </li>
+          <li>
+            For each |IdentifierName| _n_ in ReferencedBindings of |NamedExports|: It is a Syntax Error if StringValue of _n_ is a |ReservedWord| or the StringValue of _n_ is one of *"implements"*, *"interface"*, *"let"*, *"package"*, *"private"*, *"protected"*, *"public"*, or *"static"*.
+          </li>
+        </ul>
+        <emu-note>
+          <p>The above rule means that each ReferencedBindings of |NamedExports| is treated as an |IdentifierReference|.</p>
+        </emu-note>
+        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins></emu-grammar>
+        <ul>
+          <li>
+            <ins>It is a Synta Error if |ExportFromClause| is not |NamedNamespaceExport|.</ins>
+          </li>
+        </ul>
+      </emu-clause>
+
+      <emu-clause id="sec-static-semantics-exportednames" type="sdo" number="3">
+        <h1>Static Semantics: ExportedNames ( ): a List of Strings</h1>
+        <dl class="header">
+        </dl>
+        <emu-note>
+          <p>ExportedNames are the externally visible names that a |Module| explicitly maps to one of its local name bindings.</p>
+        </emu-note>
+        <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
+        <emu-alg>
+          1. Let _names1_ be ExportedNames of |ModuleItemList|.
+          1. Let _names2_ be ExportedNames of |ModuleItem|.
+          1. Return the list-concatenation of _names1_ and _names2_.
+        </emu-alg>
+        <emu-grammar>ModuleItem : ExportDeclaration</emu-grammar>
+        <emu-alg>
+          1. Return the ExportedNames of |ExportDeclaration|.
+        </emu-alg>
+        <emu-grammar>
+          ModuleItem :
+            ImportDeclaration
+            StatementListItem
+        </emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` <ins>`defer`?</ins> ExportFromClause FromClause `;`</emu-grammar>
+        <emu-alg>
+          1. Return the ExportedNames of |ExportFromClause|.
+        </emu-alg>
+        <emu-grammar>ExportFromClause : `*`</emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ExportFromClause : `*` `as` ModuleExportName</emu-grammar>
+        <emu-alg>
+          1. Return a List whose sole element is the StringValue of |ModuleExportName|.
+        </emu-alg>
+        <emu-grammar>ExportFromClause : NamedExports</emu-grammar>
+        <emu-alg>
+          1. Return the ExportedNames of |NamedExports|.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` VariableStatement</emu-grammar>
+        <emu-alg>
+          1. Return the BoundNames of |VariableStatement|.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` Declaration</emu-grammar>
+        <emu-alg>
+          1. Return the BoundNames of |Declaration|.
+        </emu-alg>
+        <emu-grammar>
+          ExportDeclaration :
+            `export` `default` HoistableDeclaration
+            `export` `default` ClassDeclaration
+            `export` `default` AssignmentExpression `;`
+        </emu-grammar>
+        <emu-alg>
+          1. Return « *"default"* ».
+        </emu-alg>
+        <emu-grammar>NamedExports : `{` `}`</emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ExportsList : ExportsList `,` ExportSpecifier</emu-grammar>
+        <emu-alg>
+          1. Let _names1_ be the ExportedNames of |ExportsList|.
+          1. Let _names2_ be the ExportedNames of |ExportSpecifier|.
+          1. Return the list-concatenation of _names1_ and _names2_.
+        </emu-alg>
+        <emu-grammar>ExportSpecifier : ModuleExportName</emu-grammar>
+        <emu-alg>
+          1. Return a List whose sole element is the StringValue of |ModuleExportName|.
+        </emu-alg>
+        <emu-grammar>ExportSpecifier : ModuleExportName `as` ModuleExportName</emu-grammar>
+        <emu-alg>
+          1. Return a List whose sole element is the StringValue of the second |ModuleExportName|.
+        </emu-alg>
+      </emu-clause>
+
       <emu-clause id="sec-static-semantics-exportentries" type="sdo" number="4">
         <h1>Static Semantics: ExportEntries ( ): a List of ExportEntry Records</h1>
         <dl class="header">
@@ -1648,7 +1792,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` ExportFromClause FromClause `;`</emu-grammar>
+        <emu-grammar>ExportDeclaration : `export` `defer`? ExportFromClause FromClause `;`</emu-grammar>
         <emu-alg>
           1. Let _module_ be <del>the sole element of ModuleRequests</del><ins>SV</ins> of |FromClause|.
           1. Return ExportEntriesForModule of |ExportFromClause| with argument _module_.
