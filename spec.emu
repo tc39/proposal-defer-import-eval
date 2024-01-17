@@ -176,20 +176,23 @@ contributors: Nicolò Ribaudo
           </ins>
         </h1>
         <dl class="header"></dl>
+        <emu-note type="editor">
+          The diff presented for this algorithm is relative to the original algorithm for the Evaluation of |ImportCall| : `import` `(` |AssignmentExpression| `)`.
+        </emu-note>
         <emu-alg>
           1. Let _referrer_ be GetActiveScriptOrModule().
           1. If _referrer_ is *null*, set _referrer_ to the current Realm Record.
-          1. Let _specifierRef_ be the result of evaluating _specifierExpression_.
+          1. Let _specifierRef_ be ? Evaluation of <del>|AssignmentExpression|</del><ins>_specifierExpression_</ins>.
           1. Let _specifier_ be ? GetValue(_specifierRef_).
           1. Let _promiseCapability_ be ! NewPromiseCapability(%Promise%).
           1. Let _specifierString_ be Completion(ToString(_specifier_)).
           1. IfAbruptRejectPromise(_specifierString_, _promiseCapability_).
-          1. Let _payload_ be a new DynamicImportState Record { [[PromiseCapability]]: _promiseCapability_, [[Phase]]: _phase_ }.
-          1. Perform HostLoadImportedModule(_referrer_, _specifierString_, ~empty~, _payload_).
+          1. <ins>Let _payload_ be a new DynamicImportState Record { [[PromiseCapability]]: _promiseCapability_, [[Phase]]: _phase_ }.</ins>
+          1. Perform HostLoadImportedModule(_referrer_, _specifierString_, ~empty~, <del>_promiseCapability_</del><ins>_payload_</ins>).
           1. Return _promiseCapability_.[[Promise]].
         </emu-alg>
 
-        <p>A <dfn id="dynamicimportstate-record" variants="DynamicImportState Records">DynamicImportState Record</dfn> is a Record that contains information about a dynamic import call. It's used to continue loading after a call to HostLoadImportedModule. Each DynamicImportState Record has the fields defined in <emu-xref href="#table-dynamicimportstate-record-fields"></emu-xref>:</p>
+        <p><ins>A <dfn id="dynamicimportstate-record" variants="DynamicImportState Records">DynamicImportState Record</dfn> is a Record that contains information about a dynamic import call. It's used to continue loading after a call to HostLoadImportedModule. Each DynamicImportState Record has the fields defined in <emu-xref href="#table-dynamicimportstate-record-fields"></emu-xref>:</ins></p>
         <emu-table id="table-dynamicimportstate-record-fields" caption="DynamicImportState Record Fields">
           <table>
             <tr>
@@ -205,24 +208,24 @@ contributors: Nicolò Ribaudo
             </tr>
             <tr>
               <td>
-                [[PromiseCapability]]
+                <ins>[[PromiseCapability]]</ins>
               </td>
               <td>
-                a PromiseCapability Record
+                <ins>a PromiseCapability Record</ins>
               </td>
               <td>
-                The promise to resolve when the loading process finishes.
+                <ins>The promise to resolve when the loading process finishes.</ins>
               </td>
             </tr>
             <tr>
               <td>
-                [[Phase]]
+                <ins>[[Phase]]</ins>
               </td>
               <td>
-                ~defer~ or ~evaluation~
+                <ins>~defer~ or ~evaluation~</ins>
               </td>
               <td>
-                The target import phase
+                <ins>The target import phase</ins>
               </td>
             </tr>
           </table>
