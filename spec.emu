@@ -401,100 +401,125 @@ contributors: Nicolò Ribaudo
                 1. For each _r_ in _requests_, do
                   1. If _existingRequest_ is ~empty~ and _r_.[[Specifier]] is _oie_.[[Specifier]], then
                     1. Set _existingRequest_ to _r_.
+                1. Let _newImportedNames_ be ~all~.
+                1. If _oie_.[[ImportName]] is a String, then set _newImportedNames_ to « _oie_.[[ImportName]] ».
                 1. If _existingRequest_ is ~empty~, then
-                  1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _oie_.[[Specifier]], [[Phase]]: ~evaluation~, [[ImportedNames]]: ~all~ }.
-                  1. If _oie_.[[ImportName]] is a String, then set _request_.[[ImportedNames]] to « _oie_.[[ImportName]] ».
+                  1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _oie_.[[Specifier]], [[Phase]]: ~evaluation~, [[ImportedNames]]: _newImportedNames_ }.
                   1. Append _request_ to _requests_.
-                1. Else, if _existingRequest_.[[ImportedNames]] is not ~all~, then
-                  1. Assert: _existingRequest_.[[ImportedNames]] is a List of Strings.
-                  1. If _oie_.[[ImportName]] is ~all~, set _existingRequest_.[[ImportedNames]] to ~all~.
-                  1. Else, append _oie_.[[ImportName]] to _existingRequest_.[[ImportedNames]].
+                1. Else,
+                  1. Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _newImportedNames_).
             1. Return _requests_.
           </emu-alg>
         </emu-clause>
-      </emu-clause>
 
-      <emu-clause id="sec-static-semantics-modulerequests" type="sdo" number="3">
-        <h1>
-          Static Semantics: ModuleRequests ( ): a List of <del>Strings</del><ins>ModuleRequest Records</ins>
-        </h1>
-        <dl class="header">
-        </dl>
-        <emu-grammar>Module : [empty]</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>ModuleItemList : ModuleItem</emu-grammar>
-        <emu-alg>
-          1. Return ModuleRequests of |ModuleItem|.
-        </emu-alg>
-        <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
-        <emu-alg>
-          1. Let <del>_moduleNames_</del><ins>_requests_</ins> be ModuleRequests of |ModuleItemList|.
-          1. Let <del>_additionalNames_</del><ins>_additionalRequests_</ins> be ModuleRequests of |ModuleItem|.
-          1. <del>For each String _name_ of _additionalNames_, do</del>
-          1. <ins>For each ModuleRequest Record _mr_ of _additionalRequests_, do</ins>
-            1. <ins>Let _found_ be *false*.</ins>
-            1. <ins>For each ModuleRequest Record _mr2_ of _requests_, do</ins>
-              1. <ins>If _mr_.[[Specifer]] is _mr2_.[[Specifer]] and _mr_.[[Phase]] is _mr2_.[[Phase]], then</ins>
-                1. <ins>Assert: _found_ is *false*.</ins>
-                1. <ins>Set _found_ to *true*.</ins>
-            1. <del>If _moduleNames_ does not contain _name_, then</del>
-            1. <ins>If _found_ is *false*, then</ins>
-              1. Append <del>_name_</del><ins>_mr_</ins> to <del>_moduleNames_</del><ins>_requests_</ins>.
-          1. Return <del>_moduleNames_</del><ins>_requests_</ins>.
-        </emu-alg>
-        <emu-grammar>ModuleItem : StatementListItem</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>
-          ImportDeclaration : `import` ImportClause FromClause `;`
-        </emu-grammar>
-        <emu-alg>
-          1. <del>Return ModuleRequests of |FromClause|.</del>
-          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~evaluation~ }.</ins>
-        </emu-alg>
-        <emu-grammar>
-          <ins>ImportDeclaration : `import` `defer` ImportClause FromClause `;`</ins>
-        </emu-grammar>
-        <emu-alg>
-          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~defer~ }.</ins>
-        </emu-alg>
-        <emu-grammar><del>ModuleSpecifier : StringLiteral</del></emu-grammar>
-        <emu-alg>
-          1. <del>Return a List whose sole element is the SV of |StringLiteral|.</del>
-        </emu-alg>
-        <emu-grammar>
-          ExportDeclaration : `export` ExportFromClause FromClause `;`
-        </emu-grammar>
-        <emu-alg>
-          1. <del>Return ModuleRequests of |FromClause|.</del>
-          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~evaluation~ }.</ins>
-        </emu-alg>
-        <emu-grammar>
-          <ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins>
-        </emu-grammar>
-        <emu-alg>
-          1. <ins>Assert: |ExportFromClause| matches |NamedNamespaceExport|.</ins>
-          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~defer~ }.</ins>
-        </emu-alg>
-        <emu-grammar>
-          ExportDeclaration :
-            `export` NamedExports `;`
-            `export` VariableStatement
-            `export` Declaration
-            `export` `default` HoistableDeclaration
-            `export` `default` ClassDeclaration
-            `export` `default` AssignmentExpression `;`
-        </emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
+        <emu-clause id="sec-mergeimportednames" type="abstract operation">
+          <h1>
+            <ins>
+              MergeImportedNames (
+                _a_: ~all~ or a List of Strings,
+                _b_: ~all~ or a List of Strings,
+              ): ~all~ or a List of Strings
+            </ins>
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd></dd>
+          </dl>
+
+          <emu-alg>
+            1. If _a_ is ~all~ or _b_ is ~all~, return ~all~.
+            1. Return the list-concatenation of _a_ and _b_.
+          </emu-alg>
+        </emu-clause>
+
+        <emu-clause id="sec-static-semantics-modulerequests" type="sdo">
+          <h1>
+            Static Semantics: ModuleRequests ( ): a List of <del>Strings</del><ins>ModuleRequest Records</ins>
+          </h1>
+          <dl class="header">
+          </dl>
+          <emu-grammar>Module : [empty]</emu-grammar>
+          <emu-alg>
+            1. Return a new empty List.
+          </emu-alg>
+          <emu-grammar>ModuleItemList : ModuleItem</emu-grammar>
+          <emu-alg>
+            1. Return ModuleRequests of |ModuleItem|.
+          </emu-alg>
+          <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
+          <emu-alg>
+            1. Let <del>_moduleNames_</del><ins>_requests_</ins> be ModuleRequests of |ModuleItemList|.
+            1. Let <del>_additionalNames_</del><ins>_additionalRequests_</ins> be ModuleRequests of |ModuleItem|.
+            1. <del>For each String _name_ of _additionalNames_, do</del>
+            1. <ins>For each ModuleRequest Record _mr_ of _additionalRequests_, do</ins>
+              1. <ins>Let _found_ be *false*.</ins>
+              1. <ins>For each ModuleRequest Record _mr2_ of _requests_, do</ins>
+                1. <ins>If _mr_.[[Specifer]] is _mr2_.[[Specifer]] and _mr_.[[Phase]] is _mr2_.[[Phase]], then</ins>
+                  1. <ins>Assert: _found_ is *false*.</ins>
+                  1. <ins>Set _found_ to *true*.</ins>
+                  1. <ins>Set _mr_.[[ImportedNames]] to MergeImportedNames(_mr_.[[ImportedNames]], _mr2_.[[ImportedNames]]).</ins>
+              1. <del>If _moduleNames_ does not contain _name_, then</del>
+              1. <ins>If _found_ is *false*, then</ins>
+                1. Append <del>_name_</del><ins>_mr_</ins> to <del>_moduleNames_</del><ins>_requests_</ins>.
+            1. Return <del>_moduleNames_</del><ins>_requests_</ins>.
+          </emu-alg>
+          <emu-grammar>ModuleItem : StatementListItem</emu-grammar>
+          <emu-alg>
+            1. Return a new empty List.
+          </emu-alg>
+          <emu-grammar>
+            ImportDeclaration : `import` ImportClause FromClause `;`
+          </emu-grammar>
+          <emu-alg>
+            1. <del>Return ModuleRequests of |FromClause|.</del>
+            1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
+            1. <ins>Let _importedNames_ be ImportedNames of |ImportClause|.</ins>
+            1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~evaluation~, [[ImportedNames]]: _importedNames_ }.</ins>
+          </emu-alg>
+          <emu-grammar>
+            <ins>ImportDeclaration : `import` `defer` ImportClause FromClause `;`</ins>
+          </emu-grammar>
+          <emu-alg>
+            1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
+            1. <ins>Let _importedNames_ be ImportedNames of |ImportClause|.</ins>
+            1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~defer~, [[ImportedNames]]: _importedNames_ }.</ins>
+          </emu-alg>
+          <emu-grammar><del>ModuleSpecifier : StringLiteral</del></emu-grammar>
+          <emu-alg>
+            1. <del>Return a List whose sole element is the SV of |StringLiteral|.</del>
+          </emu-alg>
+          <emu-grammar>
+            ExportDeclaration : `export` ExportFromClause FromClause `;`
+          </emu-grammar>
+          <emu-alg>
+            1. <del>Return ModuleRequests of |FromClause|.</del>
+            1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
+            1. <ins>Let _importedNames_ be ImportedNames of |ExportFromClause|.</ins>
+            1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~evaluation~, [[ImportedNames]]: _importedNames_ }.</ins>
+          </emu-alg>
+          <emu-grammar>
+            <ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins>
+          </emu-grammar>
+          <emu-alg>
+            1. <ins>Assert: |ExportFromClause| matches |NamedNamespaceExport|.</ins>
+            1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
+            1. <ins>Let _importedNames_ be ImportedNames of |ExportFromClause|.</ins>
+            1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~defer~, [[ImportedNames]]: _importedNames_ }.</ins>
+          </emu-alg>
+          <emu-grammar>
+            ExportDeclaration :
+              `export` `optional` `defer`? ExportFromClause FromClause `;`
+              `export` NamedExports `;`
+              `export` VariableStatement
+              `export` Declaration
+              `export` `default` HoistableDeclaration
+              `export` `default` ClassDeclaration
+              `export` `default` AssignmentExpression `;`
+          </emu-grammar>
+          <emu-alg>
+            1. Return a new empty List.
+          </emu-alg>
+        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-cyclic-module-records" number="5">
@@ -1255,7 +1280,7 @@ contributors: Nicolò Ribaudo
               1. Assert: _module_.[[State]] is ~evaluating~ if and only if _stack_ contains _module_.
               1. Let _moduleRequests_ be GetModuleRequestsOptionalIndirectExports(_module_, _importedNames_).
               1. For each ModuleRequest Record _request_ of _moduleRequests_, do
-                1. Set _index_ to ? EvaluateDependency(_module_, _request_.[[Specifier]], _stack_, _index_, _request_.[[ImportedNames]]).
+                1. Set _index_ to ? EvaluateDependency(_module_, _stack_, _index_, _request_.[[ImportedNames]]).
               1. Return _index_.
             </emu-alg>
           </emu-clause>
@@ -2000,6 +2025,55 @@ contributors: Nicolò Ribaudo
         </emu-clause>
       </emu-clause>
 
+      <emu-clause id="sec-source-text-module-records">
+        <h1>Source Text Module Records</h1>
+
+        <emu-clause id="sec-parsemodule" type="abstract operation">
+          <h1>
+            ParseModule (
+              _sourceText_: ECMAScript source text,
+              _realm_: a Realm Record,
+              _hostDefined_: anything,
+            ): a Source Text Module Record or a non-empty List of *SyntaxError* objects
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It creates a Source Text Module Record based upon the result of parsing _sourceText_ as a |Module|.</dd>
+          </dl>
+          <emu-alg>
+            1. Let _body_ be ParseText(_sourceText_, |Module|).
+            1. If _body_ is a List of errors, return _body_.
+            1. Let _requestedModules_ be the ModuleRequests of _body_.
+            1. Let _importEntries_ be ImportEntries of _body_.
+            1. Let _importedBoundNames_ be ImportedLocalNames(_importEntries_).
+            1. Let _indirectExportEntries_ be a new empty List.
+            1. Let _localExportEntries_ be a new empty List.
+            1. Let _starExportEntries_ be a new empty List.
+            1. Let _exportEntries_ be ExportEntries of _body_.
+            1. <ins>Let _optionalIndirectExports_ be OptionalIndirectExportEntries of _body_.</ins>
+            1. For each ExportEntry Record _ee_ of _exportEntries_, do
+              1. If _ee_.[[ModuleRequest]] is *null*, then
+                1. If _importedBoundNames_ does not contain _ee_.[[LocalName]], then
+                  1. Append _ee_ to _localExportEntries_.
+                1. Else,
+                  1. Let _ie_ be the element of _importEntries_ whose [[LocalName]] is _ee_.[[LocalName]].
+                  1. If _ie_.[[ImportName]] is ~namespace-object~, then
+                    1. NOTE: This is a re-export of an imported module namespace object.
+                    1. Append _ee_ to _localExportEntries_.
+                  1. Else,
+                    1. NOTE: This is a re-export of a single name.
+                    1. Append the ExportEntry Record { [[ModuleRequest]]: _ie_.[[ModuleRequest]], [[ImportName]]: _ie_.[[ImportName]], [[LocalName]]: *null*, [[ExportName]]: _ee_.[[ExportName]] } to _indirectExportEntries_.
+              1. Else if _ee_.[[ImportName]] is ~all-but-default~, then
+                1. Assert: _ee_.[[ExportName]] is *null*.
+                1. Append _ee_ to _starExportEntries_.
+              1. Else,
+                1. Append _ee_ to _indirectExportEntries_.
+            1. Let _async_ be _body_ Contains `await`.
+            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluation]]: *false*, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, <ins>[[OptionalIndirectExports]]: _optionalIndirectExports_</ins>, [[DFSIndex]]: ~empty~, [[DFSAncestorIndex]]: ~empty~ }.
+          </emu-alg>
+        </emu-clause>
+      </emu-clause>
+
       <emu-clause id="sec-FinishLoadingImportedModule" type="abstract operation" oldids="sec-finishdynamicimport" number="9">
         <h1>
           FinishLoadingImportedModule (
@@ -2124,6 +2198,70 @@ contributors: Nicolò Ribaudo
           1. Return a new empty List.
         </emu-alg>
       </emu-clause>
+
+      <emu-clause id="sec-static-semantics-importednames" type="sdo">
+        <h1>Static Semantics: ImportedNames ( ): ~all~ or a List of Strings</h1>
+        <dl class="header">
+        </dl>
+        <emu-grammar>ImportClause : ImportedDefaultBinding</emu-grammar>
+        <emu-alg>
+          1. Return « *"default"* ».
+        </emu-alg>
+        <emu-grammar>
+          ImportClause :
+            NameSpaceImport
+            ImportedDefaultBinding `,` NameSpaceImport
+
+          ExportFromClause :
+            NamedNamespaceExport
+        </emu-grammar>
+        <emu-alg>
+          1. Return ~all~.
+        </emu-alg>
+        <emu-grammar>ExportFromClause : `*`</emu-grammar>
+        <emu-alg>
+          1. Return ~all~. TODO: It should be ~all-but-default~.
+        </emu-alg>
+        <emu-grammar>ImportClause : ImportedDefaultBinding, NamedImports</emu-grammar>
+        <emu-alg>
+          1. Let _additionalNames_ be ImportNames of |NamedImports|.
+          1. Return MergeImportNames(« *"default"* », _additionalNames_).
+        </emu-alg>
+        <emu-grammar>
+          NamedImports : `{` `}`
+          NamedExport : `{` `}`
+        </emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ImportsList : ImportsList `,` ImportSpecifier</emu-grammar>
+        <emu-alg>
+          1. Let _names_ be ImportedNames of |ImportsList|.
+          1. Let _additionalNames_ be ImportNames of |ImportSpecifier|.
+          1. Return MergeImportNames(_names_, _additionalames_).
+        </emu-alg>
+        <emu-grammar>ExportsList : ExportsList `,` ExportSpecifier</emu-grammar>
+        <emu-alg>
+          1. Let _names_ be ImportedNames of |ExportsList|.
+          1. Let _additionalNames_ be ImportNames of |ExportSpecifier|.
+          1. Return MergeImportNames(_names_, _additionalames_).
+        </emu-alg>
+        <emu-grammar>ImportSpecifier : ImportedBinding</emu-grammar>
+        <emu-alg>
+          1. Return a new List whose only element is the StringValue of |ImportedBinding|.
+        </emu-alg>
+        <emu-grammar>
+          ImportSpecifier :
+            ModuleExportName `as` ImportedBinding
+
+          ExportSpecifier :
+            ModuleExportName
+            ModuleExportName `as` ModuleExportName
+        </emu-grammar>
+        <emu-alg>
+          1. Return a new List whose only element is the StringValue of the first |ModuleExportName|.
+        </emu-alg>
+      </emu-clause>
     </emu-clause>
 
     <emu-clause id="sec-exports">
@@ -2132,7 +2270,7 @@ contributors: Nicolò Ribaudo
       <h2>Syntax</h2>
       <emu-grammar type="definition">
         ExportDeclaration :
-          `export` <ins>`defer`?</ins> ExportFromClause FromClause `;`
+          `export` <ins>`optional`?</ins> <ins>`defer`?</ins> ExportFromClause FromClause `;`
           `export` NamedExports `;`
           `export` VariableStatement[~Yield, +Await]
           `export` Declaration[~Yield, +Await]
@@ -2179,10 +2317,22 @@ contributors: Nicolò Ribaudo
         <emu-note>
           <p>The above rule means that each ReferencedBindings of |NamedExports| is treated as an |IdentifierReference|.</p>
         </emu-note>
+        <emu-grammar><ins>ExportDeclaration : `export` `optional` ExportFromClause FromClause `;`</ins></emu-grammar>
+        <ul>
+          <li>
+            <ins>It is a Syntax Error if |ExportFromClause| is not |NamedExports|.</ins>
+          </li>
+        </ul>
         <emu-grammar><ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins></emu-grammar>
         <ul>
           <li>
-            <ins>It is a Synta Error if |ExportFromClause| is not |NamedNamespaceExport|.</ins>
+            <ins>It is a Syntax Error if |ExportFromClause| is not |NamedNamespaceExport|.</ins>
+          </li>
+        </ul>
+        <emu-grammar><ins>ExportDeclaration : `export` `optional` `defer` ExportFromClause FromClause `;`</ins></emu-grammar>
+        <ul>
+          <li>
+            <ins>This production is always a Syntax Error. (TODO: Support it)</ins>
           </li>
         </ul>
       </emu-clause>
@@ -2212,7 +2362,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` <ins>`defer`?</ins> ExportFromClause FromClause `;`</emu-grammar>
+        <emu-grammar>ExportDeclaration : `export` <ins>`optional`?</ins> <ins>`defer`?</ins> ExportFromClause FromClause `;`</emu-grammar>
         <emu-alg>
           1. Return the ExportedNames of |ExportFromClause|.
         </emu-alg>
@@ -2287,7 +2437,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` `defer`? ExportFromClause FromClause `;`</emu-grammar>
+        <emu-grammar>ExportDeclaration : `export` <ins>`optional`?</ins> <ins>`defer`?</ins> ExportFromClause FromClause `;`</emu-grammar>
         <emu-alg>
           1. Let _module_ be <del>the sole element of ModuleRequests</del><ins>SV</ins> of |FromClause|.
           1. Return ExportEntriesForModule of |ExportFromClause| with argument _module_.
@@ -2332,6 +2482,45 @@ contributors: Nicolò Ribaudo
         <emu-note>
           <p>*"\*default\*"* is used within this specification as a synthetic name for anonymous default export values. See <emu-xref href="#note-star-default-star">this note</emu-xref> for more details.</p>
         </emu-note>
+      </emu-clause>
+
+      <emu-clause id="sec-static-semantics-optionalindirectexportentries" type="sdo" number="4">
+        <h1>
+          <ins>Static Semantics: OptionalIndirectExportEntries ( ): a List of ExportEntry Records</ins>
+        </h1>
+        <dl class="header">
+        </dl>
+        <emu-grammar>Module : [empty]</emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
+        <emu-alg>
+          1. Let _entries1_ be OptionalIndirectExportEntries of |ModuleItemList|.
+          1. Let _entries2_ be OptionalIndirectExportEntries of |ModuleItem|.
+          1. Return the list-concatenation of _entries1_ and _entries2_.
+        </emu-alg>
+        <emu-grammar>
+          ModuleItem :
+            ImportDeclaration
+            StatementListItem
+
+          ExportDeclaration :
+            `export` `defer`? ExportFromClause FromClause `;`
+            `export` NamedExports `;`
+            `export` VariableStatement
+            `export` Declaration
+            `export` `default` HoistableDeclaration
+            `export` `default` ClassDeclaration
+            `export` `default` AssignmentExpression `;`
+        </emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` `optional` `defer`? ExportFromClause FromClause `;`</emu-grammar>
+        <emu-alg>
+          1. Return ExportEntries of |ExportDeclaration|.
+        </emu-alg>
       </emu-clause>
     </emu-clause>
   </emu-clause>
