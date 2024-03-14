@@ -256,7 +256,7 @@ contributors: Nicolò Ribaudo
               1. Return ~UNUSED~.
             1. Let _onRejected_ be CreateBuiltinFunction(_rejectedClosure_, 1, *""*, &laquo; &raquo;).
             1. Let _linkAndEvaluateClosure_ be a new Abstract Closure with no parameters that captures _module_, _promiseCapability_, <ins>_phase_</ins> and _onRejected_ and performs the following steps when called:
-              1. Let _link_ be Completion(_module_.Link()).
+              1. Let _link_ be Completion(_module_.Link(<ins>~all~</ins>)).
               1. If _link_ is an abrupt completion, then
                 1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _link_.[[Value]] &raquo;).
                 1. Return ~UNUSED~.
@@ -900,7 +900,11 @@ contributors: Nicolò Ribaudo
         </emu-clause>
 
         <emu-clause id="sec-moduledeclarationlinking" type="concrete method" oldids="sec-moduledeclarationinstantiation">
-          <h1>Link ( ): either a normal completion containing ~unused~ or a throw completion</h1>
+          <h1>
+            Link (
+              <ins>_importedNames_: ~all~ or a List of Strings,</ins>
+            ): either a normal completion containing ~unused~ or a throw completion
+          </h1>
           <dl class="header">
             <dt>for</dt>
             <dd>a Cyclic Module Record _module_</dd>
@@ -912,7 +916,7 @@ contributors: Nicolò Ribaudo
           <emu-alg>
             1. Assert: _module_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.
             1. Let _stack_ be a new empty List.
-            1. Let _result_ be Completion(InnerModuleLinking(_module_, _stack_, 0)).
+            1. Let _result_ be Completion(InnerModuleLinking(_module_, _stack_, 0, <ins>_importedNames_</ins>)).
             1. If _result_ is an abrupt completion, then
               1. For each Cyclic Module Record _m_ of _stack_, do
                 1. Assert: _m_.[[Status]] is ~linking~.
@@ -930,6 +934,7 @@ contributors: Nicolò Ribaudo
                 _module_: a Module Record,
                 _stack_: a List of Cyclic Module Records,
                 _index_: a non-negative integer,
+                <ins>_importedNames_: ~all~ or a List of Strings,</ins>
               ): either a normal completion containing a non-negative integer or a throw completion
             </h1>
             <dl class="header">
@@ -942,7 +947,8 @@ contributors: Nicolò Ribaudo
                 1. Perform ? _module_.Link().
                 1. Return _index_.
               1. If _module_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~, then
-                1. Return _index_.
+                1. <del>Return _index_.</del>
+                1. <ins>Return ? LinkOptionalIndirectExports(_module_, _stack_, _index_, _importedNames_).</ins>
               1. Assert: _module_.[[Status]] is ~unlinked~.
               1. Set _module_.[[Status]] to ~linking~.
               1. Set _module_.[[DFSIndex]] to _index_.
@@ -951,13 +957,14 @@ contributors: Nicolò Ribaudo
               1. Append _module_ to _stack_.
               1. <del>For each String _required_ of _module_.[[RequestedModules]], do</del>
               1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
-                1. Let _requiredModule_ be GetImportedModule(_module_, _required_<ins>.[[Specifier]]</ins>).
-                1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
-                1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
-                  1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
-                  1. If _requiredModule_.[[Status]] is ~linking~, then
-                    1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+                1. <del>Let _requiredModule_ be GetImportedModule(_module_, _required_).</del>
+                1. <del>Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).</del>
+                1. <del>If _requiredModule_ is a Cyclic Module Record, then</del>
+                  1. <del>Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.</del>
+                  1. <del>Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.</del>
+                  1. <del>If _requiredModule_.[[Status]] is ~linking~, then</del>
+                    1. <del>Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).</del>
+                1. <ins>Set _index_ to ? LinkDependency(_module_, _required_.[[Specifier]], _stack_, _index_, _required_.[[ImportedNames]]).</ins>
               1. Perform ? _module_.InitializeEnvironment().
               1. Assert: _module_ occurs exactly once in _stack_.
               1. Assert: _module_.[[DFSAncestorIndex]] ≤ _module_.[[DFSIndex]].
@@ -969,6 +976,65 @@ contributors: Nicolò Ribaudo
                   1. Assert: _requiredModule_ is a Cyclic Module Record.
                   1. Set _requiredModule_.[[Status]] to ~linked~.
                   1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
+              1. <del>Return _index_.</del>
+              1. <ins>Return ? LinkOptionalIndirectExports(_module_, _stack_, _index_, _importedNames_).</ins>
+            </emu-alg>
+          </emu-clause>
+
+          <emu-clause id="sec-LinkDependency" type="abstract operation">
+            <h1>
+              <ins>
+                LinkDependency (
+                  _referrer_: a Cyclic Module Record,
+                  _specifier_: a String,
+                  _stack_: a List of Cyclic Module Records,
+                  _index_: a non-negative integer,
+                  _importedNames_: ~all~ or a List of Strings,
+                ): either a normal completion containing a non-negative integer or a throw completion
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd></dd>
+            </dl>
+
+            <emu-alg>
+              1. Let _requiredModule_ be GetImportedModule(_referrer_, _specifier_).
+              1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
+              1. If _requiredModule_ is a Cyclic Module Record, then
+                1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
+                1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
+                1. If _requiredModule_.[[Status]] is ~linking~, then
+                  1. Set _referrer_.[[DFSAncestorIndex]] to min(_referrer_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+              1. Return _index_.
+            </emu-alg>
+          </emu-clause>
+
+          <emu-clause id="sec-LinkOptionalIndirectExports" type="abstract operation">
+            <h1>
+              <ins>
+                LinkOptionalIndirectExports (
+                  _module_: a Cyclic Module Record,
+                  _stack_: a List of Cyclic Module Records,
+                  _index_: a non-negative integer,
+                  _importedNames_: ~all~ or a List of Strings,
+                ): either a normal completion containing a non-negative integer or a throw completion
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd></dd>
+            </dl>
+
+            <emu-alg>
+              1. Assert: _module_.[[State]] is one of ~linking~, ~linked~, ~evaluating~, ~evaluating-async~, ~evaluated~.
+              1. Assert: _module_.[[State]] is ~linking~ if and only if _stack_ contains _module_.
+              1. Let _requestedSpecifiers_ be a new empy List.
+              1. For each Record { [[ExportName]], [[Specifier]] } _oie_ of _module_.[[OptionalIndirectExports]], do
+                1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], and _requestedSpecifiers_ does not contain _oie_.[[Specifier]], then
+                  1. Append _oie_.[[Specifier]] to _requestedSpecifiers_.
+              1. For each element _specifier_ of _requestedSpecifiers_, do
+                1. Set _index_ to ? LinkDependency(_module_, _specifier_, _stack_, _index_, TODO imported names).
               1. Return _index_.
             </emu-alg>
           </emu-clause>
