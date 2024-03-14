@@ -400,11 +400,12 @@ contributors: Nicolò Ribaudo
                 1. Let _specifier_ be _oie_.[[ModuleRequest]].[[Specifier]].
                 1. Let _phase_ be _oie_.[[ModuleRequest]].[[Phase]].
                 1. Let _existingRequest_ be ~empty~.
-                1. For each _r_ in _requests_, do
+                1. For each ModuleRequest Record _r_ in _requests_, do
                   1. If _existingRequest_ is ~empty~ and _r_.[[Specifier]] is _specifier_ and _r_.[[Phase]] is _phase_, then
                     1. Set _existingRequest_ to _r_.
                 1. Let _newImportedNames_ be ~all~.
-                1. If _oie_.[[ImportName]] is a String, then set _newImportedNames_ to « _oie_.[[ImportName]] ».
+                1. Assert: _oie_.[[ImportName]] is a String or ~all~.
+                1. If _oie_.[[ImportName]] is a String, set _newImportedNames_ to « _oie_.[[ImportName]] ».
                 1. If _existingRequest_ is ~empty~, then
                   1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: _phase_, [[ImportedNames]]: _newImportedNames_ }.
                   1. Append _request_ to _requests_.
@@ -1058,7 +1059,7 @@ contributors: Nicolò Ribaudo
 
             <emu-alg>
               1. Let _requiredModule_ be GetImportedModule(_referrer_, _specifier_).
-              1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
+              1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_, _importedNames_).
               1. If _requiredModule_ is a Cyclic Module Record, then
                 1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
                 1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
@@ -1160,10 +1161,12 @@ contributors: Nicolò Ribaudo
                 1. <ins>Perform ? EvaluateSync(_module_).</ins>
                 1. Return _index_.
               1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
-                1. If _module_.[[EvaluationError]] is ~empty~, then <del>return _index_.</del>
+                1. If _module_.[[EvaluationError]] is ~empty~, then
+                  1. <del>Return _index_.</del>
                   1. <ins>Return ? EvaluateOptionalIndirectExports(_module_, _stack_, _index_, _importedNames_).</ins>
                 1. Otherwise, return ? _module_.[[EvaluationError]].
-              1. If _module_.[[Status]] is ~evaluating~, then <del>return _index_.</del>
+              1. If _module_.[[Status]] is ~evaluating~, then
+                1. <del>Return _index_.</del>
                 1. <ins>Return ? EvaluateOptionalIndirectExports(_module_, _stack_, _index_, _importedNames_).</ins>
               1. Assert: _module_.[[Status]] is ~linked~.
               1. Set _module_.[[Status]] to ~evaluating~.
@@ -2226,11 +2229,11 @@ contributors: Nicolò Ribaudo
         <emu-grammar>ImportClause : ImportedDefaultBinding, NamedImports</emu-grammar>
         <emu-alg>
           1. Let _additionalNames_ be ImportNames of |NamedImports|.
-          1. Return MergeImportNames(« *"default"* », _additionalNames_).
+          1. Return MergeImportedNames(« *"default"* », _additionalNames_).
         </emu-alg>
         <emu-grammar>
           NamedImports : `{` `}`
-          NamedExport : `{` `}`
+          NamedExports : `{` `}`
         </emu-grammar>
         <emu-alg>
           1. Return a new empty List.
@@ -2239,13 +2242,13 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Let _names_ be ImportedNames of |ImportsList|.
           1. Let _additionalNames_ be ImportNames of |ImportSpecifier|.
-          1. Return MergeImportNames(_names_, _additionalames_).
+          1. Return MergeImportedNames(_names_, _additionalNames_).
         </emu-alg>
         <emu-grammar>ExportsList : ExportsList `,` ExportSpecifier</emu-grammar>
         <emu-alg>
           1. Let _names_ be ImportedNames of |ExportsList|.
           1. Let _additionalNames_ be ImportNames of |ExportSpecifier|.
-          1. Return MergeImportNames(_names_, _additionalames_).
+          1. Return MergeImportedNames(_names_, _additionalNames_).
         </emu-alg>
         <emu-grammar>ImportSpecifier : ImportedBinding</emu-grammar>
         <emu-alg>
@@ -2479,9 +2482,11 @@ contributors: Nicolò Ribaudo
         </emu-note>
       </emu-clause>
 
-      <emu-clause id="sec-static-semantics-optionalindirectexportentries" type="sdo" number="4">
+      <emu-clause id="sec-static-semantics-optionalindirectexportentries" type="sdo">
         <h1>
-          <ins>Static Semantics: OptionalIndirectExportEntries ( ): a List of ExportEntry Records</ins>
+          <ins>
+            Static Semantics: OptionalIndirectExportEntries ( ): a List of ExportEntry Records
+          </ins>
         </h1>
         <dl class="header">
         </dl>
