@@ -250,7 +250,7 @@ contributors: Nicolò Ribaudo
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _moduleCompletion_.[[Value]] &raquo;).
               1. Return ~UNUSED~.
             1. Let _module_ be _moduleCompletion_.[[Value]].
-            1. Let _loadPromise_ be _module_.LoadRequestedModules().
+            1. Let _loadPromise_ be _module_.LoadRequestedModules(<ins>~all~</ins>).
             1. Let _rejectedClosure_ be a new Abstract Closure with parameters (_reason_) that captures _promiseCapability_ and performs the following steps when called:
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _reason_ &raquo;).
               1. Return ~UNUSED~.
@@ -360,6 +360,17 @@ contributors: Nicolò Ribaudo
                 </td>
                 <td>
                   The target import phase
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  [[ImportedNames]]
+                </td>
+                <td>
+                  ~all~ or a List of Strings
+                </td>
+                <td>
+                  The names of the bindings requested from this module.
                 </td>
               </tr>
             </tbody>
@@ -526,6 +537,17 @@ contributors: Nicolò Ribaudo
             </tr>
             <tr>
               <td>
+                <ins>[[OptionalIndirectExports]]</ins>
+              </td>
+              <td>
+                <ins>a List of ExportEntry Records whose [[LocalName]] is *null*.</ins>
+              </td>
+              <td>
+                <ins>A list of all the bindings re-exported through `export defer { ... } from "..."`. The List is in source text occurrence order.</ins>
+              </td>
+            </tr>
+            <tr>
+              <td>
                 [[LoadedModules]]
               </td>
               <td>
@@ -682,6 +704,17 @@ contributors: Nicolò Ribaudo
             </tr>
             <tr>
               <td>
+                <ins>[[ContinuationData]]</ins>
+              </td>
+              <td>
+                <ins>a List of Records with fields [[Referrer]] (a Cyclic Module Record), [[Specifier]] (a String), and [[ImportedNames]] (~all~ or a List of Strings)</ins>
+              </td>
+              <td>
+                <ins>It stores data to be used for ContinueModuleLoading calls by FinishLoadingImportedModule.</ins>
+              </td>
+            </tr>
+            <tr>
+              <td>
                 [[Visited]]
               </td>
               <td>
@@ -708,6 +741,7 @@ contributors: Nicolò Ribaudo
         <emu-clause id="sec-LoadRequestedModules" type="concrete method">
           <h1>
             LoadRequestedModules (
+              <ins>_importedNames_: ~all~ or a List of Strings,</ins>
               optional _hostDefined_: anything,
             ): a Promise
           </h1>
@@ -723,7 +757,7 @@ contributors: Nicolò Ribaudo
             1. If _hostDefined_ is not present, let _hostDefined_ be ~empty~.
             1. Let _pc_ be ! NewPromiseCapability(%Promise%).
             1. Let _state_ be the GraphLoadingState Record { [[IsLoading]]: *true*, [[PendingModulesCount]]: 1, [[Visited]]: « », [[PromiseCapability]]: _pc_, [[HostDefined]]: _hostDefined_ }.
-            1. Perform InnerModuleLoading(_state_, _module_).
+            1. Perform InnerModuleLoading(_state_, _module_, <ins>_importedNames_</ins>).
             1. Return _pc_.[[Promise]].
           </emu-alg>
 
@@ -732,11 +766,16 @@ contributors: Nicolò Ribaudo
             <code>import()</code> expressions never set the _hostDefined_ parameter.
           </emu-note>
 
+          <emu-note>
+            <ins>When the exports of the module are not observed, such as in <code>&lt;script type="module" src="./file.js"&gt;</code> tags, the host should set the _importedNames_ parameter to « ».</ins>
+          </emu-note>
+
           <emu-clause id="sec-InnerModuleLoading" type="abstract operation">
             <h1>
               InnerModuleLoading (
                 _state_: a GraphLoadingState Record,
                 _module_: a Module Record,
+                <ins>_importedNames_: ~all~ or a List of Strings,</ins>
               ): ~unused~
             </h1>
             <dl class="header">
@@ -752,14 +791,17 @@ contributors: Nicolò Ribaudo
                 1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] + _requestedModulesCount_.
                 1. <del>For each String _required_ of _module_.[[RequestedModules]], do</del>
                 1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
-                  1. <ins>Let _specifier_ be _required_.[[Specifier]].</ins>
-                  1. If _module_.[[LoadedModules]] contains a Record whose [[Specifier]] is <del>_required_</del><ins>_specifier_</ins>, then
-                    1. Let _record_ be that Record.
-                    1. Perform InnerModuleLoading(_state_, _record_.[[Module]]).
-                  1. Else,
-                    1. Perform HostLoadImportedModule(_module_, <del>_required_</del><ins>_specifier_</ins>, _state_.[[HostDefined]], _state_).
-                    1. NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.
+                  1. <del>If _module_.[[LoadedModules]] contains a Record whose [[Specifier]] is _required_, then</del>
+                    1. <del>Let _record_ be that Record.</del>
+                    1. <del>Perform InnerModuleLoading(_state_, _record_.[[Module]]).</del>
+                  1. <del>Else,</del>
+                    1. <del>Perform HostLoadImportedModule(_module_, _required_, _state_.[[HostDefined]], _state_).</del>
+                    1. <del>NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.</del>
+                  1. <ins>Perform LoadDependency(_state_, _module_, _required_.[[Specifier]], _required_.[[ImportedNames]]).</ins>
                   1. If _state_.[[IsLoading]] is *false*, return ~unused~.
+              1. <ins>If _module_ is a Cyclic Module Record, then</ins>
+                1. <ins>Perform LoadOptionalIndirectExports(_state_, _module_, _importedNames_).</ins>
+                1. <ins>If _state_.[[IsLoading]] is *false*, return ~unused~.</ins>
               1. Assert: _state_.[[PendingModulesCount]] ≥ 1.
               1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] - 1.
               1. If _state_.[[PendingModulesCount]] = 0, then
@@ -769,6 +811,67 @@ contributors: Nicolò Ribaudo
                 1. Perform ! Call(_state_.[[PromiseCapability]].[[Resolve]], *undefined*, « *undefined* »).
               1. Return ~unused~.
             </emu-alg>
+
+            <emu-note type="editor">
+              Handle the case where a module has already been loaded, and later we need to load one of its optional re-exports.
+            </emu-note>
+          </emu-clause>
+
+          <emu-clause id="sec-LoadDependency" type="abstract operation">
+            <h1>
+              <ins>
+                LoadDependency (
+                  _state_: a GraphLoadingState Record,
+                  _module_: a Cyclic Module Record,
+                  _specifier_: a String,
+                  _importedNames_: ~all~ or a List of Strings,
+                ): ~unused~
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd></dd>
+            </dl>
+
+            <emu-alg>
+              1. Assert: _state_.[[IsLoading]] is *true*.
+              1. If _module_.[[LoadedModules]] contains a Record whose [[Specifier]] is _specifier_, then
+                1. Let _record_ be that Record.
+                1. Perform InnerModuleLoading(_state_, _record_.[[Module]], _importedNames_).
+              1. Else,
+                1. Append the Record { [[Referrer]]: _module_, [[Specifier]]: _specifier_, [[ImportedNames]]: _importedNames_ } to _state_.[[ContinuationData]].
+                1. Perform HostLoadImportedModule(_module_, _specifier_, _state_.[[HostDefined]], _state_).
+                1. NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.
+            </emu-alg>
+          </emu-clause>
+
+          <emu-clause id="sec-LoadOptionalIndirectExports" type="abstract operation">
+            <h1>
+              <ins>
+                LoadOptionalIndirectExports (
+                  _state_: a GraphLoadingState Record,
+                  _module_: a Module Record,
+                  _importedNames_: ~all~ or a List of Strings,
+                ): ~unused~
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd></dd>
+            </dl>
+
+            <emu-alg>
+              1. Assert: _state_.[[IsLoading]] is *true*.
+              1. If _module_ is not a Cyclic Module Record, return ~unused~.
+              1. Let _requestedSpecifiers_ be a new empy List.
+              1. For each Record { [[ExportName]], [[Specifier]] } _oie_ of _module_.[[OptionalIndirectExports]], do
+                1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], and _requestedSpecifiers_ does not contain _oie_.[[Specifier]], then
+                  1. Append _oie_.[[Specifier]] to _requestedSpecifiers_.
+              1. For each element _specifier_ of _requestedSpecifiers_, do
+                1. Perform LoadDependency(_state_, _module_, _specifier_, TODO imported names).
+                1. If _state_.[[IsLoading]] is *false*, return ~unused~.
+              1. Return ~unused~.
+            </emu-alg>
           </emu-clause>
 
           <emu-clause id="sec-ContinueModuleLoading" type="abstract operation">
@@ -776,6 +879,7 @@ contributors: Nicolò Ribaudo
               ContinueModuleLoading (
                 _state_: a GraphLoadingState Record,
                 _moduleCompletion_: either a normal completion containing a Module Record or a throw completion,
+                <ins>_importedNames_: ~all~ or a List of Strings,</ins>
               ): ~unused~
             </h1>
             <dl class="header">
@@ -786,7 +890,7 @@ contributors: Nicolò Ribaudo
             <emu-alg>
               1. If _state_.[[IsLoading]] is *false*, return ~unused~.
               1. If _moduleCompletion_ is a normal completion, then
-                1. Perform InnerModuleLoading(_state_, _moduleCompletion_.[[Value]]).
+                1. Perform InnerModuleLoading(_state_, _moduleCompletion_.[[Value]], <ins>_importedNames_</ins>).
               1. Else,
                 1. Set _state_.[[IsLoading]] to *false*.
                 1. Perform ! Call(_state_.[[PromiseCapability]].[[Reject]], *undefined*, « _moduleCompletion_.[[Value]] »).
@@ -1704,6 +1808,36 @@ contributors: Nicolò Ribaudo
           </emu-clause>
         </emu-clause>
       </emu-clause>
+
+      <emu-clause id="sec-FinishLoadingImportedModule" type="abstract operation" oldids="sec-finishdynamicimport" number="9">
+        <h1>
+          FinishLoadingImportedModule (
+            _referrer_: a Script Record, a Cyclic Module Record, or a Realm Record,
+            _specifier_: a String,
+            _payload_: a GraphLoadingState Record or a PromiseCapability Record,
+            _result_: either a normal completion containing a Module Record or a throw completion,
+          ): ~unused~
+        </h1>
+        <dl class="header">
+          <dt>description</dt>
+          <dd></dd>
+        </dl>
+        <emu-alg>
+          1. If _result_ is a normal completion, then
+            1. If _referrer_.[[LoadedModules]] contains a Record whose [[Specifier]] is _specifier_, then
+              1. Assert: That Record's [[Module]] is _result_.[[Value]].
+            1. Else,
+              1. Append the Record { [[Specifier]]: _specifier_, [[Module]]: _result_.[[Value]] } to _referrer_.[[LoadedModules]].
+          1. If _payload_ is a GraphLoadingState Record, then
+            1. <ins>Assert: _payload_.[[ContinuationData]] contains a Record whose [[Referrer]] is _referrer_ and [[Specifier]] is _specifier_.</ins>
+            1. <ins>Let _pending_ be the first Record in _payload_.[[ContinuationData]] whose [[Referrer]] is _referrer_ and [[Specifier]] is _specifier_.</ins>
+            1. <ins>Remove _pending_ from _payload_.[[ContinuationData]].</ins>
+            1. Perform ContinueModuleLoading(_payload_, _result_, <ins>_pending_.[[ImportedNames]]</ins>).
+          1. Else,
+            1. Perform ContinueDynamicImport(_payload_, _result_).
+          1. Return ~unused~.
+        </emu-alg>
+      </emu-clause>
     </emu-clause>
 
     <emu-clause id="sec-imports">
@@ -1857,7 +1991,7 @@ contributors: Nicolò Ribaudo
         <emu-grammar><ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins></emu-grammar>
         <ul>
           <li>
-            <ins>It is a Synta Error if |ExportFromClause| is not |NamedNamespaceExport|.</ins>
+            <ins>It is a Syntax Error if |ExportFromClause| is `*` or |NamedNamespaceExport|.</ins>
           </li>
         </ul>
       </emu-clause>
