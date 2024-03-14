@@ -378,6 +378,40 @@ contributors: Nicolò Ribaudo
         </emu-table>
 
         <emu-note type="editor">In general, this proposal replaces places where module specifiers are passed around with ModuleRequest Records. For example, several syntax-directed operations, such as ModuleRequests produce Lists of ModuleRequest Records rather than Lists of Strings which are interpreted as module specifiers. Some algorithms like ImportEntries and ImportEntriesForModule pass around ModuleRequest Records rather than Strings, in a way which doesn't require any particular textual change. Additionally, record fields in Cyclic Module Records and Source Text Module Records which contained Lists of Strings are replaced by Lists of ModuleRequest Records, as indicated above.</emu-note>
+
+        <emu-clause id="sec-getmodulerequestsforoptionalindirectexports" type="abstract operation">
+          <h1>
+            <ins>
+              GetModuleRequestsOptionalIndirectExports (
+                _module_: a Cyclic Module Record,
+                _importedNames_: ~all~ or a List of Strings,
+              ): a List of ModuleRequest Records
+            </ins>
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd></dd>
+          </dl>
+
+          <emu-alg>
+            1. Let _requests_ be a new empty List.
+            1. For each Record { [[ExportName]], [[Specifier]] } _oie_ of _module_.[[OptionalIndirectExports]], do
+              1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
+                1. Let _existingRequest_ be ~empty~.
+                1. For each _r_ in _requests_, do
+                  1. If _existingRequest_ is ~empty~ and _r_.[[Specifier]] is _oie_.[[Specifier]], then
+                    1. Set _existingRequest_ to _r_.
+                1. If _existingRequest_ is ~empty~, then
+                  1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _oie_.[[Specifier]], [[Phase]]: ~evaluation~, [[ImportedNames]]: ~all~ }.
+                  1. If _oie_.[[ImportName]] is a String, then set _request_.[[ImportedNames]] to « _oie_.[[ImportName]] ».
+                  1. Append _request_ to _requests_.
+                1. Else, if _existingRequest_.[[ImportedNames]] is not ~all~, then
+                  1. Assert: _existingRequest_.[[ImportedNames]] is a List of Strings.
+                  1. If _oie_.[[ImportName]] is ~all~, set _existingRequest_.[[ImportedNames]] to ~all~.
+                  1. Else, append _oie_.[[ImportName]] to _existingRequest_.[[ImportedNames]].
+            1. Return _requests_.
+          </emu-alg>
+        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-static-semantics-modulerequests" type="sdo" number="3">
@@ -863,12 +897,9 @@ contributors: Nicolò Ribaudo
             <emu-alg>
               1. Assert: _state_.[[IsLoading]] is *true*.
               1. If _module_ is not a Cyclic Module Record, return ~unused~.
-              1. Let _requestedSpecifiers_ be a new empy List.
-              1. For each Record { [[ExportName]], [[Specifier]] } _oie_ of _module_.[[OptionalIndirectExports]], do
-                1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], and _requestedSpecifiers_ does not contain _oie_.[[Specifier]], then
-                  1. Append _oie_.[[Specifier]] to _requestedSpecifiers_.
-              1. For each element _specifier_ of _requestedSpecifiers_, do
-                1. Perform LoadDependency(_state_, _module_, _specifier_, TODO imported names).
+              1. Let _moduleRequests_ be GetModuleRequestsOptionalIndirectExports(_module_, _importedNames_).
+              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+                1. Perform LoadDependency(_state_, _module_, _moduleRequests_.[[Specifier]], _moduleRequests_.[[ImportedNames]]).
                 1. If _state_.[[IsLoading]] is *false*, return ~unused~.
               1. Return ~unused~.
             </emu-alg>
@@ -1029,12 +1060,9 @@ contributors: Nicolò Ribaudo
             <emu-alg>
               1. Assert: _module_.[[State]] is one of ~linking~, ~linked~, ~evaluating~, ~evaluating-async~, ~evaluated~.
               1. Assert: _module_.[[State]] is ~linking~ if and only if _stack_ contains _module_.
-              1. Let _requestedSpecifiers_ be a new empy List.
-              1. For each Record { [[ExportName]], [[Specifier]] } _oie_ of _module_.[[OptionalIndirectExports]], do
-                1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], and _requestedSpecifiers_ does not contain _oie_.[[Specifier]], then
-                  1. Append _oie_.[[Specifier]] to _requestedSpecifiers_.
-              1. For each element _specifier_ of _requestedSpecifiers_, do
-                1. Set _index_ to ? LinkDependency(_module_, _specifier_, _stack_, _index_, TODO imported names).
+              1. Let _moduleRequests_ be GetModuleRequestsOptionalIndirectExports(_module_, _importedNames_).
+              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+                1. Set _index_ to ? LinkDependency(_module_, _request_.[[Specifier]], _stack_, _index_, _request_.[[ImportedNames]]).
               1. Return _index_.
             </emu-alg>
           </emu-clause>
@@ -1225,12 +1253,9 @@ contributors: Nicolò Ribaudo
             <emu-alg>
               1. Assert: _module_.[[State]] is one of ~evaluating~, ~evaluating-async~, ~evaluated~.
               1. Assert: _module_.[[State]] is ~evaluating~ if and only if _stack_ contains _module_.
-              1. Let _requestedSpecifiers_ be a new empy List.
-              1. For each Record { [[ExportName]], [[Specifier]] } _oie_ of _module_.[[OptionalIndirectExports]], do
-                1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], and _requestedSpecifiers_ does not contain _oie_.[[Specifier]], then
-                  1. Append _oie_.[[Specifier]] to _requestedSpecifiers_.
-              1. For each element _specifier_ of _requestedSpecifiers_, do
-                1. Set _index_ to ? EvaluateDependency(_module_, _specifier_, _stack_, _index_, TODO imported names).
+              1. Let _moduleRequests_ be GetModuleRequestsOptionalIndirectExports(_module_, _importedNames_).
+              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+                1. Set _index_ to ? EvaluateDependency(_module_, _request_.[[Specifier]], _stack_, _index_, _request_.[[ImportedNames]]).
               1. Return _index_.
             </emu-alg>
           </emu-clause>
@@ -1309,13 +1334,10 @@ contributors: Nicolò Ribaudo
             </dl>
 
             <emu-alg>
-              1. Let _requestedSpecifiers_ be a new empy List.
-              1. For each Record { [[ExportName]], [[Specifier]] } _oie_ of _module_.[[OptionalIndirectExports]], do
-                1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], and _requestedSpecifiers_ does not contain _oie_.[[Specifier]], then
-                  1. Append _oie_.[[Specifier]] to _requestedSpecifiers_.
-              1. For each element _specifier_ of _requestedSpecifiers_, do
-                1. Let _requiredModule_ be GetImportedModule(_module_, _specifier_).
-                1. Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _result_, _seen_, TODO imported names).
+              1. Let _moduleRequests_ be GetModuleRequestsOptionalIndirectExports(_module_, _importedNames_).
+              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+                1. Let _requiredModule_ be GetImportedModule(_module_, _request_.[[Specifier]]).
+                1. Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _result_, _seen_, _request_.[[ImportedNames]]).
               1. Return ~unused~.
             </emu-alg>
           </emu-clause>
