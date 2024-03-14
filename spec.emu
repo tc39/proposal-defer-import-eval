@@ -395,16 +395,18 @@ contributors: Nicolò Ribaudo
 
           <emu-alg>
             1. Let _requests_ be a new empty List.
-            1. For each Record { [[ExportName]], [[Specifier]] } _oie_ of _module_.[[OptionalIndirectExports]], do
+            1. For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExports]], do
               1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
+                1. Let _specifier_ be _oie_.[[ModuleRequest]].[[Specifier]].
+                1. Let _phase_ be _oie_.[[ModuleRequest]].[[Phase]].
                 1. Let _existingRequest_ be ~empty~.
                 1. For each _r_ in _requests_, do
-                  1. If _existingRequest_ is ~empty~ and _r_.[[Specifier]] is _oie_.[[Specifier]], then
+                  1. If _existingRequest_ is ~empty~ and _r_.[[Specifier]] is _specifier_ and _r_.[[Phase]] is _phase_, then
                     1. Set _existingRequest_ to _r_.
                 1. Let _newImportedNames_ be ~all~.
                 1. If _oie_.[[ImportName]] is a String, then set _newImportedNames_ to « _oie_.[[ImportName]] ».
                 1. If _existingRequest_ is ~empty~, then
-                  1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _oie_.[[Specifier]], [[Phase]]: ~evaluation~, [[ImportedNames]]: _newImportedNames_ }.
+                  1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: _phase_, [[ImportedNames]]: _newImportedNames_ }.
                   1. Append _request_ to _requests_.
                 1. Else,
                   1. Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _newImportedNames_).
@@ -1169,16 +1171,8 @@ contributors: Nicolò Ribaudo
               1. Set _module_.[[DFSAncestorIndex]] to _index_.
               1. Set _module_.[[PendingAsyncDependencies]] to 0.
               1. Set _index_ to _index_ + 1.
-              1. <ins>Let _evaluationList_ be a new empty List.</ins>
-              1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
-                1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).</ins>
-                1. <ins>If _required_.[[Phase]] is ~defer~, then</ins>
-                  1. <ins>Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _evaluationList_, _required_.[[ImportedNames]]).</ins>
-                1. <ins>Else if _evaluationList_ does not contain _requiredModule_, then</ins>
-                  1. <ins>Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: _required_.[[ImportedNames]] } to _evaluationList_.</ins>
               1. Append _module_ to _stack_.
               1. <del>For each String _required_ of _module_.[[RequestedModules]], do</del>
-              1. <ins>For each Record _required_ of _evaluationList_, do</ins>
                 1. <del>Let _requiredModule_ be GetImportedModule(_module_, _required_).</del>
                 1. <del>Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).</del>
                 1. <del>If _requiredModule_ is a Cyclic Module Record, then</del>
@@ -1193,7 +1187,7 @@ contributors: Nicolò Ribaudo
                   1. <del>If _requiredModule_.[[AsyncEvaluation]] is *true*, then</del>
                     1. <del>Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.</del>
                     1. <del>Append _module_ to _requiredModule_.[[AsyncParentModules]].</del>
-                1. <ins>Set _index_ to ? EvaluateDependency(_required_.[[Module]], _stack_, _index_, _requried_.[[ImportedNames]]).</ins>
+              1. <ins>Set _index_ to ? EvaluateDependenciesList(_module_, _stack_, _index_, _module_.[[ModuleRequests]]).</ins>
               1. If _module_.[[PendingAsyncDependencies]] > 0 or _module_.[[HasTLA]] is *true*, then
                 1. Assert: _module_.[[AsyncEvaluation]] is *false*.
                 1. Set _module_.[[AsyncEvaluation]] to *true*.
@@ -1225,14 +1219,14 @@ contributors: Nicolò Ribaudo
             </emu-note>
           </emu-clause>
 
-          <emu-clause id="sec-EvaluateDependency" type="abstract operation">
+          <emu-clause id="sec-EvaluateDependenciesList" type="abstract operation">
             <h1>
               <ins>
-                EvaluateDependency (
-                  _requiredModule_: a Module Record,
+                EvaluateDependenciesList (
+                  _module_: a Cyclic Module Record,
                   _stack_: a List of Cyclic Module Records,
                   _index_: a non-negative integer,
-                  _importedNames_: ~all~ or a List of Strings,
+                  _moduleRequests_: a List of ModuleRequest Records,
                 ): either a normal completion containing a non-negative integer or a throw completion
               </ins>
             </h1>
@@ -1242,19 +1236,28 @@ contributors: Nicolò Ribaudo
             </dl>
 
             <emu-alg>
-              1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
-              1. If _requiredModule_ is a Cyclic Module Record, then
-                1. Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.
-                1. Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.
-                1. If _requiredModule_.[[Status]] is ~evaluating~, then
-                  1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
-                1. Else,
-                  1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
-                  1. Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
-                  1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
-                1. If _requiredModule_.[[AsyncEvaluation]] is *true*, then
-                  1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
-                  1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
+              1. Let _evaluationList_ be a new empty List.
+              1. For each ModuleRequest Record _required_ of _moduleRequests_, do
+                1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).
+                1. If _required_.[[Phase]] is ~defer~, then
+                  1. Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _evaluationList_, _required_.[[ImportedNames]]).
+                1. Else if _evaluationList_ does not contain _requiredModule_, then
+                  1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: _required_.[[ImportedNames]] } to _evaluationList_.
+              1. For each Record _required_ in _evaluationList_, do
+                1. Let _requiredModule_ be _required_.[[Module]].
+                1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_, _required_.[[ImportedNames]]).
+                1. If _requiredModule_ is a Cyclic Module Record, then
+                  1. Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.
+                  1. Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.
+                  1. If _requiredModule_.[[Status]] is ~evaluating~, then
+                    1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+                  1. Else,
+                    1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
+                    1. Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
+                    1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
+                  1. If _requiredModule_.[[AsyncEvaluation]] is *true*, then
+                    1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
+                    1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
               1. Return _index_.
             </emu-alg>
           </emu-clause>
@@ -1279,9 +1282,7 @@ contributors: Nicolò Ribaudo
               1. Assert: _module_.[[State]] is one of ~evaluating~, ~evaluating-async~, ~evaluated~.
               1. Assert: _module_.[[State]] is ~evaluating~ if and only if _stack_ contains _module_.
               1. Let _moduleRequests_ be GetModuleRequestsOptionalIndirectExports(_module_, _importedNames_).
-              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
-                1. Set _index_ to ? EvaluateDependency(_module_, _stack_, _index_, _request_.[[ImportedNames]]).
-              1. Return _index_.
+              1. Return ? EvaluateDependenciesList(_module_, _stack_, _index_, _moduleRequests_).
             </emu-alg>
           </emu-clause>
 
@@ -2320,19 +2321,13 @@ contributors: Nicolò Ribaudo
         <emu-grammar><ins>ExportDeclaration : `export` `optional` ExportFromClause FromClause `;`</ins></emu-grammar>
         <ul>
           <li>
-            <ins>It is a Syntax Error if |ExportFromClause| is not |NamedExports|.</ins>
+            <ins>It is a Syntax Error if |ExportFromClause| is `*`.</ins>
           </li>
         </ul>
-        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins></emu-grammar>
+        <emu-grammar><ins>ExportDeclaration : `export` `optional`? `defer` ExportFromClause FromClause `;`</ins></emu-grammar>
         <ul>
           <li>
             <ins>It is a Syntax Error if |ExportFromClause| is not |NamedNamespaceExport|.</ins>
-          </li>
-        </ul>
-        <emu-grammar><ins>ExportDeclaration : `export` `optional` `defer` ExportFromClause FromClause `;`</ins></emu-grammar>
-        <ul>
-          <li>
-            <ins>This production is always a Syntax Error. (TODO: Support it)</ins>
           </li>
         </ul>
       </emu-clause>
