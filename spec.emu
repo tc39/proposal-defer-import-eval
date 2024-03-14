@@ -2182,7 +2182,7 @@ contributors: Nicolò Ribaudo
         <emu-grammar><ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins></emu-grammar>
         <ul>
           <li>
-            <ins>It is a Syntax Error if |ExportFromClause| is `*` or |NamedNamespaceExport|.</ins>
+            <ins>It is a Synta Error if |ExportFromClause| is not |NamedNamespaceExport|.</ins>
           </li>
         </ul>
       </emu-clause>
