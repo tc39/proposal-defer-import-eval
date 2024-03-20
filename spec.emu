@@ -77,7 +77,7 @@ contributors: Nicolò Ribaudo
           1. If _exports_ does not contain _P_, return *undefined*.
           1. Let _m_ be _O_.[[Module]].
           1. <ins>If _m_ is not a Cyclic Module Record, or both _m_.[[Status]] is ~linked~ and AnyDependencyNeedsAsyncEvaluation(_m_) is *false*, then</ins>
-            1. <ins>Perform ? EvaluateSync(_m_).</ins>
+            1. <ins>Perform ? EvaluateSync(_m_, « _P_ »).</ins>
           1. Let _binding_ be _m_.ResolveExport(_P_).
           1. Assert: _binding_ is a ResolvedBinding Record.
           1. Let _targetModule_ be _binding_.[[Module]].
@@ -501,17 +501,8 @@ contributors: Nicolò Ribaudo
             1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~evaluation~, [[ImportedNames]]: _importedNames_ }.</ins>
           </emu-alg>
           <emu-grammar>
-            <ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins>
-          </emu-grammar>
-          <emu-alg>
-            1. <ins>Assert: |ExportFromClause| matches |NamedNamespaceExport|.</ins>
-            1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-            1. <ins>Let _importedNames_ be ImportedNames of |ExportFromClause|.</ins>
-            1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~defer~, [[ImportedNames]]: _importedNames_ }.</ins>
-          </emu-alg>
-          <emu-grammar>
             ExportDeclaration :
-              `export` `optional` `defer`? ExportFromClause FromClause `;`
+              <ins>`export` `defer` ExportFromClause FromClause `;`</ins>
               `export` NamedExports `;`
               `export` VariableStatement
               `export` Declaration
@@ -1158,7 +1149,7 @@ contributors: Nicolò Ribaudo
                 1. <del>Assert: _promise_.[[PromiseState]] is not ~pending~.</del>
                 1. <del>If _promise_.[[PromiseState]] is ~rejected~, then</del>
                   1. <del>Return ThrowCompletion(_promise_.[[PromiseResult]]).</del>
-                1. <ins>Perform ? EvaluateSync(_module_).</ins>
+                1. <ins>Perform ? EvaluateSync(_module_, ~all~).</ins>
                 1. Return _index_.
               1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
                 1. If _module_.[[EvaluationError]] is ~empty~, then
@@ -1294,6 +1285,7 @@ contributors: Nicolò Ribaudo
               <ins>
                 EvaluateSync (
                   _module_: a Module Record,
+                  _importedNames_: ~all~ or a List of Strings,
                 ): either a normal completion containing ~unused~ or a throw completion
               </ins>
             </h1>
@@ -1304,7 +1296,7 @@ contributors: Nicolò Ribaudo
 
             <emu-alg>
               1. Assert: If _module_ is a Cyclic Module Record, _module_.[[HasTLA]] is *false* and all its asynchronous transitive dependencies have already been evaluated.
-              1. Let _promise_ be ! _module_.Evaluate(~all~).
+              1. Let _promise_ be ! _module_.Evaluate(_importedNames_).
               1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
               1. If _promise_.[[PromiseState]] is ~rejected~, then
                 1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
@@ -2274,7 +2266,7 @@ contributors: Nicolò Ribaudo
       <h2>Syntax</h2>
       <emu-grammar type="definition">
         ExportDeclaration :
-          `export` <ins>`optional`?</ins> <ins>`defer`?</ins> ExportFromClause FromClause `;`
+          `export` <ins>`defer`?</ins> ExportFromClause FromClause `;`
           `export` NamedExports `;`
           `export` VariableStatement[~Yield, +Await]
           `export` Declaration[~Yield, +Await]
@@ -2321,16 +2313,10 @@ contributors: Nicolò Ribaudo
         <emu-note>
           <p>The above rule means that each ReferencedBindings of |NamedExports| is treated as an |IdentifierReference|.</p>
         </emu-note>
-        <emu-grammar><ins>ExportDeclaration : `export` `optional` ExportFromClause FromClause `;`</ins></emu-grammar>
+        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins></emu-grammar>
         <ul>
           <li>
             <ins>It is a Syntax Error if |ExportFromClause| is `*`.</ins>
-          </li>
-        </ul>
-        <emu-grammar><ins>ExportDeclaration : `export` `optional`? `defer` ExportFromClause FromClause `;`</ins></emu-grammar>
-        <ul>
-          <li>
-            <ins>It is a Syntax Error if |ExportFromClause| is not |NamedNamespaceExport|.</ins>
           </li>
         </ul>
       </emu-clause>
@@ -2360,7 +2346,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` <ins>`optional`?</ins> <ins>`defer`?</ins> ExportFromClause FromClause `;`</emu-grammar>
+        <emu-grammar>ExportDeclaration : `export` <ins>`defer`?</ins> ExportFromClause FromClause `;`</emu-grammar>
         <emu-alg>
           1. Return the ExportedNames of |ExportFromClause|.
         </emu-alg>
@@ -2435,7 +2421,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` <ins>`optional`?</ins> <ins>`defer`?</ins> ExportFromClause FromClause `;`</emu-grammar>
+        <emu-grammar>ExportDeclaration : `export` <ins>`defer`?</ins> ExportFromClause FromClause `;`</emu-grammar>
         <emu-alg>
           1. Let _module_ be <del>the sole element of ModuleRequests</del><ins>SV</ins> of |FromClause|.
           1. Return ExportEntriesForModule of |ExportFromClause| with argument _module_.
@@ -2506,7 +2492,7 @@ contributors: Nicolò Ribaudo
             StatementListItem
 
           ExportDeclaration :
-            `export` `defer`? ExportFromClause FromClause `;`
+            `export` ExportFromClause FromClause `;`
             `export` NamedExports `;`
             `export` VariableStatement
             `export` Declaration
@@ -2517,7 +2503,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` `optional` `defer`? ExportFromClause FromClause `;`</emu-grammar>
+        <emu-grammar>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</emu-grammar>
         <emu-alg>
           1. Return ExportEntries of |ExportDeclaration|.
         </emu-alg>
