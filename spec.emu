@@ -250,13 +250,13 @@ contributors: Nicolò Ribaudo
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _moduleCompletion_.[[Value]] &raquo;).
               1. Return ~UNUSED~.
             1. Let _module_ be _moduleCompletion_.[[Value]].
-            1. Let _loadPromise_ be _module_.LoadRequestedModules().
+            1. Let _loadPromise_ be _module_.LoadRequestedModules(<ins>~all~</ins>).
             1. Let _rejectedClosure_ be a new Abstract Closure with parameters (_reason_) that captures _promiseCapability_ and performs the following steps when called:
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _reason_ &raquo;).
               1. Return ~UNUSED~.
             1. Let _onRejected_ be CreateBuiltinFunction(_rejectedClosure_, 1, *""*, &laquo; &raquo;).
             1. Let _linkAndEvaluateClosure_ be a new Abstract Closure with no parameters that captures _module_, _promiseCapability_, <ins>_phase_</ins> and _onRejected_ and performs the following steps when called:
-              1. Let _link_ be Completion(_module_.Link()).
+              1. Let _link_ be Completion(_module_.Link(<ins>~all~</ins>)).
               1. If _link_ is an abrupt completion, then
                 1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _link_.[[Value]] &raquo;).
                 1. Return ~UNUSED~.
@@ -267,18 +267,18 @@ contributors: Nicolò Ribaudo
                 1. Return ~UNUSED~.
               1. <ins>If _phase_ is ~defer~, then</ins>
                 1. <ins>Let _evaluationList_ be a new empty List.</ins>
-                1. <ins>Perform GatherAsynchronousTransitiveDependencies(_module_, _evaluationList_).</ins>
+                1. <ins>Perform GatherAsynchronousTransitiveDependencies(_module_, _evaluationList_, ~all~).</ins>
                 1. <ins>If _evaluationList_ is empty, then</ins>
                   1. <ins>Perform _fulfilledClosure_().</ins>
                   1. <ins>Return ~UNUSED~.</ins>
                 1. <ins>Let _asyncDepsEvaluationPromises_ be a new empty List.</ins>
-                1. <ins>For each Module Record _dep_ of _evaluationList_, append _dep_.Evaluate() to _asyncDepsEvaluationPromises_.</ins>
+                1. <ins>For each Module Record _dep_ of _evaluationList_, append _dep_.Evaluate(~all~) to _asyncDepsEvaluationPromises_.</ins>
                 1. <ins>Let _iterator_ be CreateListIteratorRecord(_asyncDepsEvaluationPromises_).</ins>
                 1. <ins>Let _pc_ be ! NewPromiseCapability(%Promise%).</ins>
                 1. <ins>Set _evaluatePromise_ to ! PerformPromiseAll(_iterator_, %Promise%, _pc_, %Promise.resolve%).</ins>
               1. <ins>Else,</ins>
                 1. <ins>Assert: _phase_ is ~evaluation~.</ins>
-                1. <ins>Set _evaluatePromise_ to _module_.Evaluate().</ins>
+                1. <ins>Set _evaluatePromise_ to _module_.Evaluate(~all~).</ins>
               1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledClosure_, *""*, 0, &laquo; &raquo;).
               1. Perform PerformPromiseThen(_evaluatePromise_, _onFulfilled_, _onRejected_).
               1. Return ~UNUSED~.
@@ -362,94 +362,167 @@ contributors: Nicolò Ribaudo
                   The target import phase
                 </td>
               </tr>
+              <tr>
+                <td>
+                  [[ImportedNames]]
+                </td>
+                <td>
+                  ~all~ or a List of Strings
+                </td>
+                <td>
+                  The names of the bindings requested from this module.
+                </td>
+              </tr>
             </tbody>
           </table>
         </emu-table>
 
         <emu-note type="editor">In general, this proposal replaces places where module specifiers are passed around with ModuleRequest Records. For example, several syntax-directed operations, such as ModuleRequests produce Lists of ModuleRequest Records rather than Lists of Strings which are interpreted as module specifiers. Some algorithms like ImportEntries and ImportEntriesForModule pass around ModuleRequest Records rather than Strings, in a way which doesn't require any particular textual change. Additionally, record fields in Cyclic Module Records and Source Text Module Records which contained Lists of Strings are replaced by Lists of ModuleRequest Records, as indicated above.</emu-note>
-      </emu-clause>
 
-      <emu-clause id="sec-static-semantics-modulerequests" type="sdo" number="3">
-        <h1>
-          Static Semantics: ModuleRequests ( ): a List of <del>Strings</del><ins>ModuleRequest Records</ins>
-        </h1>
-        <dl class="header">
-        </dl>
-        <emu-grammar>Module : [empty]</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>ModuleItemList : ModuleItem</emu-grammar>
-        <emu-alg>
-          1. Return ModuleRequests of |ModuleItem|.
-        </emu-alg>
-        <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
-        <emu-alg>
-          1. Let <del>_moduleNames_</del><ins>_requests_</ins> be ModuleRequests of |ModuleItemList|.
-          1. Let <del>_additionalNames_</del><ins>_additionalRequests_</ins> be ModuleRequests of |ModuleItem|.
-          1. <del>For each String _name_ of _additionalNames_, do</del>
-          1. <ins>For each ModuleRequest Record _mr_ of _additionalRequests_, do</ins>
-            1. <ins>Let _found_ be *false*.</ins>
-            1. <ins>For each ModuleRequest Record _mr2_ of _requests_, do</ins>
-              1. <ins>If _mr_.[[Specifer]] is _mr2_.[[Specifer]] and _mr_.[[Phase]] is _mr2_.[[Phase]], then</ins>
-                1. <ins>Assert: _found_ is *false*.</ins>
-                1. <ins>Set _found_ to *true*.</ins>
-            1. <del>If _moduleNames_ does not contain _name_, then</del>
-            1. <ins>If _found_ is *false*, then</ins>
-              1. Append <del>_name_</del><ins>_mr_</ins> to <del>_moduleNames_</del><ins>_requests_</ins>.
-          1. Return <del>_moduleNames_</del><ins>_requests_</ins>.
-        </emu-alg>
-        <emu-grammar>ModuleItem : StatementListItem</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>
-          ImportDeclaration : `import` ImportClause FromClause `;`
-        </emu-grammar>
-        <emu-alg>
-          1. <del>Return ModuleRequests of |FromClause|.</del>
-          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~evaluation~ }.</ins>
-        </emu-alg>
-        <emu-grammar>
-          <ins>ImportDeclaration : `import` `defer` ImportClause FromClause `;`</ins>
-        </emu-grammar>
-        <emu-alg>
-          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~defer~ }.</ins>
-        </emu-alg>
-        <emu-grammar><del>ModuleSpecifier : StringLiteral</del></emu-grammar>
-        <emu-alg>
-          1. <del>Return a List whose sole element is the SV of |StringLiteral|.</del>
-        </emu-alg>
-        <emu-grammar>
-          ExportDeclaration : `export` ExportFromClause FromClause `;`
-        </emu-grammar>
-        <emu-alg>
-          1. <del>Return ModuleRequests of |FromClause|.</del>
-          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~evaluation~ }.</ins>
-        </emu-alg>
-        <emu-grammar>
-          <ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins>
-        </emu-grammar>
-        <emu-alg>
-          1. <ins>Assert: |ExportFromClause| matches |NamedNamespaceExport|.</ins>
-          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~defer~ }.</ins>
-        </emu-alg>
-        <emu-grammar>
-          ExportDeclaration :
-            `export` NamedExports `;`
-            `export` VariableStatement
-            `export` Declaration
-            `export` `default` HoistableDeclaration
-            `export` `default` ClassDeclaration
-            `export` `default` AssignmentExpression `;`
-        </emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
+        <emu-clause id="sec-getmodulerequestsforoptionalindirectexports" type="abstract operation">
+          <h1>
+            <ins>
+              GetModuleRequestsOptionalIndirectExports (
+                _module_: a Cyclic Module Record,
+                _importedNames_: ~all~ or a List of Strings,
+              ): a List of ModuleRequest Records
+            </ins>
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd></dd>
+          </dl>
+
+          <emu-alg>
+            1. Let _requests_ be a new empty List.
+            1. For each ExportEntry Record _oie_ of _module_.[[OptionalIndirectExports]], do
+              1. If _importedNames_ is ~all~ or _importedNames_ contains _oie_.[[ExportName]], then
+                1. Let _specifier_ be _oie_.[[ModuleRequest]].[[Specifier]].
+                1. Let _phase_ be _oie_.[[ModuleRequest]].[[Phase]].
+                1. Let _existingRequest_ be ~empty~.
+                1. For each ModuleRequest Record _r_ in _requests_, do
+                  1. If _existingRequest_ is ~empty~ and _r_.[[Specifier]] is _specifier_ and _r_.[[Phase]] is _phase_, then
+                    1. Set _existingRequest_ to _r_.
+                1. Let _newImportedNames_ be ~all~.
+                1. Assert: _oie_.[[ImportName]] is a String or ~all~.
+                1. If _oie_.[[ImportName]] is a String, set _newImportedNames_ to « _oie_.[[ImportName]] ».
+                1. If _existingRequest_ is ~empty~, then
+                  1. Let _request_ be the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: _phase_, [[ImportedNames]]: _newImportedNames_ }.
+                  1. Append _request_ to _requests_.
+                1. Else,
+                  1. Set _existingRequest_.[[ImportedNames]] to MergeImportedNames(_existingRequest_.[[ImportedNames]], _newImportedNames_).
+            1. Return _requests_.
+          </emu-alg>
+        </emu-clause>
+
+        <emu-clause id="sec-mergeimportednames" type="abstract operation">
+          <h1>
+            <ins>
+              MergeImportedNames (
+                _a_: ~all~ or a List of Strings,
+                _b_: ~all~ or a List of Strings,
+              ): ~all~ or a List of Strings
+            </ins>
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd></dd>
+          </dl>
+
+          <emu-alg>
+            1. If _a_ is ~all~ or _b_ is ~all~, return ~all~.
+            1. Return the list-concatenation of _a_ and _b_.
+          </emu-alg>
+        </emu-clause>
+
+        <emu-clause id="sec-static-semantics-modulerequests" type="sdo">
+          <h1>
+            Static Semantics: ModuleRequests ( ): a List of <del>Strings</del><ins>ModuleRequest Records</ins>
+          </h1>
+          <dl class="header">
+          </dl>
+          <emu-grammar>Module : [empty]</emu-grammar>
+          <emu-alg>
+            1. Return a new empty List.
+          </emu-alg>
+          <emu-grammar>ModuleItemList : ModuleItem</emu-grammar>
+          <emu-alg>
+            1. Return ModuleRequests of |ModuleItem|.
+          </emu-alg>
+          <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
+          <emu-alg>
+            1. Let <del>_moduleNames_</del><ins>_requests_</ins> be ModuleRequests of |ModuleItemList|.
+            1. Let <del>_additionalNames_</del><ins>_additionalRequests_</ins> be ModuleRequests of |ModuleItem|.
+            1. <del>For each String _name_ of _additionalNames_, do</del>
+            1. <ins>For each ModuleRequest Record _mr_ of _additionalRequests_, do</ins>
+              1. <ins>Let _found_ be *false*.</ins>
+              1. <ins>For each ModuleRequest Record _mr2_ of _requests_, do</ins>
+                1. <ins>If _mr_.[[Specifer]] is _mr2_.[[Specifer]] and _mr_.[[Phase]] is _mr2_.[[Phase]], then</ins>
+                  1. <ins>Assert: _found_ is *false*.</ins>
+                  1. <ins>Set _found_ to *true*.</ins>
+                  1. <ins>Set _mr_.[[ImportedNames]] to MergeImportedNames(_mr_.[[ImportedNames]], _mr2_.[[ImportedNames]]).</ins>
+              1. <del>If _moduleNames_ does not contain _name_, then</del>
+              1. <ins>If _found_ is *false*, then</ins>
+                1. Append <del>_name_</del><ins>_mr_</ins> to <del>_moduleNames_</del><ins>_requests_</ins>.
+            1. Return <del>_moduleNames_</del><ins>_requests_</ins>.
+          </emu-alg>
+          <emu-grammar>ModuleItem : StatementListItem</emu-grammar>
+          <emu-alg>
+            1. Return a new empty List.
+          </emu-alg>
+          <emu-grammar>
+            ImportDeclaration : `import` ImportClause FromClause `;`
+          </emu-grammar>
+          <emu-alg>
+            1. <del>Return ModuleRequests of |FromClause|.</del>
+            1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
+            1. <ins>Let _importedNames_ be ImportedNames of |ImportClause|.</ins>
+            1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~evaluation~, [[ImportedNames]]: _importedNames_ }.</ins>
+          </emu-alg>
+          <emu-grammar>
+            <ins>ImportDeclaration : `import` `defer` ImportClause FromClause `;`</ins>
+          </emu-grammar>
+          <emu-alg>
+            1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
+            1. <ins>Let _importedNames_ be ImportedNames of |ImportClause|.</ins>
+            1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~defer~, [[ImportedNames]]: _importedNames_ }.</ins>
+          </emu-alg>
+          <emu-grammar><del>ModuleSpecifier : StringLiteral</del></emu-grammar>
+          <emu-alg>
+            1. <del>Return a List whose sole element is the SV of |StringLiteral|.</del>
+          </emu-alg>
+          <emu-grammar>
+            ExportDeclaration : `export` ExportFromClause FromClause `;`
+          </emu-grammar>
+          <emu-alg>
+            1. <del>Return ModuleRequests of |FromClause|.</del>
+            1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
+            1. <ins>Let _importedNames_ be ImportedNames of |ExportFromClause|.</ins>
+            1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~evaluation~, [[ImportedNames]]: _importedNames_ }.</ins>
+          </emu-alg>
+          <emu-grammar>
+            <ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins>
+          </emu-grammar>
+          <emu-alg>
+            1. <ins>Assert: |ExportFromClause| matches |NamedNamespaceExport|.</ins>
+            1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
+            1. <ins>Let _importedNames_ be ImportedNames of |ExportFromClause|.</ins>
+            1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifer]]: _specifier_, [[Phase]]: ~defer~, [[ImportedNames]]: _importedNames_ }.</ins>
+          </emu-alg>
+          <emu-grammar>
+            ExportDeclaration :
+              `export` `optional` `defer`? ExportFromClause FromClause `;`
+              `export` NamedExports `;`
+              `export` VariableStatement
+              `export` Declaration
+              `export` `default` HoistableDeclaration
+              `export` `default` ClassDeclaration
+              `export` `default` AssignmentExpression `;`
+          </emu-grammar>
+          <emu-alg>
+            1. Return a new empty List.
+          </emu-alg>
+        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-cyclic-module-records" number="5">
@@ -522,6 +595,17 @@ contributors: Nicolò Ribaudo
               </td>
               <td>
                 A List of all the |ModuleSpecifier| strings used by the module represented by this record to request the importation of a module, <ins>alongside with their maximum specified import phase (~defer~ or ~evaluation~)</ins>. The List is in source text occurrence order.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <ins>[[OptionalIndirectExports]]</ins>
+              </td>
+              <td>
+                <ins>a List of ExportEntry Records whose [[LocalName]] is *null*.</ins>
+              </td>
+              <td>
+                <ins>A list of all the bindings re-exported through `export defer { ... } from "..."`. The List is in source text occurrence order.</ins>
               </td>
             </tr>
             <tr>
@@ -682,6 +766,17 @@ contributors: Nicolò Ribaudo
             </tr>
             <tr>
               <td>
+                <ins>[[ContinuationData]]</ins>
+              </td>
+              <td>
+                <ins>a List of Records with fields [[Referrer]] (a Cyclic Module Record), [[Specifier]] (a String), and [[ImportedNames]] (~all~ or a List of Strings)</ins>
+              </td>
+              <td>
+                <ins>It stores data to be used for ContinueModuleLoading calls by FinishLoadingImportedModule.</ins>
+              </td>
+            </tr>
+            <tr>
+              <td>
                 [[Visited]]
               </td>
               <td>
@@ -708,6 +803,7 @@ contributors: Nicolò Ribaudo
         <emu-clause id="sec-LoadRequestedModules" type="concrete method">
           <h1>
             LoadRequestedModules (
+              <ins>_importedNames_: ~all~ or a List of Strings,</ins>
               optional _hostDefined_: anything,
             ): a Promise
           </h1>
@@ -723,7 +819,7 @@ contributors: Nicolò Ribaudo
             1. If _hostDefined_ is not present, let _hostDefined_ be ~empty~.
             1. Let _pc_ be ! NewPromiseCapability(%Promise%).
             1. Let _state_ be the GraphLoadingState Record { [[IsLoading]]: *true*, [[PendingModulesCount]]: 1, [[Visited]]: « », [[PromiseCapability]]: _pc_, [[HostDefined]]: _hostDefined_ }.
-            1. Perform InnerModuleLoading(_state_, _module_).
+            1. Perform InnerModuleLoading(_state_, _module_, <ins>_importedNames_</ins>).
             1. Return _pc_.[[Promise]].
           </emu-alg>
 
@@ -732,11 +828,16 @@ contributors: Nicolò Ribaudo
             <code>import()</code> expressions never set the _hostDefined_ parameter.
           </emu-note>
 
+          <emu-note>
+            <ins>When the exports of the module are not observed, such as in <code>&lt;script type="module" src="./file.js"&gt;</code> tags, the host should set the _importedNames_ parameter to « ».</ins>
+          </emu-note>
+
           <emu-clause id="sec-InnerModuleLoading" type="abstract operation">
             <h1>
               InnerModuleLoading (
                 _state_: a GraphLoadingState Record,
                 _module_: a Module Record,
+                <ins>_importedNames_: ~all~ or a List of Strings,</ins>
               ): ~unused~
             </h1>
             <dl class="header">
@@ -752,14 +853,17 @@ contributors: Nicolò Ribaudo
                 1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] + _requestedModulesCount_.
                 1. <del>For each String _required_ of _module_.[[RequestedModules]], do</del>
                 1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
-                  1. <ins>Let _specifier_ be _required_.[[Specifier]].</ins>
-                  1. If _module_.[[LoadedModules]] contains a Record whose [[Specifier]] is <del>_required_</del><ins>_specifier_</ins>, then
-                    1. Let _record_ be that Record.
-                    1. Perform InnerModuleLoading(_state_, _record_.[[Module]]).
-                  1. Else,
-                    1. Perform HostLoadImportedModule(_module_, <del>_required_</del><ins>_specifier_</ins>, _state_.[[HostDefined]], _state_).
-                    1. NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.
+                  1. <del>If _module_.[[LoadedModules]] contains a Record whose [[Specifier]] is _required_, then</del>
+                    1. <del>Let _record_ be that Record.</del>
+                    1. <del>Perform InnerModuleLoading(_state_, _record_.[[Module]]).</del>
+                  1. <del>Else,</del>
+                    1. <del>Perform HostLoadImportedModule(_module_, _required_, _state_.[[HostDefined]], _state_).</del>
+                    1. <del>NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.</del>
+                  1. <ins>Perform LoadDependency(_state_, _module_, _required_.[[Specifier]], _required_.[[ImportedNames]]).</ins>
                   1. If _state_.[[IsLoading]] is *false*, return ~unused~.
+              1. <ins>If _module_ is a Cyclic Module Record, then</ins>
+                1. <ins>Perform LoadOptionalIndirectExports(_state_, _module_, _importedNames_).</ins>
+                1. <ins>If _state_.[[IsLoading]] is *false*, return ~unused~.</ins>
               1. Assert: _state_.[[PendingModulesCount]] ≥ 1.
               1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] - 1.
               1. If _state_.[[PendingModulesCount]] = 0, then
@@ -769,6 +873,64 @@ contributors: Nicolò Ribaudo
                 1. Perform ! Call(_state_.[[PromiseCapability]].[[Resolve]], *undefined*, « *undefined* »).
               1. Return ~unused~.
             </emu-alg>
+
+            <emu-note type="editor">
+              Handle the case where a module has already been loaded, and later we need to load one of its optional re-exports.
+            </emu-note>
+          </emu-clause>
+
+          <emu-clause id="sec-LoadDependency" type="abstract operation">
+            <h1>
+              <ins>
+                LoadDependency (
+                  _state_: a GraphLoadingState Record,
+                  _module_: a Cyclic Module Record,
+                  _specifier_: a String,
+                  _importedNames_: ~all~ or a List of Strings,
+                ): ~unused~
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd></dd>
+            </dl>
+
+            <emu-alg>
+              1. Assert: _state_.[[IsLoading]] is *true*.
+              1. If _module_.[[LoadedModules]] contains a Record whose [[Specifier]] is _specifier_, then
+                1. Let _record_ be that Record.
+                1. Perform InnerModuleLoading(_state_, _record_.[[Module]], _importedNames_).
+              1. Else,
+                1. Append the Record { [[Referrer]]: _module_, [[Specifier]]: _specifier_, [[ImportedNames]]: _importedNames_ } to _state_.[[ContinuationData]].
+                1. Perform HostLoadImportedModule(_module_, _specifier_, _state_.[[HostDefined]], _state_).
+                1. NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.
+            </emu-alg>
+          </emu-clause>
+
+          <emu-clause id="sec-LoadOptionalIndirectExports" type="abstract operation">
+            <h1>
+              <ins>
+                LoadOptionalIndirectExports (
+                  _state_: a GraphLoadingState Record,
+                  _module_: a Module Record,
+                  _importedNames_: ~all~ or a List of Strings,
+                ): ~unused~
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd></dd>
+            </dl>
+
+            <emu-alg>
+              1. Assert: _state_.[[IsLoading]] is *true*.
+              1. If _module_ is not a Cyclic Module Record, return ~unused~.
+              1. Let _moduleRequests_ be GetModuleRequestsOptionalIndirectExports(_module_, _importedNames_).
+              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+                1. Perform LoadDependency(_state_, _module_, _moduleRequests_.[[Specifier]], _moduleRequests_.[[ImportedNames]]).
+                1. If _state_.[[IsLoading]] is *false*, return ~unused~.
+              1. Return ~unused~.
+            </emu-alg>
           </emu-clause>
 
           <emu-clause id="sec-ContinueModuleLoading" type="abstract operation">
@@ -776,6 +938,7 @@ contributors: Nicolò Ribaudo
               ContinueModuleLoading (
                 _state_: a GraphLoadingState Record,
                 _moduleCompletion_: either a normal completion containing a Module Record or a throw completion,
+                <ins>_importedNames_: ~all~ or a List of Strings,</ins>
               ): ~unused~
             </h1>
             <dl class="header">
@@ -786,7 +949,7 @@ contributors: Nicolò Ribaudo
             <emu-alg>
               1. If _state_.[[IsLoading]] is *false*, return ~unused~.
               1. If _moduleCompletion_ is a normal completion, then
-                1. Perform InnerModuleLoading(_state_, _moduleCompletion_.[[Value]]).
+                1. Perform InnerModuleLoading(_state_, _moduleCompletion_.[[Value]], <ins>_importedNames_</ins>).
               1. Else,
                 1. Set _state_.[[IsLoading]] to *false*.
                 1. Perform ! Call(_state_.[[PromiseCapability]].[[Reject]], *undefined*, « _moduleCompletion_.[[Value]] »).
@@ -796,7 +959,11 @@ contributors: Nicolò Ribaudo
         </emu-clause>
 
         <emu-clause id="sec-moduledeclarationlinking" type="concrete method" oldids="sec-moduledeclarationinstantiation">
-          <h1>Link ( ): either a normal completion containing ~unused~ or a throw completion</h1>
+          <h1>
+            Link (
+              <ins>_importedNames_: ~all~ or a List of Strings,</ins>
+            ): either a normal completion containing ~unused~ or a throw completion
+          </h1>
           <dl class="header">
             <dt>for</dt>
             <dd>a Cyclic Module Record _module_</dd>
@@ -808,7 +975,7 @@ contributors: Nicolò Ribaudo
           <emu-alg>
             1. Assert: _module_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.
             1. Let _stack_ be a new empty List.
-            1. Let _result_ be Completion(InnerModuleLinking(_module_, _stack_, 0)).
+            1. Let _result_ be Completion(InnerModuleLinking(_module_, _stack_, 0, <ins>_importedNames_</ins>)).
             1. If _result_ is an abrupt completion, then
               1. For each Cyclic Module Record _m_ of _stack_, do
                 1. Assert: _m_.[[Status]] is ~linking~.
@@ -826,6 +993,7 @@ contributors: Nicolò Ribaudo
                 _module_: a Module Record,
                 _stack_: a List of Cyclic Module Records,
                 _index_: a non-negative integer,
+                <ins>_importedNames_: ~all~ or a List of Strings,</ins>
               ): either a normal completion containing a non-negative integer or a throw completion
             </h1>
             <dl class="header">
@@ -838,7 +1006,8 @@ contributors: Nicolò Ribaudo
                 1. Perform ? _module_.Link().
                 1. Return _index_.
               1. If _module_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~, then
-                1. Return _index_.
+                1. <del>Return _index_.</del>
+                1. <ins>Return ? LinkOptionalIndirectExports(_module_, _stack_, _index_, _importedNames_).</ins>
               1. Assert: _module_.[[Status]] is ~unlinked~.
               1. Set _module_.[[Status]] to ~linking~.
               1. Set _module_.[[DFSIndex]] to _index_.
@@ -847,13 +1016,14 @@ contributors: Nicolò Ribaudo
               1. Append _module_ to _stack_.
               1. <del>For each String _required_ of _module_.[[RequestedModules]], do</del>
               1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
-                1. Let _requiredModule_ be GetImportedModule(_module_, _required_<ins>.[[Specifier]]</ins>).
-                1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
-                1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
-                  1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
-                  1. If _requiredModule_.[[Status]] is ~linking~, then
-                    1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+                1. <del>Let _requiredModule_ be GetImportedModule(_module_, _required_).</del>
+                1. <del>Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).</del>
+                1. <del>If _requiredModule_ is a Cyclic Module Record, then</del>
+                  1. <del>Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.</del>
+                  1. <del>Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.</del>
+                  1. <del>If _requiredModule_.[[Status]] is ~linking~, then</del>
+                    1. <del>Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).</del>
+                1. <ins>Set _index_ to ? LinkDependency(_module_, _required_.[[Specifier]], _stack_, _index_, _required_.[[ImportedNames]]).</ins>
               1. Perform ? _module_.InitializeEnvironment().
               1. Assert: _module_ occurs exactly once in _stack_.
               1. Assert: _module_.[[DFSAncestorIndex]] ≤ _module_.[[DFSIndex]].
@@ -865,13 +1035,73 @@ contributors: Nicolò Ribaudo
                   1. Assert: _requiredModule_ is a Cyclic Module Record.
                   1. Set _requiredModule_.[[Status]] to ~linked~.
                   1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
+              1. <del>Return _index_.</del>
+              1. <ins>Return ? LinkOptionalIndirectExports(_module_, _stack_, _index_, _importedNames_).</ins>
+            </emu-alg>
+          </emu-clause>
+
+          <emu-clause id="sec-LinkDependency" type="abstract operation">
+            <h1>
+              <ins>
+                LinkDependency (
+                  _referrer_: a Cyclic Module Record,
+                  _specifier_: a String,
+                  _stack_: a List of Cyclic Module Records,
+                  _index_: a non-negative integer,
+                  _importedNames_: ~all~ or a List of Strings,
+                ): either a normal completion containing a non-negative integer or a throw completion
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd></dd>
+            </dl>
+
+            <emu-alg>
+              1. Let _requiredModule_ be GetImportedModule(_referrer_, _specifier_).
+              1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_, _importedNames_).
+              1. If _requiredModule_ is a Cyclic Module Record, then
+                1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
+                1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
+                1. If _requiredModule_.[[Status]] is ~linking~, then
+                  1. Set _referrer_.[[DFSAncestorIndex]] to min(_referrer_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+              1. Return _index_.
+            </emu-alg>
+          </emu-clause>
+
+          <emu-clause id="sec-LinkOptionalIndirectExports" type="abstract operation">
+            <h1>
+              <ins>
+                LinkOptionalIndirectExports (
+                  _module_: a Cyclic Module Record,
+                  _stack_: a List of Cyclic Module Records,
+                  _index_: a non-negative integer,
+                  _importedNames_: ~all~ or a List of Strings,
+                ): either a normal completion containing a non-negative integer or a throw completion
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd></dd>
+            </dl>
+
+            <emu-alg>
+              1. Assert: _module_.[[State]] is one of ~linking~, ~linked~, ~evaluating~, ~evaluating-async~, ~evaluated~.
+              1. Assert: _module_.[[State]] is ~linking~ if and only if _stack_ contains _module_.
+              1. Let _moduleRequests_ be GetModuleRequestsOptionalIndirectExports(_module_, _importedNames_).
+              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+                1. Set _index_ to ? LinkDependency(_module_, _request_.[[Specifier]], _stack_, _index_, _request_.[[ImportedNames]]).
               1. Return _index_.
             </emu-alg>
           </emu-clause>
         </emu-clause>
 
         <emu-clause id="sec-moduleevaluation" type="concrete method">
-          <h1>Evaluate ( ): a Promise</h1>
+          <h1>
+            Evaluate (
+              <ins>_importedNames_: ~all~ or a List of Strings,</ins>
+            ): a Promise
+          </h1>
           <dl class="header">
             <dt>for</dt>
             <dd>a Cyclic Module Record _module_</dd>
@@ -889,7 +1119,7 @@ contributors: Nicolò Ribaudo
             1. Let _stack_ be a new empty List.
             1. Let _capability_ be ! NewPromiseCapability(%Promise%).
             1. Set _module_.[[TopLevelCapability]] to _capability_.
-            1. Let _result_ be Completion(InnerModuleEvaluation(_module_, _stack_, 0)).
+            1. Let _result_ be Completion(InnerModuleEvaluation(_module_, _stack_, 0, <ins>_importedNames_</ins>)).
             1. If _result_ is an abrupt completion, then
               1. For each Cyclic Module Record _m_ of _stack_, do
                 1. Assert: _m_.[[Status]] is ~evaluating~.
@@ -914,6 +1144,7 @@ contributors: Nicolò Ribaudo
                 _module_: a Module Record,
                 _stack_: a List of Cyclic Module Records,
                 _index_: a non-negative integer,
+                <ins>_importedNames_: ~all~ or a List of Strings,</ins>
               ): either a normal completion containing a non-negative integer or a throw completion
             </h1>
             <dl class="header">
@@ -930,39 +1161,36 @@ contributors: Nicolò Ribaudo
                 1. <ins>Perform ? EvaluateSync(_module_).</ins>
                 1. Return _index_.
               1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
-                1. If _module_.[[EvaluationError]] is ~empty~, return _index_.
+                1. If _module_.[[EvaluationError]] is ~empty~, then
+                  1. <del>Return _index_.</del>
+                  1. <ins>Return ? EvaluateOptionalIndirectExports(_module_, _stack_, _index_, _importedNames_).</ins>
                 1. Otherwise, return ? _module_.[[EvaluationError]].
-              1. If _module_.[[Status]] is ~evaluating~, return _index_.
+              1. If _module_.[[Status]] is ~evaluating~, then
+                1. <del>Return _index_.</del>
+                1. <ins>Return ? EvaluateOptionalIndirectExports(_module_, _stack_, _index_, _importedNames_).</ins>
               1. Assert: _module_.[[Status]] is ~linked~.
               1. Set _module_.[[Status]] to ~evaluating~.
               1. Set _module_.[[DFSIndex]] to _index_.
               1. Set _module_.[[DFSAncestorIndex]] to _index_.
               1. Set _module_.[[PendingAsyncDependencies]] to 0.
               1. Set _index_ to _index_ + 1.
-              1. <ins>Let _evaluationList_ be a new empty List.</ins>
-              1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
-                1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).</ins>
-                1. <ins>If _required_.[[Phase]] is ~defer~, then</ins>
-                  1. <ins>Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _evaluationList_).</ins>
-                1. <ins>Else if _evaluationList_ does not contain _requiredModule_, then</ins>
-                  1. <ins>Append _requiredModule_ to _evaluationList_.</ins>
               1. Append _module_ to _stack_.
               1. <del>For each String _required_ of _module_.[[RequestedModules]], do</del>
                 1. <del>Let _requiredModule_ be GetImportedModule(_module_, _required_).</del>
-              1. <ins>For each Module Record _requiredModule_ of _evaluationList_, do</ins>
-                1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
-                1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.
-                  1. Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.
-                  1. If _requiredModule_.[[Status]] is ~evaluating~, then
-                    1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
-                  1. Else,
-                    1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
-                    1. Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
-                    1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
-                  1. If _requiredModule_.[[AsyncEvaluation]] is *true*, then
-                    1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
-                    1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
+                1. <del>Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).</del>
+                1. <del>If _requiredModule_ is a Cyclic Module Record, then</del>
+                  1. <del>Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.</del>
+                  1. <del>Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.</del>
+                  1. <del>If _requiredModule_.[[Status]] is ~evaluating~, then</del>
+                    1. <del>Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).</del>
+                  1. <del>Else,</del>
+                    1. <del>Set _requiredModule_ to _requiredModule_.[[CycleRoot]].</del>
+                    1. <del>Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.</del>
+                    1. <del>If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].</del>
+                  1. <del>If _requiredModule_.[[AsyncEvaluation]] is *true*, then</del>
+                    1. <del>Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.</del>
+                    1. <del>Append _module_ to _requiredModule_.[[AsyncParentModules]].</del>
+              1. <ins>Set _index_ to ? EvaluateDependenciesList(_module_, _stack_, _index_, _module_.[[ModuleRequests]]).</ins>
               1. If _module_.[[PendingAsyncDependencies]] > 0 or _module_.[[HasTLA]] is *true*, then
                 1. Assert: _module_.[[AsyncEvaluation]] is *false*.
                 1. Set _module_.[[AsyncEvaluation]] to *true*.
@@ -983,7 +1211,8 @@ contributors: Nicolò Ribaudo
                     1. Set _requiredModule_.[[Status]] to ~evaluating-async~.
                   1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
                   1. Set _requiredModule_.[[CycleRoot]] to _module_.
-              1. Return _index_.
+              1. <del>Return _index_.</del>
+              1. <ins>Return ? EvaluateOptionalIndirectExports(_module_, _stack_, _index_, _importedNames_).</ins>
             </emu-alg>
             <emu-note>
               <p>A module is ~evaluating~ while it is being traversed by InnerModuleEvaluation. A module is ~evaluated~ on execution completion or ~evaluating-async~ during execution if its [[HasTLA]] field is *true* or if it has asynchronous dependencies.</p>
@@ -991,6 +1220,73 @@ contributors: Nicolò Ribaudo
             <emu-note>
               <p>Any modules depending on a module of an asynchronous cycle when that cycle is not ~evaluating~ will instead depend on the execution of the root of the cycle via [[CycleRoot]]. This ensures that the cycle state can be treated as a single strongly connected component through its root module state.</p>
             </emu-note>
+          </emu-clause>
+
+          <emu-clause id="sec-EvaluateDependenciesList" type="abstract operation">
+            <h1>
+              <ins>
+                EvaluateDependenciesList (
+                  _module_: a Cyclic Module Record,
+                  _stack_: a List of Cyclic Module Records,
+                  _index_: a non-negative integer,
+                  _moduleRequests_: a List of ModuleRequest Records,
+                ): either a normal completion containing a non-negative integer or a throw completion
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd></dd>
+            </dl>
+
+            <emu-alg>
+              1. Let _evaluationList_ be a new empty List.
+              1. For each ModuleRequest Record _required_ of _moduleRequests_, do
+                1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).
+                1. If _required_.[[Phase]] is ~defer~, then
+                  1. Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _evaluationList_, _required_.[[ImportedNames]]).
+                1. Else if _evaluationList_ does not contain _requiredModule_, then
+                  1. Append the Record { [[Module]]: _requiredModule_, [[ImportedNames]]: _required_.[[ImportedNames]] } to _evaluationList_.
+              1. For each Record _required_ in _evaluationList_, do
+                1. Let _requiredModule_ be _required_.[[Module]].
+                1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_, _required_.[[ImportedNames]]).
+                1. If _requiredModule_ is a Cyclic Module Record, then
+                  1. Assert: _requiredModule_.[[Status]] is one of ~evaluating~, ~evaluating-async~, or ~evaluated~.
+                  1. Assert: _requiredModule_.[[Status]] is ~evaluating~ if and only if _stack_ contains _requiredModule_.
+                  1. If _requiredModule_.[[Status]] is ~evaluating~, then
+                    1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
+                  1. Else,
+                    1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
+                    1. Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
+                    1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
+                  1. If _requiredModule_.[[AsyncEvaluation]] is *true*, then
+                    1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
+                    1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
+              1. Return _index_.
+            </emu-alg>
+          </emu-clause>
+
+          <emu-clause id="sec-EvaluateOptionalIndirectExports" type="abstract operation">
+            <h1>
+              <ins>
+                EvaluateOptionalIndirectExports (
+                  _module_: a Cyclic Module Record,
+                  _stack_: a List of Cyclic Module Records,
+                  _index_: a non-negative integer,
+                  _importedNames_: ~all~ or a List of Strings,
+                ): either a normal completion containing a non-negative integer or a throw completion
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd></dd>
+            </dl>
+
+            <emu-alg>
+              1. Assert: _module_.[[State]] is one of ~evaluating~, ~evaluating-async~, ~evaluated~.
+              1. Assert: _module_.[[State]] is ~evaluating~ if and only if _stack_ contains _module_.
+              1. Let _moduleRequests_ be GetModuleRequestsOptionalIndirectExports(_module_, _importedNames_).
+              1. Return ? EvaluateDependenciesList(_module_, _stack_, _index_, _moduleRequests_).
+            </emu-alg>
           </emu-clause>
 
           <emu-clause id="sec-EvaluateSync" type="abstract operation">
@@ -1008,7 +1304,7 @@ contributors: Nicolò Ribaudo
 
             <emu-alg>
               1. Assert: If _module_ is a Cyclic Module Record, _module_.[[HasTLA]] is *false* and all its asynchronous transitive dependencies have already been evaluated.
-              1. Let _promise_ be ! _module_.Evaluate().
+              1. Let _promise_ be ! _module_.Evaluate(~all~).
               1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
               1. If _promise_.[[PromiseState]] is ~rejected~, then
                 1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
@@ -1016,12 +1312,13 @@ contributors: Nicolò Ribaudo
             </emu-alg>
           </emu-clause>
 
-          <emu-clause id="sec-InnerAsyncSubgraphsEvaluation" type="abstract operation">
+          <emu-clause id="sec-GatherAsynchronousTransitiveDependencies" type="abstract operation">
             <h1>
               <ins>
                 GatherAsynchronousTransitiveDependencies (
                   _module_: a Module Record,
-                  _result_: a List of Module Records,
+                  _result_: a List of Records with fields [[Module]] (a Module Record) and [[ImportedNames]] (~all~ or a List of Strings),
+                  _importedNames_: ~all~ or a List of Strings,
                   optional _seen_: a List of Module Records
                 ): ~unused~
               </ins>
@@ -1038,11 +1335,38 @@ contributors: Nicolò Ribaudo
               1. If _module_ is not a Cyclic Module Record, return ~unused~.
               1. If _module_.[[Status]] is either ~evaluating~ or ~evaluated~, return ~unused~.
               1. If _module_.[[HasTLA]] is *true*, then
-                1. If _result_ does not contain _module_, append _module_ to _result_.
+                1. If _result_ does not contain a Record whose [[Module]] is _module_, append the Record { [[Module]]: _module_, [[ImportedNames]]: « » } to _result_.
+                1. Perform GatherAsynchronousTransitiveDependenciesInOptionalIndirectExports(_module_, _result_, _seen_, _importedNames_).
                 1. Return ~unused~.
               1. For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do
                 1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).
-                1. Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _result_, _seen_).
+                1. Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _result_, _seen_, _required_.[[ImportedNames]]).
+              1. Perform GatherAsynchronousTransitiveDependenciesInOptionalIndirectExports(_module_, _result_, _seen_, _importedNames_).
+              1. Return ~unused~.
+            </emu-alg>
+          </emu-clause>
+
+          <emu-clause id="sec-GatherAsynchronousTransitiveDependenciesInOptionalIndirectExports" type="abstract operation">
+            <h1>
+              <ins>
+                GatherAsynchronousTransitiveDependenciesInOptionalIndirectExports (
+                  _module_: a Module Record,
+                  _result_: a List of Module Records,
+                  _seen_: a List of Module Records
+                  _importedNames_: ~all~ or a List of Strings,
+                ): ~unused~
+              </ins>
+            </h1>
+            <dl class="header">
+              <dt>description</dt>
+              <dd></dd>
+            </dl>
+
+            <emu-alg>
+              1. Let _moduleRequests_ be GetModuleRequestsOptionalIndirectExports(_module_, _importedNames_).
+              1. For each ModuleRequest Record _request_ of _moduleRequests_, do
+                1. Let _requiredModule_ be GetImportedModule(_module_, _request_.[[Specifier]]).
+                1. Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _result_, _seen_, _request_.[[ImportedNames]]).
               1. Return ~unused~.
             </emu-alg>
           </emu-clause>
@@ -1704,6 +2028,85 @@ contributors: Nicolò Ribaudo
           </emu-clause>
         </emu-clause>
       </emu-clause>
+
+      <emu-clause id="sec-source-text-module-records">
+        <h1>Source Text Module Records</h1>
+
+        <emu-clause id="sec-parsemodule" type="abstract operation">
+          <h1>
+            ParseModule (
+              _sourceText_: ECMAScript source text,
+              _realm_: a Realm Record,
+              _hostDefined_: anything,
+            ): a Source Text Module Record or a non-empty List of *SyntaxError* objects
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It creates a Source Text Module Record based upon the result of parsing _sourceText_ as a |Module|.</dd>
+          </dl>
+          <emu-alg>
+            1. Let _body_ be ParseText(_sourceText_, |Module|).
+            1. If _body_ is a List of errors, return _body_.
+            1. Let _requestedModules_ be the ModuleRequests of _body_.
+            1. Let _importEntries_ be ImportEntries of _body_.
+            1. Let _importedBoundNames_ be ImportedLocalNames(_importEntries_).
+            1. Let _indirectExportEntries_ be a new empty List.
+            1. Let _localExportEntries_ be a new empty List.
+            1. Let _starExportEntries_ be a new empty List.
+            1. Let _exportEntries_ be ExportEntries of _body_.
+            1. <ins>Let _optionalIndirectExports_ be OptionalIndirectExportEntries of _body_.</ins>
+            1. For each ExportEntry Record _ee_ of _exportEntries_, do
+              1. If _ee_.[[ModuleRequest]] is *null*, then
+                1. If _importedBoundNames_ does not contain _ee_.[[LocalName]], then
+                  1. Append _ee_ to _localExportEntries_.
+                1. Else,
+                  1. Let _ie_ be the element of _importEntries_ whose [[LocalName]] is _ee_.[[LocalName]].
+                  1. If _ie_.[[ImportName]] is ~namespace-object~, then
+                    1. NOTE: This is a re-export of an imported module namespace object.
+                    1. Append _ee_ to _localExportEntries_.
+                  1. Else,
+                    1. NOTE: This is a re-export of a single name.
+                    1. Append the ExportEntry Record { [[ModuleRequest]]: _ie_.[[ModuleRequest]], [[ImportName]]: _ie_.[[ImportName]], [[LocalName]]: *null*, [[ExportName]]: _ee_.[[ExportName]] } to _indirectExportEntries_.
+              1. Else if _ee_.[[ImportName]] is ~all-but-default~, then
+                1. Assert: _ee_.[[ExportName]] is *null*.
+                1. Append _ee_ to _starExportEntries_.
+              1. Else,
+                1. Append _ee_ to _indirectExportEntries_.
+            1. Let _async_ be _body_ Contains `await`.
+            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluation]]: *false*, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, <ins>[[OptionalIndirectExports]]: _optionalIndirectExports_</ins>, [[DFSIndex]]: ~empty~, [[DFSAncestorIndex]]: ~empty~ }.
+          </emu-alg>
+        </emu-clause>
+      </emu-clause>
+
+      <emu-clause id="sec-FinishLoadingImportedModule" type="abstract operation" oldids="sec-finishdynamicimport" number="9">
+        <h1>
+          FinishLoadingImportedModule (
+            _referrer_: a Script Record, a Cyclic Module Record, or a Realm Record,
+            _specifier_: a String,
+            _payload_: a GraphLoadingState Record or a PromiseCapability Record,
+            _result_: either a normal completion containing a Module Record or a throw completion,
+          ): ~unused~
+        </h1>
+        <dl class="header">
+          <dt>description</dt>
+          <dd></dd>
+        </dl>
+        <emu-alg>
+          1. If _result_ is a normal completion, then
+            1. If _referrer_.[[LoadedModules]] contains a Record whose [[Specifier]] is _specifier_, then
+              1. Assert: That Record's [[Module]] is _result_.[[Value]].
+            1. Else,
+              1. Append the Record { [[Specifier]]: _specifier_, [[Module]]: _result_.[[Value]] } to _referrer_.[[LoadedModules]].
+          1. If _payload_ is a GraphLoadingState Record, then
+            1. <ins>Assert: _payload_.[[ContinuationData]] contains a Record whose [[Referrer]] is _referrer_ and [[Specifier]] is _specifier_.</ins>
+            1. <ins>Let _pending_ be the first Record in _payload_.[[ContinuationData]] whose [[Referrer]] is _referrer_ and [[Specifier]] is _specifier_.</ins>
+            1. <ins>Remove _pending_ from _payload_.[[ContinuationData]].</ins>
+            1. Perform ContinueModuleLoading(_payload_, _result_, <ins>_pending_.[[ImportedNames]]</ins>).
+          1. Else,
+            1. Perform ContinueDynamicImport(_payload_, _result_).
+          1. Return ~unused~.
+        </emu-alg>
+      </emu-clause>
     </emu-clause>
 
     <emu-clause id="sec-imports">
@@ -1799,6 +2202,70 @@ contributors: Nicolò Ribaudo
           1. Return a new empty List.
         </emu-alg>
       </emu-clause>
+
+      <emu-clause id="sec-static-semantics-importednames" type="sdo">
+        <h1>Static Semantics: ImportedNames ( ): ~all~ or a List of Strings</h1>
+        <dl class="header">
+        </dl>
+        <emu-grammar>ImportClause : ImportedDefaultBinding</emu-grammar>
+        <emu-alg>
+          1. Return « *"default"* ».
+        </emu-alg>
+        <emu-grammar>
+          ImportClause :
+            NameSpaceImport
+            ImportedDefaultBinding `,` NameSpaceImport
+
+          ExportFromClause :
+            NamedNamespaceExport
+        </emu-grammar>
+        <emu-alg>
+          1. Return ~all~.
+        </emu-alg>
+        <emu-grammar>ExportFromClause : `*`</emu-grammar>
+        <emu-alg>
+          1. Return ~all~. TODO: It should be ~all-but-default~.
+        </emu-alg>
+        <emu-grammar>ImportClause : ImportedDefaultBinding, NamedImports</emu-grammar>
+        <emu-alg>
+          1. Let _additionalNames_ be ImportNames of |NamedImports|.
+          1. Return MergeImportedNames(« *"default"* », _additionalNames_).
+        </emu-alg>
+        <emu-grammar>
+          NamedImports : `{` `}`
+          NamedExports : `{` `}`
+        </emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ImportsList : ImportsList `,` ImportSpecifier</emu-grammar>
+        <emu-alg>
+          1. Let _names_ be ImportedNames of |ImportsList|.
+          1. Let _additionalNames_ be ImportNames of |ImportSpecifier|.
+          1. Return MergeImportedNames(_names_, _additionalNames_).
+        </emu-alg>
+        <emu-grammar>ExportsList : ExportsList `,` ExportSpecifier</emu-grammar>
+        <emu-alg>
+          1. Let _names_ be ImportedNames of |ExportsList|.
+          1. Let _additionalNames_ be ImportNames of |ExportSpecifier|.
+          1. Return MergeImportedNames(_names_, _additionalNames_).
+        </emu-alg>
+        <emu-grammar>ImportSpecifier : ImportedBinding</emu-grammar>
+        <emu-alg>
+          1. Return a new List whose only element is the StringValue of |ImportedBinding|.
+        </emu-alg>
+        <emu-grammar>
+          ImportSpecifier :
+            ModuleExportName `as` ImportedBinding
+
+          ExportSpecifier :
+            ModuleExportName
+            ModuleExportName `as` ModuleExportName
+        </emu-grammar>
+        <emu-alg>
+          1. Return a new List whose only element is the StringValue of the first |ModuleExportName|.
+        </emu-alg>
+      </emu-clause>
     </emu-clause>
 
     <emu-clause id="sec-exports">
@@ -1807,7 +2274,7 @@ contributors: Nicolò Ribaudo
       <h2>Syntax</h2>
       <emu-grammar type="definition">
         ExportDeclaration :
-          `export` <ins>`defer`?</ins> ExportFromClause FromClause `;`
+          `export` <ins>`optional`?</ins> <ins>`defer`?</ins> ExportFromClause FromClause `;`
           `export` NamedExports `;`
           `export` VariableStatement[~Yield, +Await]
           `export` Declaration[~Yield, +Await]
@@ -1854,10 +2321,16 @@ contributors: Nicolò Ribaudo
         <emu-note>
           <p>The above rule means that each ReferencedBindings of |NamedExports| is treated as an |IdentifierReference|.</p>
         </emu-note>
-        <emu-grammar><ins>ExportDeclaration : `export` `defer` ExportFromClause FromClause `;`</ins></emu-grammar>
+        <emu-grammar><ins>ExportDeclaration : `export` `optional` ExportFromClause FromClause `;`</ins></emu-grammar>
         <ul>
           <li>
-            <ins>It is a Synta Error if |ExportFromClause| is not |NamedNamespaceExport|.</ins>
+            <ins>It is a Syntax Error if |ExportFromClause| is `*`.</ins>
+          </li>
+        </ul>
+        <emu-grammar><ins>ExportDeclaration : `export` `optional`? `defer` ExportFromClause FromClause `;`</ins></emu-grammar>
+        <ul>
+          <li>
+            <ins>It is a Syntax Error if |ExportFromClause| is not |NamedNamespaceExport|.</ins>
           </li>
         </ul>
       </emu-clause>
@@ -1887,7 +2360,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` <ins>`defer`?</ins> ExportFromClause FromClause `;`</emu-grammar>
+        <emu-grammar>ExportDeclaration : `export` <ins>`optional`?</ins> <ins>`defer`?</ins> ExportFromClause FromClause `;`</emu-grammar>
         <emu-alg>
           1. Return the ExportedNames of |ExportFromClause|.
         </emu-alg>
@@ -1962,7 +2435,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` `defer`? ExportFromClause FromClause `;`</emu-grammar>
+        <emu-grammar>ExportDeclaration : `export` <ins>`optional`?</ins> <ins>`defer`?</ins> ExportFromClause FromClause `;`</emu-grammar>
         <emu-alg>
           1. Let _module_ be <del>the sole element of ModuleRequests</del><ins>SV</ins> of |FromClause|.
           1. Return ExportEntriesForModule of |ExportFromClause| with argument _module_.
@@ -2007,6 +2480,47 @@ contributors: Nicolò Ribaudo
         <emu-note>
           <p>*"\*default\*"* is used within this specification as a synthetic name for anonymous default export values. See <emu-xref href="#note-star-default-star">this note</emu-xref> for more details.</p>
         </emu-note>
+      </emu-clause>
+
+      <emu-clause id="sec-static-semantics-optionalindirectexportentries" type="sdo">
+        <h1>
+          <ins>
+            Static Semantics: OptionalIndirectExportEntries ( ): a List of ExportEntry Records
+          </ins>
+        </h1>
+        <dl class="header">
+        </dl>
+        <emu-grammar>Module : [empty]</emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
+        <emu-alg>
+          1. Let _entries1_ be OptionalIndirectExportEntries of |ModuleItemList|.
+          1. Let _entries2_ be OptionalIndirectExportEntries of |ModuleItem|.
+          1. Return the list-concatenation of _entries1_ and _entries2_.
+        </emu-alg>
+        <emu-grammar>
+          ModuleItem :
+            ImportDeclaration
+            StatementListItem
+
+          ExportDeclaration :
+            `export` `defer`? ExportFromClause FromClause `;`
+            `export` NamedExports `;`
+            `export` VariableStatement
+            `export` Declaration
+            `export` `default` HoistableDeclaration
+            `export` `default` ClassDeclaration
+            `export` `default` AssignmentExpression `;`
+        </emu-grammar>
+        <emu-alg>
+          1. Return a new empty List.
+        </emu-alg>
+        <emu-grammar>ExportDeclaration : `export` `optional` `defer`? ExportFromClause FromClause `;`</emu-grammar>
+        <emu-alg>
+          1. Return ExportEntries of |ExportDeclaration|.
+        </emu-alg>
       </emu-clause>
     </emu-clause>
   </emu-clause>
