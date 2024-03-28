@@ -256,6 +256,9 @@ contributors: Nicolò Ribaudo
               1. Return ~UNUSED~.
             1. Let _onRejected_ be CreateBuiltinFunction(_rejectedClosure_, 1, *""*, &laquo; &raquo;).
             1. Let _linkAndEvaluateClosure_ be a new Abstract Closure with no parameters that captures _module_, _promiseCapability_, <ins>_phase_</ins> and _onRejected_ and performs the following steps when called:
+              1. <ins>If _phase_ is ~defer~ and _module_.GetExportedNames() is empty, then</ins>
+                1. <ins>Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; a new *SyntaxError* &raquo;).</ins>
+                1. <ins>Return ~UNUSED~.</ins>
               1. Let _link_ be Completion(_module_.Link()).
               1. If _link_ is an abrupt completion, then
                 1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _link_.[[Value]] &raquo;).
@@ -840,6 +843,7 @@ contributors: Nicolò Ribaudo
               1. <del>For each String _required_ of _module_.[[RequestedModules]], do</del>
               1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
                 1. Let _requiredModule_ be GetImportedModule(_module_, _required_<ins>.[[Specifier]]</ins>).
+                1. <ins>If _required_.[[Phase]] is ~defer~ and _requiredModule_.GetExportedNames() is empty, throw a new *SyntaxError*.</ins>
                 1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
                 1. If _requiredModule_ is a Cyclic Module Record, then
                   1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
