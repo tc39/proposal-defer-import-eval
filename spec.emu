@@ -514,7 +514,7 @@ contributors: Nicolò Ribaudo
                 a List of <del>Strings</del><ins>ModuleRequest Records</ins>
               </td>
               <td>
-                A List of all the |ModuleSpecifier| strings used by the module represented by this record to request the importation of a module, <ins>alongside with their maximum specified import phase (~defer~ or ~evaluation~)</ins>. The List is in source text occurrence order.
+                A List of all the |ModuleSpecifier| strings used by the module represented by this record to request the importation of a module, <ins>along with their maximum specified import phase (~defer~ or ~evaluation~)</ins>. The List is in source text occurrence order.
               </td>
             </tr>
             <tr>
@@ -1038,6 +1038,9 @@ contributors: Nicolò Ribaudo
                 1. Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _result_, _seen_).
               1. Return ~unused~.
             </emu-alg>
+            <emu-note>
+              <p>In the case where module.[[Status]] is ~evaluating-async~, it is possible to short-circuit this check with adding the module to the list if and only if [[AsyncEvaluation]] is true.</p>
+            </emu-note>
           </emu-clause>
         </emu-clause>
 
