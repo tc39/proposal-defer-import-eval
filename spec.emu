@@ -1782,7 +1782,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ImportDeclaration : `import` `defer`? ImportClause FromClause `;`</emu-grammar>
+        <emu-grammar>ImportDeclaration : `import` <ins>`defer`?</ins> ImportClause FromClause `;`</emu-grammar>
         <emu-alg>
           1. Let _module_ be <del>the sole element of ModuleRequests</del><ins>SV</ins> of |FromClause|.
           1. Return ImportEntriesForModule of |ImportClause| with arguments _module_.
@@ -1810,14 +1810,8 @@ contributors: Nicolò Ribaudo
 
         ExportFromClause :
           `*`
-          <del>`*` `as` ModuleExportName</del>
-          <ins>NamedNamespaceExport</ins>
-          NamedExports
-
-        <ins>
-        NamedNamespaceExport :
           `*` `as` ModuleExportName
-        </ins>
+          NamedExports
 
         NamedExports :
           `{` `}`
