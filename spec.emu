@@ -123,7 +123,6 @@ contributors: Nicolò Ribaudo
             1. Return *true*.
           </emu-alg>
         </emu-clause>
-
       </emu-clause>
     </emu-clause>
   </emu-clause>
@@ -1036,7 +1035,7 @@ contributors: Nicolò Ribaudo
               1. If _seen_ contains _module_, return ~unused~.
               1. Append _module_ to _seen_.
               1. If _module_ is not a Cyclic Module Record, return ~unused~.
-              1. If _module_.[[Status]] is ~evaluating~ or ~evaluated~, return ~unused~.
+              1. If _module_.[[Status]] is either ~evaluating~ or ~evaluated~, return ~unused~.
               1. If _module_.[[Status]] is ~evaluating-async~ or _module_.[[HasTLA]] is *true*, then
                 1. If _result_ does not contain _module_, append _module_ to _result_.
                 1. Return ~unused~.
