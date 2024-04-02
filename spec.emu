@@ -74,7 +74,7 @@ contributors: Nicolò Ribaudo
           1. If _P_ is a Symbol, then
             1. Return ! OrdinaryGet(_O_, _P_, _Receiver_).
           1. <ins>Let _m_ be _O_.[[Module]].</ins>
-          1. <ins>If _m_ is not a Cyclic Module Record, or both _m_.[[Status]] is ~linked~ and AnyDependencyNeedsAsyncEvaluation(_m_) is *false*, then</ins>
+          1. <ins>If _m_ is not a Cyclic Module Record, or _m_.[[Status]] is not ~evaluated~, then</ins>
             1. <ins>Perform ? EvaluateSync(_m_).</ins>
           1. Let _exports_ be _O_.[[Exports]].
           1. If _exports_ does not contain _P_, return *undefined*.
@@ -92,32 +92,6 @@ contributors: Nicolò Ribaudo
         <emu-note>
           <p>ResolveExport is side-effect free. Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result. An implementation might choose to pre-compute or cache the ResolveExport results for the [[Exports]] of each module namespace exotic object.</p>
         </emu-note>
-        <emu-note>
-          <ins>AnyDependencyNeedsAsyncEvaluation can return *true* when this [[Get]] operation on a namespace coming from a deferred import is triggered during the evaluation of one of its dependencies, either synchronously or asynchronously. In that case, the module cannot be fully evaluated and some of its exports will not be initialized yet.</ins>
-        </emu-note>
-
-        <emu-clause id="sec-module-namespace-exotic-objects-get-p-receiver-AnyDependencyNeedsAsyncEvaluation" type="abstract operation">
-          <h1>
-            <ins>
-              AnyDependencyNeedsAsyncEvaluation (
-                _module_: a Module Record,
-                optional _seen_: a List of Module Records,
-              ): a Boolean
-            </ins>
-          </h1>
-          <dl class="header"></dl>
-          <emu-alg>
-            1. If _seen_ is not provided, let _seen_ be a new empty List.
-            1. If _seen_ contains _module_, return *false*.
-            1. Append _module_ to _seen_.
-            1. If _module_ is not a Cyclic Module Record or _module_.[[Status]] is ~evaluated~, return *false*.
-            1. If _module_.[[HasTLA]] is *true*, return *true*.
-            1. For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do
-              1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifer]]).
-              1. If AnyDependencyNeedsAsyncEvaluation(_requiredModule_, _seen_) is *true*, return *true*.
-            1. Return *false*.
-          </emu-alg>
-        </emu-clause>
       </emu-clause>
     </emu-clause>
   </emu-clause>
@@ -874,7 +848,7 @@ contributors: Nicolò Ribaudo
           </dl>
 
           <emu-alg>
-            1. Assert: This call to Evaluate is not happening at the same time as another call to Evaluate within the surrounding agent.
+            1. Assert: This call to Evaluate is not happening at the same time as another call to Evaluate within the surrounding agent<ins>, unless it was initiated by EvaluateSync</ins>.
             1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
             1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, set _module_ to _module_.[[CycleRoot]].
             1. If _module_.[[TopLevelCapability]] is not ~empty~, then
@@ -916,11 +890,10 @@ contributors: Nicolò Ribaudo
 
             <emu-alg>
               1. If _module_ is not a Cyclic Module Record, then
-                1. <del>Let _promise_ be ! _module_.Evaluate().</del>
-                1. <del>Assert: _promise_.[[PromiseState]] is not ~pending~.</del>
-                1. <del>If _promise_.[[PromiseState]] is ~rejected~, then</del>
-                  1. <del>Return ThrowCompletion(_promise_.[[PromiseResult]]).</del>
-                1. <ins>Perform ? EvaluateSync(_module_).</ins>
+                1. Let _promise_ be ! _module_.Evaluate().
+                1. Assert: _promise_.[[PromiseState]] is not ~pending~.
+                1. If _promise_.[[PromiseState]] is ~rejected~, then
+                  1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
                 1. Return _index_.
               1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
                 1. If _module_.[[EvaluationError]] is ~empty~, return _index_.
@@ -996,11 +969,12 @@ contributors: Nicolò Ribaudo
             </h1>
             <dl class="header">
               <dt>description</dt>
-              <dd>It synchronously evaluates _module_, which must not have asynchronous dependencies.</dd>
+              <dd>It synchronously evaluates _module_, throwing if it has asynchronous dependencies or is already evaluating.</dd>
             </dl>
 
             <emu-alg>
-              1. Assert: If _module_ is a Cyclic Module Record, _module_.[[HasTLA]] is *false* and all its asynchronous transitive dependencies have already been evaluated.
+              1. If _module_ is a Cyclic Module Record, then
+                1. Perform ? ValidateSyncExecution(_m_).
               1. Let _promise_ be ! _module_.Evaluate().
               1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
               1. If _promise_.[[PromiseState]] is ~rejected~, then
@@ -1009,7 +983,32 @@ contributors: Nicolò Ribaudo
             </emu-alg>
           </emu-clause>
 
-          <emu-clause id="sec-InnerAsyncSubgraphsEvaluation" type="abstract operation">
+          <emu-clause id="sec-ValidateSyncExecution" type="abstract operation">
+            <h1>
+              <ins>
+                ValidateSyncExecution (
+                  _module_: a Cyclic Module Record,
+                  optional _seen_: a List of Module Records,
+                ): a Boolean
+              </ins>
+            </h1>
+            <dl class="header"></dl>
+            <emu-alg>
+              1. If _seen_ is not provided, let _seen_ be a new empty List.
+              1. If _seen_ contains _module_, return ~unused~.
+              1. Append _module_ to _seen_.
+              1. If _module_.[[Status]] is ~evaluated~, return ~unused~.
+              1. If _module_.[[Status]] is ~evaluating~ or ~evaluating-async~, throw a *ReferenceError* exception.
+              1. Assert: _module_.[[Status]] is ~linked~.
+              1. If _module_.[[HasTLA]] is *true*, throw a *ReferenceError* exception.
+              1. For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do
+                1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifer]]).
+                1. Perform ? ValidateSyncExecution(_requiredModule_, _seen_).
+              1. Return ~unused~.
+            </emu-alg>
+          </emu-clause>
+
+          <emu-clause id="sec-GatherAsynchronousTransitiveDependencies" type="abstract operation">
             <h1>
               <ins>
                 GatherAsynchronousTransitiveDependencies (
@@ -1021,7 +1020,7 @@ contributors: Nicolò Ribaudo
             </h1>
             <dl class="header">
               <dt>description</dt>
-              <dd></dd>
+              <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an async dependency is found.</dd>
             </dl>
 
             <emu-alg>
@@ -1029,7 +1028,7 @@ contributors: Nicolò Ribaudo
               1. If _seen_ contains _module_, return ~unused~.
               1. Append _module_ to _seen_.
               1. If _module_ is not a Cyclic Module Record, return ~unused~.
-              1. If _module_.[[Status]] is either ~evaluating~ or ~evaluated~, return ~unused~.
+              1. If _module_.[[Status]] is ~evaluating~, ~evaluating-async~ or ~evaluated~, return ~unused~.
               1. If _module_.[[HasTLA]] is *true*, then
                 1. If _result_ does not contain _module_, append _module_ to _result_.
                 1. Return ~unused~.
