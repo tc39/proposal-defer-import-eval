@@ -919,10 +919,11 @@ contributors: Nicolò Ribaudo
 
             <emu-alg>
               1. If _module_ is not a Cyclic Module Record, then
-                1. Let _promise_ be ! _module_.Evaluate().
-                1. Assert: _promise_.[[PromiseState]] is not ~pending~.
-                1. If _promise_.[[PromiseState]] is ~rejected~, then
-                  1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
+                1. <del>Let _promise_ be ! _module_.Evaluate().</del>
+                1. <del>Assert: _promise_.[[PromiseState]] is not ~pending~.</del>
+                1. <del>If _promise_.[[PromiseState]] is ~rejected~, then</del>
+                  1. <del>Return ThrowCompletion(_promise_.[[PromiseResult]]).</del>
+                1. <ins>Perform ? EvaluateSync(_module_).</ins>
                 1. Return _index_.
               1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
                 1. If _module_.[[EvaluationError]] is ~empty~, return _index_.
