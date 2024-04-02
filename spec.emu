@@ -1034,9 +1034,9 @@ contributors: Nicolò Ribaudo
               1. If _seen_ is not specified, let _seen_ be a new empty List.
               1. If _seen_ contains _module_, return ~unused~.
               1. Append _module_ to _seen_.
-              1. If _module_ is not a Cyclic Module Record, return ~unused~.
-              1. If _module_.[[Status]] is ~evaluating~, ~evaluating-async~ or ~evaluated~, return ~unused~.
-              1. If _module_.[[HasTLA]] is *true*, then
+              1. If _module_ is not a Cyclic Module Record or _module_.[[Status]] is ~evaluated~, return ~unused~.
+              1. Assert: _module_.[[Status]] is not ~evaluating~.
+              1. If _module_.[[Status]] is ~evaluating-async~ or _module_.[[HasTLA]] is *true*, then
                 1. If _result_ does not contain _module_, append _module_ to _result_.
                 1. Return ~unused~.
               1. For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do
