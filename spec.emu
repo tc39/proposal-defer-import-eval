@@ -94,6 +94,9 @@ contributors: Nicolò Ribaudo
         <emu-note>
           <p>ResolveExport is side-effect free. Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result. An implementation might choose to pre-compute or cache the ResolveExport results for the [[Exports]] of each module namespace exotic object.</p>
         </emu-note>
+        <emu-note>
+          <ins>ReadyForSyncExecution can return *false* when this [[Get]] operation on a namespace coming from a deferred import is triggered during the evaluation of one of its dependencies, either synchronously or asynchronously. In that case, the module cannot be fully evaluated and some of its exports will not be initialized yet.</ins>
+        </emu-note>
 
         <emu-clause id="sec-module-namespace-exotic-objects-get-p-receiver-ReadyForSyncExecution" type="abstract operation">
           <h1>
