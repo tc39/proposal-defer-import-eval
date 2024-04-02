@@ -1039,7 +1039,7 @@ contributors: Nicolò Ribaudo
               1. Return ~unused~.
             </emu-alg>
             <emu-note>
-              <p>In the case where module.[[Status]] is ~evaluating-async~, it is possible to short-circuit this check with adding the module to the list if and only if [[AsyncEvaluation]] is true.</p>
+              <p>If [[AsyncEvaluation]] is true, it is possible to short-circuit the check, immediately addding the module to the list and returning.</p>
             </emu-note>
           </emu-clause>
         </emu-clause>
