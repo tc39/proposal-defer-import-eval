@@ -74,7 +74,9 @@ contributors: Nicolò Ribaudo
           1. If _P_ is a Symbol, then
             1. Return ! OrdinaryGet(_O_, _P_, _Receiver_).
           1. <ins>Let _m_ be _O_.[[Module]].</ins>
-          1. <ins>If _m_ is not a Cyclic Module Record, or both _m_.[[Status]] is ~linked~ and AnyDependencyNeedsAsyncEvaluation(_m_) is *false*, then</ins>
+          1. <ins>If _m_ is not a Cyclic Module Record, then</ins>
+            1. <ins>Perform ? EvaluateSync(_m_).</ins>
+          1. <ins>Otherwise if _m_.[[Status]] is not ~evaluated~ and ! ReadyForSyncExecution(_m_) is *true*, then</ins>
             1. <ins>Perform ? EvaluateSync(_m_).</ins>
           1. Let _exports_ be _O_.[[Exports]].
           1. If _exports_ does not contain _P_, return *undefined*.
@@ -93,14 +95,14 @@ contributors: Nicolò Ribaudo
           <p>ResolveExport is side-effect free. Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result. An implementation might choose to pre-compute or cache the ResolveExport results for the [[Exports]] of each module namespace exotic object.</p>
         </emu-note>
         <emu-note>
-          <ins>AnyDependencyNeedsAsyncEvaluation can return *true* when this [[Get]] operation on a namespace coming from a deferred import is triggered during the evaluation of one of its dependencies, either synchronously or asynchronously. In that case, the module cannot be fully evaluated and some of its exports will not be initialized yet.</ins>
+          <ins>ReadyForSyncExecution can return *false* when this [[Get]] operation on a namespace coming from a deferred import is triggered during the evaluation of one of its dependencies, either synchronously or asynchronously. In that case, the module cannot be fully evaluated and some of its exports will not be initialized yet.</ins>
         </emu-note>
 
-        <emu-clause id="sec-module-namespace-exotic-objects-get-p-receiver-AnyDependencyNeedsAsyncEvaluation" type="abstract operation">
+        <emu-clause id="sec-module-namespace-exotic-objects-get-p-receiver-ReadyForSyncExecution" type="abstract operation">
           <h1>
             <ins>
-              AnyDependencyNeedsAsyncEvaluation (
-                _module_: a Module Record,
+              ReadyForSyncExecution (
+                _module_: a Cyclic Module Record,
                 optional _seen_: a List of Module Records,
               ): a Boolean
             </ins>
@@ -108,14 +110,17 @@ contributors: Nicolò Ribaudo
           <dl class="header"></dl>
           <emu-alg>
             1. If _seen_ is not provided, let _seen_ be a new empty List.
-            1. If _seen_ contains _module_, return *false*.
+            1. If _seen_ contains _module_, return *true*.
             1. Append _module_ to _seen_.
-            1. If _module_ is not a Cyclic Module Record or _module_.[[Status]] is ~evaluated~, return *false*.
-            1. If _module_.[[HasTLA]] is *true*, return *true*.
+            1. If _module_.[[Status]] is ~evaluated~, return *true*.
+            1. If _module_.[[Status]] is ~evaluating~ or ~evaluating-async~, return *false*.
+            1. Assert: _module_.[[Status]] is ~linked~.
+            1. If _module_.[[HasTLA]] is *true*, return *false*.
             1. For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do
               1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifer]]).
-              1. If AnyDependencyNeedsAsyncEvaluation(_requiredModule_, _seen_) is *true*, return *true*.
-            1. Return *false*.
+              1. If ! ReadyForSyncExecution(_requiredModule_, _seen_) is *false*, then
+                1. Return *false*.
+            1. Return *true*.
           </emu-alg>
         </emu-clause>
       </emu-clause>
@@ -514,7 +519,7 @@ contributors: Nicolò Ribaudo
                 a List of <del>Strings</del><ins>ModuleRequest Records</ins>
               </td>
               <td>
-                A List of all the |ModuleSpecifier| strings used by the module represented by this record to request the importation of a module, <ins>alongside with their maximum specified import phase (~defer~ or ~evaluation~)</ins>. The List is in source text occurrence order.
+                A List of all the |ModuleSpecifier| strings used by the module represented by this record to request the importation of a module, <ins>along with their maximum specified import phase (~defer~ or ~evaluation~)</ins>. The List is in source text occurrence order.
               </td>
             </tr>
             <tr>
@@ -874,7 +879,8 @@ contributors: Nicolò Ribaudo
           </dl>
 
           <emu-alg>
-            1. Assert: This call to Evaluate is not happening at the same time as another call to Evaluate within the surrounding agent.
+            1. <del>Assert: This call to Evaluate is not happening at the same time as another call to Evaluate within the surrounding agent.</del>.
+            1. <ins>Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~evaluating~ or a status earlier than ~linked~.</ins>
             1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
             1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, set _module_ to _module_.[[CycleRoot]].
             1. If _module_.[[TopLevelCapability]] is not ~empty~, then
@@ -996,7 +1002,7 @@ contributors: Nicolò Ribaudo
             </h1>
             <dl class="header">
               <dt>description</dt>
-              <dd>It synchronously evaluates _module_, which must not have asynchronous dependencies.</dd>
+              <dd>It synchronously evaluates _module_ provided it is ready for synchronous execution.</dd>
             </dl>
 
             <emu-alg>
@@ -1009,7 +1015,7 @@ contributors: Nicolò Ribaudo
             </emu-alg>
           </emu-clause>
 
-          <emu-clause id="sec-InnerAsyncSubgraphsEvaluation" type="abstract operation">
+          <emu-clause id="sec-GatherAsynchronousTransitiveDependencies" type="abstract operation">
             <h1>
               <ins>
                 GatherAsynchronousTransitiveDependencies (
@@ -1021,7 +1027,7 @@ contributors: Nicolò Ribaudo
             </h1>
             <dl class="header">
               <dt>description</dt>
-              <dd></dd>
+              <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an async dependency is found.</dd>
             </dl>
 
             <emu-alg>
