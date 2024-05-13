@@ -94,7 +94,7 @@ contributors: Nicolò Ribaudo
           1. Assert: _targetModule_ is not *undefined*.
           1. If _binding_.[[BindingName]] is ~namespace~, then
             1. Return GetModuleNamespace(_targetModule_, <ins>~evaluation~</ins>).
-            1. <ins>TODO: With `import defer * as x from "..."; export { x }`, the call above has to use ~defer~.</ins>
+            1. <ins>NOTE: The phase here is always ~evaluation~ because in `import defer * as x from "..."; export { x }`, _binding_.[[BindingName]] is *"x"* and not ~namespace~.</ins>
           1. Let _targetEnv_ be _targetModule_.[[Environment]].
           1. If _targetEnv_ is ~empty~, throw a *ReferenceError* exception.
           1. Return ? _targetEnv_.GetBindingValue(_binding_.[[BindingName]], *true*).
