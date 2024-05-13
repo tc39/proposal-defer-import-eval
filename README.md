@@ -342,3 +342,36 @@ function Foo() {
 
 However, this solution doesn't cover deferring the loading of submodules of a lazy graph, and would
 not acheive the characteristics we are looking for.
+
+#### Why `import defer *` gives a different namespace object from `import *`?
+
+If a deferred module throws while being evaluated, `ns.foo` will throw the evaluation error:
+
+```js
+// module-that-throws1
+export let a = 1;
+throw new Error("oops");
+```
+```js
+// main1.js
+import defer * as ns1 from 'module-that-throws';
+try { ns1.a } catch (e) { console.log('caught', e) } // logs "oops"
+```
+
+Module namespace objects of modules that are already evaluated do now throw error on
+property access:
+```js
+// module-that-throws2
+import * as ns2 from 'module-that-throws';
+globalThis.ns2 = ns2;
+export let a = 1;
+throw new Error("oops");
+```
+```js
+// main2.ja
+import("module-that-throws").finally(() => {
+  try { ns2.a } catch (e) { console.log('caught', e) } // Doesn't throw
+});
+```
+
+This is not a problem today, because having access to the namespace object of a module that threw during evaluation is incredibly rare. However, it would be incredibly more common with `import defer` declarations. To guarantee that the behavior of `main1.js` is not affected by module previously loaded, `ns2.foo` must throw even if `module-that-throws` is already evaluated, and thus it cannot be the same namespace object as `import *`.
