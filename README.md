@@ -368,7 +368,7 @@ export let a = 1;
 throw new Error("oops");
 ```
 ```js
-// main2.ja
+// main2.js
 import("module-that-throws").finally(() => {
   try { ns2.a } catch (e) { console.log('caught', e) } // Doesn't throw
 });
