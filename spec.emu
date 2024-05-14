@@ -570,7 +570,7 @@ contributors: Nicolò Ribaudo
                 <ins>an Object or ~empty~</ins>
               </td>
               <td>
-                <ins>The Module Namespace Object (<emu-xref href="#sec-module-namespace-objects"></emu-xref>) whose [[Deferred]] slot is **true**, if one has been created for this module.</ins>
+                <ins>The Module Namespace Object (<emu-xref href="#sec-module-namespace-objects"></emu-xref>) whose [[Deferred]] slot is **true**, if one has been requested for this module.</ins>
               </td>
             </tr>
             <tr>
