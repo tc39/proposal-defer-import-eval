@@ -476,7 +476,7 @@ contributors: Nicolò Ribaudo
           1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: ~evaluation~ }.</ins>
         </emu-alg>
         <emu-grammar>
-          <ins>ImportDeclaration : `import` `defer` ImportClause FromClause `;`</ins>
+          <ins>ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`</ins>
         </emu-grammar>
         <emu-alg>
           1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
@@ -1953,7 +1953,8 @@ contributors: Nicolò Ribaudo
       <h2>Syntax</h2>
       <emu-grammar type="definition">
         ImportDeclaration :
-          `import` <ins>`defer`?</ins> ImportClause FromClause `;`
+          `import` ImportClause FromClause `;`
+          <ins>`import` `defer` NameSpaceImport FromClause `;`</ins>
           `import` ModuleSpecifier `;`
 
         ImportClause :
@@ -2000,13 +2001,6 @@ contributors: Nicolò Ribaudo
             It is a Syntax Error if the BoundNames of |ImportDeclaration| contains any duplicate entries.
           </li>
         </ul>
-
-        <emu-grammar><ins>ImportDeclaration : `import` `defer` ImportClause FromClause `;`</ins></emu-grammar>
-        <ul>
-          <li>
-            <ins>It is a Syntax Error if |ImportClause| is not |NameSpaceImport|.</ins>
-          </li>
-        </ul>
       </emu-clause>
 
       <emu-clause id="sec-static-semantics-importentries" oldids="sec-module-semantics-static-semantics-importentries,sec-imports-static-semantics-importentries" type="sdo">
@@ -2031,10 +2025,15 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ImportDeclaration : `import` <ins>`defer`?</ins> ImportClause FromClause `;`</emu-grammar>
+        <emu-grammar>ImportDeclaration : `import` ImportClause FromClause `;`</emu-grammar>
         <emu-alg>
           1. Let _module_ be <del>the sole element of ModuleRequests</del><ins>SV</ins> of |FromClause|.
           1. Return ImportEntriesForModule of |ImportClause| with arguments _module_.
+        </emu-alg>
+        <emu-grammar><ins>ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`</ins></emu-grammar>
+        <emu-alg>
+          1. <ins>Let _module_ be SV of |FromClause|.</ins>
+          1. <ins>Return ImportEntriesForModule of |NameSpaceImport| with arguments _module_.</ins>
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ModuleSpecifier `;`</emu-grammar>
         <emu-alg>
