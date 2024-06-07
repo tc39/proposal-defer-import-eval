@@ -331,8 +331,7 @@ contributors: Nicolò Ribaudo
                 1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, &laquo; _namespace_ &raquo;).
                 1. Return ~UNUSED~.
               1. <ins>If _phase_ is ~defer~, then</ins>
-                1. <ins>Let _evaluationList_ be a new empty List.</ins>
-                1. <ins>Perform GatherAsynchronousTransitiveDependencies(_module_, _evaluationList_).</ins>
+                1. <ins>Let _evaluationList_ be GatherAsynchronousTransitiveDependencies(_module_).</ins>
                 1. <ins>If _evaluationList_ is empty, then</ins>
                   1. <ins>Perform _fulfilledClosure_().</ins>
                   1. <ins>Return ~UNUSED~.</ins>
@@ -1080,7 +1079,10 @@ contributors: Nicolò Ribaudo
               1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
                 1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).</ins>
                 1. <ins>If _required_.[[Phase]] is ~defer~, then</ins>
-                  1. <ins>Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _evaluationList_).</ins>
+                  1. <ins>Let _additionalModules_ be GatherAsynchronousTransitiveDependencies(_requiredModule_).</ins>
+                  1. <ins>For each Module Record _additionalModule_ of _additionalModules_, do</ins>
+                    1. <ins>If _additionalModule_ is not in _evaluationList_, then</ins>
+                      1. <ins>Append _additionalModule_ to _evaluationList_.</ins>
                 1. <ins>Else if _evaluationList_ does not contain _requiredModule_, then</ins>
                   1. <ins>Append _requiredModule_ to _evaluationList_.</ins>
               1. Append _module_ to _stack_.
@@ -1158,9 +1160,8 @@ contributors: Nicolò Ribaudo
               <ins>
                 GatherAsynchronousTransitiveDependencies (
                   _module_: a Module Record,
-                  _result_: a List of Module Records,
                   optional _seen_: a List of Module Records
-                ): ~unused~
+                ): a List of Module Records
               </ins>
             </h1>
             <dl class="header">
@@ -1170,17 +1171,20 @@ contributors: Nicolò Ribaudo
 
             <emu-alg>
               1. If _seen_ is not specified, let _seen_ be a new empty List.
-              1. If _seen_ contains _module_, return ~unused~.
+              1. Let _result_ be a new empty List.
+              1. If _seen_ contains _module_, return _result_.
               1. Append _module_ to _seen_.
-              1. If _module_ is not a Cyclic Module Record, return ~unused~.
-              1. If _module_.[[Status]] is either ~evaluating~ or ~evaluated~, return ~unused~.
+              1. If _module_ is not a Cyclic Module Record, return _result_.
+              1. If _module_.[[Status]] is either ~evaluating~ or ~evaluated~, return _result_.
               1. If _module_.[[HasTLA]] is *true*, then
-                1. If _result_ does not contain _module_, append _module_ to _result_.
-                1. Return ~unused~.
+                1. Append _module_ to _result_.
+                1. Return _result_.
               1. For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do
                 1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).
-                1. Perform GatherAsynchronousTransitiveDependencies(_requiredModule_, _result_, _seen_).
-              1. Return ~unused~.
+                1. Let _additionalModules_ be GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_).
+                1. For each Module Record _m_ of _additionalModules_, do
+                  1. If _result_ does not contain _m_, append _m_ to _result_.
+              1. Return _result_.
             </emu-alg>
           </emu-clause>
         </emu-clause>
