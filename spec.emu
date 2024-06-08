@@ -1081,7 +1081,7 @@ contributors: Nicolò Ribaudo
                 1. <ins>If _required_.[[Phase]] is ~defer~, then</ins>
                   1. <ins>Let _additionalModules_ be GatherAsynchronousTransitiveDependencies(_requiredModule_).</ins>
                   1. <ins>For each Module Record _additionalModule_ of _additionalModules_, do</ins>
-                    1. <ins>If _additionalModule_ is not in _evaluationList_, then</ins>
+                    1. <ins>If _evaluationList_ does not contain _additionalModule_, then</ins>
                       1. <ins>Append _additionalModule_ to _evaluationList_.</ins>
                 1. <ins>Else if _evaluationList_ does not contain _requiredModule_, then</ins>
                   1. <ins>Append _requiredModule_ to _evaluationList_.</ins>
