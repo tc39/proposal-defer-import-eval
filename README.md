@@ -4,16 +4,18 @@ previously known as "Lazy Module Initialization"
 
 ## Status
 
-Champion(s): *Yulia Startsev and Nicolò Ribaudo*
+Champion(s): *Nicolò Ribaudo*
 
 Author(s): *Yulia Startsev, Nicolò Ribaudo and Guy Bedford*
 
-Stage: 2
+Stage: 2.7
 
 Slides:
 - 2021-01 - [Stage 1](https://docs.google.com/presentation/d/17NsxHzAC2RlP5rB3wrns9O2Z-NduSpcm2_GOVo2TnKE) ([notes](https://github.com/tc39/notes/blob/main/meetings/2021-01/jan-28.md#defer-module-import-eval))
 - 2022-11 - [Take two: Defer Module Evaluation](https://docs.google.com/presentation/d/10cn4SfVY20no6JmtWL72JLD6rmJ-dnafIfh8XmmC7mA) ([notes](https://github.com/tc39/notes/blob/main/meetings/2022-11/nov-30.md#deferred-module-evaluation))
 - 2023-07 - [Deferred import evaluation for Stage 2](https://docs.google.com/presentation/d/1rSsVsFsnXQZ8pEGFwAGiVbVqndr4DHEUqTGEM9Au0_4) ([notes](https://github.com/tc39/notes/blob/main/meetings/2023-07/july-11.md#deferred-import-evaluation))
+- 2024-04 - [Deferred import evaluation for Stage 2.7](https://docs.google.com/presentation/d/1oPEF8nA9Iq5cAqjN-FqMigNNfz6lWCUbNfIsEjRXf4Y/edit#slide=id.p)
+- 2024-06 - [Deferred import evaluation for Stage 2.7 (2)](https://docs.google.com/presentation/d/1EjV6QbT4bvcOdWj-gCLwP5fcEWRfewzbrI3vOI11LA8/edit#slide=id.p)
 
 ## Background
 
