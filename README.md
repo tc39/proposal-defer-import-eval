@@ -360,7 +360,7 @@ import defer * as ns1 from 'module-that-throws';
 try { ns1.a } catch (e) { console.log('caught', e) } // logs "oops"
 ```
 
-Module namespace objects of modules that are already evaluated do now throw error on
+Module namespace objects of modules that are _already evaluated_ and threw during evaluation do now re-throw an error on
 property access:
 ```js
 // module-that-throws2
@@ -376,4 +376,12 @@ import("module-that-throws").finally(() => {
 });
 ```
 
-This is not a problem today, because having access to the namespace object of a module that threw during evaluation is incredibly rare. However, it would be incredibly more common with `import defer` declarations. To guarantee that the behavior of `main1.js` is not affected by module previously loaded, `ns2.foo` must throw even if `module-that-throws` is already evaluated, and thus it cannot be the same namespace object as `import *`.
+This is not a problem today, because having access to the namespace object of a module that threw during evaluation is incredibly rare. However, it would be incredibly more common with `import defer` declarations. To guarantee that the behavior of `main1.js` is not affected by module previously loaded (and to avoid race conditions), `ns2.foo` must throw even if `module-that-throws` is already evaluated, and thus it cannot be the same namespace object as `import *`.
+
+Another approach we considered (and discarded) was to always suppress evaluation errors on namespace property access, so that in the ecample above `ns1.a` would be guaranteed to _never_ throw and thus not be affected by unrelated modules that might have already triggered evaluation of `module-that-throws`.
+
+#### Why not re-use import attributes (`import * as ns from "mod" with { defer: true }`)?
+
+There are two reaosns why we chose to use an "import modifier" rather than an attribute:
+1. Import attributes affect what a module _is_, but cannot change basic semantics of how ECMAScript modules behave: they are similar to adding query parameters to the imported URL, except that attributes are handled by the running environment rather than by the server. For example, `with { type: "json" }` behaves as if the imported module was a JavaScript file wrapped in ``export default JSON.parse(` ... the file contents ... `);``. `import defer` changes how namespace objects behave (by making them side-effectul, while before this proposal property access on namespace objects couldn't trigger any side effect): it cannot be expressed as a wrapped/modified "classic" ECMAScript module.
+2. Together with the [source phase imports proposal](https://github.com/tc39/proposal-source-phase-imports), we are exposing multiple "phases" of module loading. The phases we've identified are: resolving a module given a specifier, fetching the module (these two both happens in hosts and not in ECMA-262), attaching modules to their execution and resolution context, linking modules together, and finally executing them. We are using `import` modifiers to represent modules processed up to one of those phases, without going all the way to finishing execution. These modifiers give more guarantees than import attributes: while `import "x" with { attr1: "val" }` and `import "x" with { attr2: "val2" }` might be two completely different modules, `import source s from "x"`, `import defer * as ns from "x"`, and `import "x"` all are guaranteed to load the same module, and that module will be executed at most once regardless of which "phase" it gets temporarely paused at (and then continued from).
