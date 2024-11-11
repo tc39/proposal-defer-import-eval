@@ -70,7 +70,75 @@ contributors: Nicolò Ribaudo
         </table>
       </emu-table>
 
-      <emu-clause id="sec-module-namespace-exotic-objects-get-p-receiver" type="internal method" number="8">
+      <emu-clause id="sec-module-namespace-exotic-objects-getownproperty-p" type="internal method" number="5">
+        <h1>
+          [[GetOwnProperty]] (
+            _P_: a property key,
+          ): either a normal completion containing either a Property Descriptor or *undefined*, or a throw completion
+        </h1>
+        <dl class="header">
+          <dt>for</dt>
+          <dd>a module namespace exotic object _O_</dd>
+        </dl>
+        <emu-alg>
+          1. If _P_ is a Symbol, return OrdinaryGetOwnProperty(_O_, _P_).
+          1. <ins>If _O_.[[Deferred]] is *true*, then</ins>
+            1. <ins>If _P_ is *"then"*, return *undefined*.</ins>
+            1. <ins>Perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
+          1. Let _exports_ be _O_.[[Exports]].
+          1. If _exports_ does not contain _P_, return *undefined*.
+          1. Let _value_ be ? _O_.[[Get]](_P_, _O_).
+          1. Return PropertyDescriptor { [[Value]]: _value_, [[Writable]]: *true*, [[Enumerable]]: *true*, [[Configurable]]: *false* }.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-module-namespace-exotic-objects-defineownproperty-p-desc" type="internal method">
+        <h1>
+          [[DefineOwnProperty]] (
+            _P_: a property key,
+            _Desc_: a Property Descriptor,
+          ): either a normal completion containing a Boolean or a throw completion
+        </h1>
+        <dl class="header">
+          <dt>for</dt>
+          <dd>a module namespace exotic object _O_</dd>
+        </dl>
+        <emu-alg>
+          1. If _P_ is a Symbol, return ! OrdinaryDefineOwnProperty(_O_, _P_, _Desc_).
+          1. Let _current_ be ? _O_.[[GetOwnProperty]](_P_).
+          1. <ins>NOTE: If _O_.[[Deferred]] is *true* and _P_ is not *"then"*, the step above will ensure that the module is evaluated.</ins>
+          1. If _current_ is *undefined*, return *false*.
+          1. If _Desc_ has a [[Configurable]] field and _Desc_.[[Configurable]] is *true*, return *false*.
+          1. If _Desc_ has an [[Enumerable]] field and _Desc_.[[Enumerable]] is *false*, return *false*.
+          1. If IsAccessorDescriptor(_Desc_) is *true*, return *false*.
+          1. If _Desc_ has a [[Writable]] field and _Desc_.[[Writable]] is *false*, return *false*.
+          1. If _Desc_ has a [[Value]] field, return SameValue(_Desc_.[[Value]], _current_.[[Value]]).
+          1. Return *true*.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-module-namespace-exotic-objects-hasproperty-p" type="internal method">
+        <h1>
+          [[HasProperty]] (
+            _P_: a property key,
+          ): a normal completion containing a Boolean
+        </h1>
+        <dl class="header">
+          <dt>for</dt>
+          <dd>a module namespace exotic object _O_</dd>
+        </dl>
+        <emu-alg>
+          1. If _P_ is a Symbol, return ! OrdinaryHasProperty(_O_, _P_).
+          1. <ins>If _O_.[[Deferred]] is *true*, then</ins>
+            1. <ins>If _P_ is *"then"*, return *false*.</ins>
+            1. <ins>Perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
+          1. Let _exports_ be _O_.[[Exports]].
+          1. If _exports_ contains _P_, return *true*.
+          1. Return *false*.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-module-namespace-exotic-objects-get-p-receiver" type="internal method">
         <h1>
           [[Get]] (
             _P_: a property key,
@@ -84,7 +152,9 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. If _P_ is a Symbol, then
             1. Return ! OrdinaryGet(_O_, _P_, _Receiver_).
-          1. <ins>If _O_.[[Deferred]] is *true*, perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
+          1. <ins>If _O_.[[Deferred]] is *true*, then</ins>
+            1. <ins>If _P_ is *"then"*, return *undefined*.</ins>
+            1. <ins>Perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
           1. Let _exports_ be _O_.[[Exports]].
           1. If _exports_ does not contain _P_, return *undefined*.
           1. Let _m_ be _O_.[[Module]].
@@ -102,56 +172,66 @@ contributors: Nicolò Ribaudo
         <emu-note>
           <p>ResolveExport is side-effect free. Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result. An implementation might choose to pre-compute or cache the ResolveExport results for the [[Exports]] of each module namespace exotic object.</p>
         </emu-note>
-        <emu-note>
-          <ins>ReadyForSyncExecution can return *false* when this [[Get]] operation on a namespace coming from a deferred import is triggered during the evaluation of one of its dependencies, either synchronously or asynchronously. In that case, the module cannot be fully evaluated and some of its exports will not be initialized yet.</ins>
-        </emu-note>
-
-        <emu-clause id="sec-module-namespace-exotic-objects-get-p-receiver-EnsureDeferredNamespaceEvaluation" type="abstract operation">
-          <h1>
-            <ins>
-              EnsureDeferredNamespaceEvaluation (
-                _O_: a Module Namespace Exotic Object,
-              ): either a normal completion containing ~unused~ or a throw completion
-            </ins>
-          </h1>
-          <dl class="header"></dl>
-          <emu-alg>
-            1. Assert: _O_.[[Deferred]] is *true*.
-            1. Let _m_ be _O_.[[Module]].
-            1. If _m_ is a Cyclic Module Record, _m_.[[Status]] is not ~evaluated~, and ReadyForSyncExecution(_m_) is *false*, throw a *TypeError* exception.
-            1. Perform ? EvaluateSync(_m_).
-            1. Return ~unused~.
-          </emu-alg>
-        </emu-clause>
-
-        <emu-clause id="sec-module-namespace-exotic-objects-get-p-receiver-ReadyForSyncExecution" type="abstract operation">
-          <h1>
-            <ins>
-              ReadyForSyncExecution (
-                _module_: a Cyclic Module Record,
-                optional _seen_: a List of Module Records,
-              ): a Boolean
-            </ins>
-          </h1>
-          <dl class="header"></dl>
-          <emu-alg>
-            1. If _seen_ is not provided, let _seen_ be a new empty List.
-            1. If _seen_ contains _module_, return *true*.
-            1. Append _module_ to _seen_.
-            1. If _module_.[[Status]] is ~evaluated~, return *true*.
-            1. If _module_.[[Status]] is ~evaluating~ or ~evaluating-async~, return *false*.
-            1. Assert: _module_.[[Status]] is ~linked~.
-            1. If _module_.[[HasTLA]] is *true*, return *false*.
-            1. For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do
-              1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).
-              1. If ReadyForSyncExecution(_requiredModule_, _seen_) is *false*, then
-                1. Return *false*.
-            1. Return *true*.
-          </emu-alg>
-        </emu-clause>
       </emu-clause>
 
-      <emu-clause id="sec-modulenamespacecreate" type="abstract operation" number="10">
+      <emu-clause id="sec-module-namespace-exotic-objects-set-p-v-receiver" type="internal method">
+        <h1>
+          [[Set]] (
+            _P_: a property key,
+            _V_: an ECMAScript language value,
+            _Receiver_: an ECMAScript language value,
+          ): a normal completion containing *false*
+        </h1>
+        <dl class="header">
+          <dt>for</dt>
+          <dd>a module namespace exotic object</dd>
+        </dl>
+        <emu-alg>
+          1. Return *false*.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-module-namespace-exotic-objects-delete-p" type="internal method">
+        <h1>
+          [[Delete]] (
+            _P_: a property key,
+          ): a normal completion containing a Boolean
+        </h1>
+        <dl class="header">
+          <dt>for</dt>
+          <dd>a module namespace exotic object _O_</dd>
+        </dl>
+        <emu-alg>
+          1. If _P_ is a Symbol, then
+            1. Return ! OrdinaryDelete(_O_, _P_).
+          1. <ins>If _O_.[[Deferred]] is *true*, then</ins>
+            1. <ins>If _P_ is *"then"*, return *true*.</ins>
+            1. <ins>Perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
+          1. Let _exports_ be _O_.[[Exports]].
+          1. If _exports_ contains _P_, return *false*.
+          1. Return *true*.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-module-namespace-exotic-objects-ownpropertykeys" type="internal method">
+        <h1>[[OwnPropertyKeys]] ( ): a normal completion containing a List of property keys</h1>
+        <dl class="header">
+          <dt>for</dt>
+          <dd>a module namespace exotic object _O_</dd>
+        </dl>
+        <emu-alg>
+          1. <ins>If _O_.[[Deferred]] is *true*, then</ins>
+            1. <ins>Perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
+          1. Let _exports_ be _O_.[[Exports]].
+          1. <ins>If _O_.[[Deferred]] is *true*, and _exports_ contains *"then"*, then</ins>
+            1. <ins>Set _exports_ to a copy of _exports_.</ins>
+            1. <ins>Remove *"then"* from _exports_.</ins>
+          1. Let _symbolKeys_ be OrdinaryOwnPropertyKeys(_O_).
+          1. Return the list-concatenation of _exports_ and _symbolKeys_.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-modulenamespacecreate" type="abstract operation">
         <h1>
           ModuleNamespaceCreate (
             _module_: a Module Record,
@@ -182,6 +262,50 @@ contributors: Nicolò Ribaudo
             1. <ins>Set _M_.[[Deferred]] to *false*.</ins>
           1. Return _M_.
         </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-EnsureDeferredNamespaceEvaluation" type="abstract operation">
+        <h1>
+          <ins>
+            EnsureDeferredNamespaceEvaluation (
+              _O_: a Module Namespace Exotic Object,
+            ): either a normal completion containing ~unused~ or a throw completion
+          </ins>
+        </h1>
+        <dl class="header"></dl>
+        <emu-alg>
+          1. Assert: _O_.[[Deferred]] is *true*.
+          1. Let _m_ be _O_.[[Module]].
+          1. If _m_ is a Cyclic Module Record, _m_.[[Status]] is not ~evaluated~, and ReadyForSyncExecution(_m_) is *false*, throw a *TypeError* exception.
+          1. Perform ? EvaluateSync(_m_).
+          1. Return ~unused~.
+        </emu-alg>
+
+        <emu-clause id="sec-ReadyForSyncExecution" type="abstract operation">
+          <h1>
+            <ins>
+              ReadyForSyncExecution (
+                _module_: a Cyclic Module Record,
+                optional _seen_: a List of Module Records,
+              ): a Boolean
+            </ins>
+          </h1>
+          <dl class="header"></dl>
+          <emu-alg>
+            1. If _seen_ is not provided, let _seen_ be a new empty List.
+            1. If _seen_ contains _module_, return *true*.
+            1. Append _module_ to _seen_.
+            1. If _module_.[[Status]] is ~evaluated~, return *true*.
+            1. If _module_.[[Status]] is ~evaluating~ or ~evaluating-async~, return *false*.
+            1. Assert: _module_.[[Status]] is ~linked~.
+            1. If _module_.[[HasTLA]] is *true*, return *false*.
+            1. For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do
+              1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).
+              1. If ReadyForSyncExecution(_requiredModule_, _seen_) is *false*, then
+                1. Return *false*.
+            1. Return *true*.
+          </emu-alg>
+        </emu-clause>
       </emu-clause>
     </emu-clause>
   </emu-clause>
