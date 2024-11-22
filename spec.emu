@@ -1028,6 +1028,10 @@ contributors: Nicolò Ribaudo
                 1. Perform ! Call(_state_.[[PromiseCapability]].[[Resolve]], *undefined*, « *undefined* »).
               1. Return ~unused~.
             </emu-alg>
+
+            <emu-note>
+              <ins>There is no special handling for ModuleRequests whose [[Phase]] is ~defer~: any error from loading or parsing the corresponding modules will make InnerModuleLoading fail.</ins>
+            </emu-note>
           </emu-clause>
 
           <emu-clause id="sec-ContinueModuleLoading" type="abstract operation">
@@ -1126,6 +1130,10 @@ contributors: Nicolò Ribaudo
                   1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
               1. Return _index_.
             </emu-alg>
+
+            <emu-note>
+              <ins>There is no special handling for ModuleRequests whose [[Phase]] is ~defer~: any error from linking the corresponding modules will make InnerModuleLinking fail.</ins>
+            </emu-note>
           </emu-clause>
         </emu-clause>
 
