@@ -16,7 +16,8 @@ contributors: Nicolò Ribaudo
     <h1>Built-in Exotic Object Internal Methods and Slots</h1>
     <p>This specification defines several kinds of built-in exotic objects. These objects generally behave similar to ordinary objects except for a few specific situations. The following exotic objects use the ordinary object internal methods except where it is explicitly specified otherwise below:</p>
 
-    <emu-clause id="sec-module-namespace-exotic-objects" number="6">
+    <!-- NOTE!!!!: the oldids here is new, don't forget it in the ecma262 PR -->
+    <emu-clause id="sec-module-namespace-exotic-objects" oldids="sec-module-namespace-objects" number="6">
       <h1>Module Namespace Exotic Objects</h1>
       <p>A module namespace exotic object is an exotic object that exposes the bindings exported from an ECMAScript |Module| (See <emu-xref href="#sec-exports"></emu-xref>). There is a one-to-one correspondence between the String-keyed own properties of a module namespace exotic object and the binding names exported by the |Module|. The exported bindings include any bindings that are indirectly exported using `export *` export items. Each String-valued own property key is the StringValue of the corresponding exported binding name. These are the only String-keyed properties of a module namespace exotic object. Each such property has the attributes { [[Writable]]: *true*, [[Enumerable]]: *true*, [[Configurable]]: *false* }. Module namespace exotic objects are not extensible.</p>
       <p>An object is a <dfn id="module-namespace-exotic-object" variants="module namespace exotic objects">module namespace exotic object</dfn> if its [[GetPrototypeOf]], [[SetPrototypeOf]], [[IsExtensible]], [[PreventExtensions]], [[GetOwnProperty]], [[DefineOwnProperty]], [[HasProperty]], [[Get]], [[Set]], [[Delete]], and [[OwnPropertyKeys]] internal methods use the definitions in this section, and its other essential internal methods use the definitions found in <emu-xref href="#sec-ordinary-object-internal-methods-and-internal-slots"></emu-xref>. These methods are installed by ModuleNamespaceCreate.</p>
@@ -235,15 +236,18 @@ contributors: Nicolò Ribaudo
           1. Set _M_.[[Module]] to _module_.
           1. [declared="comparefn"] Let _sortedExports_ be a List whose elements are the elements of _exports_ ordered as if an Array of the same values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_.
           1. Set _M_.[[Exports]] to _sortedExports_.
-          1. Create own properties of _M_ corresponding to the definitions in <emu-xref href="#sec-module-namespace-objects"></emu-xref>.
+          1. <del>Create own properties of _M_ corresponding to the definitions in <emu-xref href="#sec-module-namespace-objects"></emu-xref>.</del>
           1. <ins>If _phase_ is ~defer~, then</ins>
             1. <ins>Assert: _module_.[[DeferredNamespace]] is ~empty~.</ins>
             1. <ins>Set _module_.[[DeferredNamespace]] to _M_.</ins>
             1. <ins>Set _M_.[[Deferred]] to *true*.</ins>
+            1. <ins>Let _toStringTag_ be *"Deferred Module"*.</ins>
           1. <ins>Else,</ins>
             1. <ins>Assert: _module_.[[Namespace]] is ~empty~.</ins>
             1. Set _module_.[[Namespace]] to _M_.
             1. <ins>Set _M_.[[Deferred]] to *false*.</ins>
+            1. <ins>Let _toStringTag_ be *"Module"*.</ins>
+          1. <ins>Create an own data property of _M_ named %Symbol.toStringTag% whose [[Value]] is _toStringTag_ and whose [[Writable]], [[Enumerable]], and [[Configurable]] attributes are *false*.</ins>
           1. Return _M_.
         </emu-alg>
       </emu-clause>
@@ -690,7 +694,7 @@ contributors: Nicolò Ribaudo
                 an Object or ~empty~
               </td>
               <td>
-                The Module Namespace Object (<emu-xref href="#sec-module-namespace-objects"></emu-xref>) whose [[Deferred]] slot is **false**, if one has been created for this module.
+                The Module Namespace Object (<emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>) whose [[Deferred]] slot is **false**, if one has been created for this module.
               </td>
             </tr>
             <tr>
@@ -701,7 +705,7 @@ contributors: Nicolò Ribaudo
                 <ins>an Object or ~empty~</ins>
               </td>
               <td>
-                <ins>The Module Namespace Object (<emu-xref href="#sec-module-namespace-objects"></emu-xref>) whose [[Deferred]] slot is **true**, if one has been requested for this module.</ins>
+                <ins>The Module Namespace Object (<emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>) whose [[Deferred]] slot is **true**, if one has been requested for this module.</ins>
               </td>
             </tr>
             <tr>
@@ -2368,6 +2372,22 @@ contributors: Nicolò Ribaudo
           <p>*"\*default\*"* is used within this specification as a synthetic name for anonymous default export values. See <emu-xref href="#note-star-default-star">this note</emu-xref> for more details.</p>
         </emu-note>
       </emu-clause>
+    </emu-clause>
+  </emu-clause>
+</emu-clause>
+
+<emu-clause id="sec-reflection" number="28">
+  <h1>Reflection</h1>
+
+  <emu-clause id="sec-module-namespace-objects" number="3">
+    <h1><del>Module Namespace Objects</del></h1>
+    <p><del>A Module Namespace Object is a module namespace exotic object that provides runtime property-based access to a module's exported bindings. There is no constructor function for Module Namespace Objects. Instead, such an object is created for each module that is imported by an |ImportDeclaration| that contains a |NameSpaceImport|.</del></p>
+    <p><del>In addition to the properties specified in <emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref> each Module Namespace Object has the following own property:</del></p>
+
+    <emu-clause oldids="sec-@@tostringtag" id="sec-%symbol.tostringtag%">
+      <h1><del>%Symbol.toStringTag%</del></h1>
+      <p><del>The initial value of the %Symbol.toStringTag% property is the String value *"Module"*.</del></p>
+      <p><del>This property has the attributes { [[Writable]]: *false*, [[Enumerable]]: *false*, [[Configurable]]: *false* }.</del></p>
     </emu-clause>
   </emu-clause>
 </emu-clause>
