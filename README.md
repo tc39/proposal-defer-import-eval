@@ -356,7 +356,7 @@ throw new Error("oops");
 ```
 ```js
 // main1.js
-import defer * as ns1 from 'module-that-throws';
+import defer * as ns1 from 'module-that-throws1';
 try { ns1.a } catch (e) { console.log('caught', e) } // logs "oops"
 ```
 
@@ -364,14 +364,14 @@ Module namespace objects of modules that are _already evaluated_ and threw durin
 property access:
 ```js
 // module-that-throws2
-import * as ns2 from 'module-that-throws';
+import * as ns2 from 'module-that-throws2';
 globalThis.ns2 = ns2;
 export let a = 1;
 throw new Error("oops");
 ```
 ```js
 // main2.js
-import("module-that-throws").finally(() => {
+import("module-that-throws2").finally(() => {
   try { ns2.a } catch (e) { console.log('caught', e) } // Doesn't throw
 });
 ```
