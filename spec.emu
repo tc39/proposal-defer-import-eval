@@ -81,10 +81,8 @@ contributors: Nicolò Ribaudo
           <dd>a module namespace exotic object _O_</dd>
         </dl>
         <emu-alg>
-          1. If _P_ is a Symbol, return OrdinaryGetOwnProperty(_O_, _P_).
-          1. <ins>If _O_.[[Deferred]] is *true*, then</ins>
-            1. <ins>If _P_ is *"then"*, return *undefined*.</ins>
-            1. <ins>Perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
+          1. If <del>_P_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_P_, _O_)</ins> is *true*, return OrdinaryGetOwnProperty(_O_, _P_).
+          1. <ins>If _O_.[[Deferred]] is *true*, perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
           1. Let _exports_ be _O_.[[Exports]].
           1. If _exports_ does not contain _P_, return *undefined*.
           1. Let _value_ be ? _O_.[[Get]](_P_, _O_).
@@ -104,9 +102,9 @@ contributors: Nicolò Ribaudo
           <dd>a module namespace exotic object _O_</dd>
         </dl>
         <emu-alg>
-          1. If _P_ is a Symbol, return ! OrdinaryDefineOwnProperty(_O_, _P_, _Desc_).
+          1. If <del>_P_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_P_, _O_)</ins>, return ! OrdinaryDefineOwnProperty(_O_, _P_, _Desc_).
           1. Let _current_ be ? _O_.[[GetOwnProperty]](_P_).
-          1. <ins>NOTE: If _O_.[[Deferred]] is *true* and _P_ is not *"then"*, the step above will ensure that the module is evaluated.</ins>
+          1. <ins>NOTE: If _O_.[[Deferred]] is *true*, the step above will ensure that the module is evaluated.</ins>
           1. If _current_ is *undefined*, return *false*.
           1. If _Desc_ has a [[Configurable]] field and _Desc_.[[Configurable]] is *true*, return *false*.
           1. If _Desc_ has an [[Enumerable]] field and _Desc_.[[Enumerable]] is *false*, return *false*.
@@ -128,10 +126,8 @@ contributors: Nicolò Ribaudo
           <dd>a module namespace exotic object _O_</dd>
         </dl>
         <emu-alg>
-          1. If _P_ is a Symbol, return ! OrdinaryHasProperty(_O_, _P_).
-          1. <ins>If _O_.[[Deferred]] is *true*, then</ins>
-            1. <ins>If _P_ is *"then"*, return *false*.</ins>
-            1. <ins>Perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
+          1. If <del>_P_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_P_, _O_)</ins>, return ! OrdinaryHasProperty(_O_, _P_).
+          1. <ins>If _O_.[[Deferred]] is *true*, perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
           1. Let _exports_ be _O_.[[Exports]].
           1. If _exports_ contains _P_, return *true*.
           1. Return *false*.
@@ -150,11 +146,8 @@ contributors: Nicolò Ribaudo
           <dd>a module namespace exotic object _O_</dd>
         </dl>
         <emu-alg>
-          1. If _P_ is a Symbol, then
-            1. Return ! OrdinaryGet(_O_, _P_, _Receiver_).
-          1. <ins>If _O_.[[Deferred]] is *true*, then</ins>
-            1. <ins>If _P_ is *"then"*, return *undefined*.</ins>
-            1. <ins>Perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
+          1. If <del>_P_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_P_, _O_)</ins>, return ! OrdinaryGet(_O_, _P_, _Receiver_).
+          1. <ins>If _O_.[[Deferred]] is *true*, perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
           1. Let _exports_ be _O_.[[Exports]].
           1. If _exports_ does not contain _P_, return *undefined*.
           1. Let _m_ be _O_.[[Module]].
@@ -202,11 +195,8 @@ contributors: Nicolò Ribaudo
           <dd>a module namespace exotic object _O_</dd>
         </dl>
         <emu-alg>
-          1. If _P_ is a Symbol, then
-            1. Return ! OrdinaryDelete(_O_, _P_).
-          1. <ins>If _O_.[[Deferred]] is *true*, then</ins>
-            1. <ins>If _P_ is *"then"*, return *true*.</ins>
-            1. <ins>Perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
+          1. If <del>_P_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_P_, _O_)</ins>, return ! OrdinaryDelete(_O_, _P_).
+          1. <ins>If _O_.[[Deferred]] is *true*, perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
           1. Let _exports_ be _O_.[[Exports]].
           1. If _exports_ contains _P_, return *false*.
           1. Return *true*.
@@ -220,8 +210,7 @@ contributors: Nicolò Ribaudo
           <dd>a module namespace exotic object _O_</dd>
         </dl>
         <emu-alg>
-          1. <ins>If _O_.[[Deferred]] is *true*, then</ins>
-            1. <ins>Perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
+          1. <ins>If _O_.[[Deferred]] is *true*, perform ? EnsureDeferredNamespaceEvaluation(_O_).</ins>
           1. Let _exports_ be _O_.[[Exports]].
           1. <ins>If _O_.[[Deferred]] is *true*, and _exports_ contains *"then"*, then</ins>
             1. <ins>Set _exports_ to a copy of _exports_.</ins>
@@ -261,6 +250,27 @@ contributors: Nicolò Ribaudo
             1. Set _module_.[[Namespace]] to _M_.
             1. <ins>Set _M_.[[Deferred]] to *false*.</ins>
           1. Return _M_.
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-IsSymbolLikeNamespaceKey" type="abstract operation">
+        <h1>
+          <ins>
+            IsSymbolLikeNamespaceKey (
+              _P_: a property key,
+              _ns_: a Module Namespace Exotic Object,
+            ): a Boolean
+          </ins>
+        </h1>
+        <dl class="header">
+          <dt>description</dt>
+          <dd>It determines if a property key corresponds to a potential ordinary property of _ns_, rather than being mapped to one of the module exports.</dd>
+        </dl>
+
+        <emu-alg>
+          1. If _P_ is a Symbol, return *true*.
+          1. If _ns_.[[Deferred]] is *true* and _P_ is *"then"*, return *true*.
+          1. Return *false*.
         </emu-alg>
       </emu-clause>
 
