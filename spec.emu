@@ -9,6 +9,8 @@ stage: 2
 contributors: Nicolò Ribaudo
 </pre>
 
+<emu-note type="editor">The diff markers in this proposal are on top of <a href="https://github.com/tc39/ecma262/pull/3057">tc39/ecma262#3057</a> (Import Attributes).</emu-note>
+
 <emu-clause id="sec-ordinary-and-exotic-objects-behaviours" number="10">
   <h1>Ordinary and Exotic Objects Behaviours</h1>
 
@@ -59,13 +61,13 @@ contributors: Nicolò Ribaudo
           </tr>
           <tr>
             <td>
-              [[Deferred]]
+              <ins>[[Deferred]]</ins>
             </td>
             <td>
-              a Boolean
+              <ins>a Boolean</ins>
             </td>
             <td>
-              Whether this module namespace was obtained through `import defer`/`import.defer()`. Deferred namespaces can have side effects when accessing properties on them.
+              <ins>Whether this module namespace was obtained through `import defer`/`import.defer()`. Deferred namespaces can have side effects when accessing properties on them.</ins>
             </td>
           </tr>
         </table>
@@ -331,15 +333,23 @@ contributors: Nicolò Ribaudo
     <h2>Syntax</h2>
     <emu-grammar type="definition">
       ImportCall[Yield, Await] :
-        `import` `(` AssignmentExpression[+In, ?Yield, ?Await] `)`
-        <ins>`import` `.` `defer` `(` AssignmentExpression[+In, ?Yield, ?Await] `)`</ins>
+        <del>`import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`</del>
+        <del>`import` `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`</del>
+        <ins>`import` ImportCallArguments[?Yield, ?Await]</ins>
+        <ins>`import` `.` `defer` ImportCallArguments[?Yield, ?Await]</ins>
+
+      <ins>
+        ImportCallArguments[Yield, Await] :
+          `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`
+          `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`
+      </ins>
     </emu-grammar>
 
     <emu-clause id="sec-import-calls" number="10">
       <h1>Import Calls</h1>
 
       <emu-note type="editor">
-        The changes to this section are intendend to mirror the changes proposed by the
+        The changes to this section are intended to mirror the changes proposed by the
         <a href="https://tc39.es/proposal-source-phase-imports/#sec-import-calls">Source
         Phase Imports</a> proposal, but adapted to the ~defer~ phase.
       </emu-note>
@@ -347,49 +357,110 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-import-call-runtime-semantics-evaluation" type="sdo">
         <h1>Runtime Semantics: Evaluation</h1>
 
-        <emu-grammar>ImportCall : `import` `(` AssignmentExpression `)`</emu-grammar>
+        <emu-grammar><del>ImportCall : `import` `(` AssignmentExpression `,`? `)`</del></emu-grammar>
         <emu-alg>
-          1. <ins>Return ? EvaluateImportCall(|AssignmentExpression|, ~evaluation~).</ins>
-          1. <del>Let _referrer_ be GetActiveScriptOrModule().</del>
-          1. <del>If _referrer_ is *null*, set _referrer_ to the current Realm Record.</del>
-          1. <del>Let _argRef_ be ? Evaluation of |AssignmentExpression|.</del>
-          1. <del>Let _specifier_ be ? GetValue(_argRef_).</del>
-          1. <del>Let _promiseCapability_ be ! NewPromiseCapability(%Promise%).</del>
-          1. <del>Let _specifierString_ be Completion(ToString(_specifier_)).</del>
-          1. <del>IfAbruptRejectPromise(_specifierString_, _promiseCapability_).</del>
-          1. <del>Perform HostLoadImportedModule(_referrer_, _specifierString_, ~empty~, _promiseCapability_).</del>
-          1. <del>Return _promiseCapability_.[[Promise]].</del>
+          1. <del>Return ? EvaluateImportCall(|AssignmentExpression|).</del>
         </emu-alg>
 
-        <emu-grammar><ins>ImportCall : `import` `.` `defer` `(` AssignmentExpression[+In, ?Yield, ?Await] `)`</ins></emu-grammar>
+        <emu-grammar><del>ImportCall : `import` `(` AssignmentExpression `,` AssignmentExpression `,`? `)`</del></emu-grammar>
         <emu-alg>
-          1. <ins>Return ? EvaluateImportCall(|AssignmentExpression|, ~defer~).</ins>
+          1. <del>Return ? EvaluateImportCall(the first |AssignmentExpression|, the second |AssignmentExpression|).</del>
+        </emu-alg>
+
+        <emu-grammar>ImportCall : `import` ImportCallArguments</emu-grammar>
+        <emu-alg>
+          1. <ins>Return ? EvaluateImportCall(|ImportCallArguments|, ~evaluation~).</ins>
+        </emu-alg>
+
+        <emu-grammar>ImportCall : `import` `.` `defer` ImportCallArguments</emu-grammar>
+        <emu-alg>
+          1. <ins>Return ? EvaluateImportCall(|ImportCallArguments|, ~defer~).</ins>
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-import-call-runtime-semantics-EvaluateImportCallSpecifier" type="sdo">
+        <h1><ins>Runtime Semantics: EvaluateImportCallSpecifier</ins></h1>
+
+        <emu-grammar>ImportCallArguments : `(` AssignmentExpression `,`? `)`</emu-grammar>
+        <emu-alg>
+          1. Let _ref_ be ? Evaluation of |AssignmentExpression|.
+          1. Return ? GetValue(_ref_).
+        </emu-alg>
+
+        <emu-grammar>ImportCallArguments : `(` AssignmentExpression `,` AssignmentExpression `,`? `)`</emu-grammar>
+        <emu-alg>
+          1. Let _ref_ be ? Evaluation of the first |AssignmentExpression|.
+          1. Return ? GetValue(_ref_).
+        </emu-alg>
+      </emu-clause>
+
+      <emu-clause id="sec-import-call-runtime-semantics-EvaluateImportCallOptions" type="sdo">
+        <h1><ins>Runtime Semantics: EvaluateImportCallOptions</ins></h1>
+
+        <emu-grammar>ImportCallArguments : `(` AssignmentExpression `,`? `)`</emu-grammar>
+        <emu-alg>
+          1. Return *undefined*.
+        </emu-alg>
+
+        <emu-grammar>ImportCallArguments : `(` AssignmentExpression `,` AssignmentExpression `,`? `)`</emu-grammar>
+        <emu-alg>
+          1. Let _ref_ be ? Evaluation of the second |AssignmentExpression|.
+          1. Return ? GetValue(_ref_).
         </emu-alg>
       </emu-clause>
 
       <emu-clause id="sec-evaluate-import-call" type="abstract operation">
         <h1>
-          <ins>
-            EvaluateImportCall (
-              _specifierExpression_: a ParseNode,
-              _phase_: ~defer~ or ~evaluation~
-            ): either a normal completion containing a Promise or a throw completion
-          </ins>
+          EvaluateImportCall (
+            <ins>_arguments_: a Parse Node,</ins>
+            <ins>_phase_: ~defer~ or ~evaluation~,</ins>
+            <del>_specifierExpression_: a Parse Node,</del>
+            <del>optional _optionsExpression_: a Parse Node,</del>
+          ): either a normal completion containing a Promise or an abrupt completion
         </h1>
         <dl class="header"></dl>
-        <emu-note type="editor">
-          The diff presented for this algorithm is relative to the original algorithm for the Evaluation of |ImportCall| : `import` `(` |AssignmentExpression| `)`.
-        </emu-note>
         <emu-alg>
           1. Let _referrer_ be GetActiveScriptOrModule().
           1. If _referrer_ is *null*, set _referrer_ to the current Realm Record.
-          1. Let _specifierRef_ be ? Evaluation of <del>|AssignmentExpression|</del><ins>_specifierExpression_</ins>.
-          1. Let _specifier_ be ? GetValue(_specifierRef_).
+          1. <del>Let _specifierRef_ be ? Evaluation of _specifierExpression_.</del>
+          1. Let _specifier_ be ? <del>GetValue(_specifierRef_)</del><ins>EvaluateImportCallSpecifier of _arguments_</ins>.
+          1. <del>If _optionsExpression_ is present, then</del>
+            1. <del>Let _optionsRef_ be ? Evaluation of _optionsExpression_.</del>
+            1. <del>Let _options_ be ? GetValue(_optionsRef_).</del>
+          1. <del>Else,</del>
+            1. <del>Let _options_ be *undefined*.</del>
+          1. <ins>Let _options_ be ? EvaluateImportCallOptions of _arguments_.</ins>
           1. Let _promiseCapability_ be ! NewPromiseCapability(%Promise%).
           1. Let _specifierString_ be Completion(ToString(_specifier_)).
           1. IfAbruptRejectPromise(_specifierString_, _promiseCapability_).
+          1. Let _attributes_ be a new empty List.
+          1. If _options_ is not *undefined*, then
+            1. If _options_ is not an Object, then
+              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).
+              1. Return _promiseCapability_.[[Promise]].
+            1. Let _attributesObj_ be Completion(Get(_options_, *"with"*)).
+            1. IfAbruptRejectPromise(_attributesObj_, _promiseCapability_).
+            1. If _attributesObj_ is not *undefined*, then
+              1. If _attributesObj_ is not an Object, then
+                1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).
+                1. Return _promiseCapability_.[[Promise]].
+              1. Let _entries_ be Completion(EnumerableOwnProperties(_attributesObj_, ~key+value~)).
+              1. IfAbruptRejectPromise(_entries_, _promiseCapability_).
+              1. For each element _entry_ of _entries_, do
+                1. Let _key_ be ! Get(_entry_, *"0"*).
+                1. Let _value_ be ! Get(_entry_, *"1"*).
+                1. If _key_ is a String, then
+                  1. If _value_ is not a String, then
+                    1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).
+                    1. Return _promiseCapability_.[[Promise]].
+                  1. Append the ImportAttribute Record { [[Key]]: _key_, [[Value]]: _value_ } to _attributes_.
+            1. If AllImportAttributesSupported(_attributes_) is *false*, then
+              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).
+              1. Return _promiseCapability_.[[Promise]].
+            1. Sort _attributes_ according to the lexicographic order of their [[Key]] field, treating the value of each such field as a sequence of UTF-16 code unit values. NOTE: This sorting is observable only in that hosts are prohibited from changing behaviour based on the order in which attributes are enumerated.
+          1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attributes_ }.
           1. <ins>Let _payload_ be a new DynamicImportState Record { [[PromiseCapability]]: _promiseCapability_, [[Phase]]: _phase_ }.</ins>
-          1. Perform HostLoadImportedModule(_referrer_, _specifierString_, ~empty~, <del>_promiseCapability_</del><ins>_payload_</ins>).
+          1. Perform HostLoadImportedModule(_referrer_, _moduleRequest_, ~empty~, <del>_promiseCapability_</del><ins>_payload_</ins>).
           1. Return _promiseCapability_.[[Promise]].
         </emu-alg>
 
@@ -522,8 +593,6 @@ contributors: Nicolò Ribaudo
     <emu-clause id="sec-module-semantics">
       <h1>Module Semantics</h1>
 
-      <emu-note type="editor">The diff markers in this section are on top of <a href="https://github.com/tc39/ecma262/pull/3057">tc39/ecma262#3057</a> (Import Attributes).</emu-note>
-
       <emu-clause id="sec-modulerequest-record">
         <h1><ins>ModuleRequest Records</ins></h1>
 
@@ -637,12 +706,26 @@ contributors: Nicolò Ribaudo
           1. Let _specifier_ be the SV of |FromClause|.
           1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », <ins>[[Phase]]: ~evaluation~</ins> }.
         </emu-alg>
+        <emu-grammar>ImportDeclaration : `import` ImportClause FromClause WithClause `;`</emu-grammar>
+        <emu-alg>
+          1. Let _specifier_ be the SV of |FromClause|.
+          1. Let _attributes_ be WithClauseToAttributes of |WithClause|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, <ins>[[Phase]]: ~evaluation~</ins> }.
+        </emu-alg>
         <emu-grammar>
           <ins>ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`</ins>
         </emu-grammar>
         <emu-alg>
           1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
           1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~ }.</ins>
+        </emu-alg>
+        <emu-grammar>
+          <ins>ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause `;`</ins>
+        </emu-grammar>
+        <emu-alg>
+          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
+          1. <ins>Let _attributes_ be WithClauseToAttributes of |WithClause|.</ins>
+          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, [[Phase]]: ~defer~ }.</ins>
         </emu-alg>
         <emu-grammar><del>ModuleSpecifier : StringLiteral</del></emu-grammar>
         <emu-alg>
@@ -652,9 +735,16 @@ contributors: Nicolò Ribaudo
           ExportDeclaration : `export` ExportFromClause FromClause `;`
         </emu-grammar>
         <emu-alg>
-          1. <del>Return ModuleRequests of |FromClause|.</del>
-          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~ }.</ins>
+          1. Let _specifier_ be SV of |FromClause|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », <ins>[[Phase]]: ~evaluation~</ins> }.
+        </emu-alg>
+        <emu-grammar>
+          ExportDeclaration : `export` ExportFromClause FromClause WithClause `;`
+        </emu-grammar>
+        <emu-alg>
+          1. Let _specifier_ be the SV of |FromClause|.
+          1. Let _attributes_ be WithClauseToAttributes of |WithClause|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attributes_, <ins>[[Phase]]: ~evaluation~</ins> }.
         </emu-alg>
         <emu-grammar>
           ExportDeclaration :
@@ -763,23 +853,7 @@ contributors: Nicolò Ribaudo
           <dl class="header">
             <dt>for</dt>
             <dd>a Cyclic Module Record _module_</dd>
-
-            <dt>description</dt>
-            <dd>It populates the [[LoadedModules]] of all the Module Records in the dependency graph of _module_ (most of the work is done by the auxiliary function InnerModuleLoading). It takes an optional _hostDefined_ parameter that is passed to the HostLoadImportedModule hook.</dd>
           </dl>
-
-          <emu-alg>
-            1. If _hostDefined_ is not present, let _hostDefined_ be ~empty~.
-            1. Let _pc_ be ! NewPromiseCapability(%Promise%).
-            1. Let _state_ be the GraphLoadingState Record { [[IsLoading]]: *true*, [[PendingModulesCount]]: 1, [[Visited]]: « », [[PromiseCapability]]: _pc_, [[HostDefined]]: _hostDefined_ }.
-            1. Perform InnerModuleLoading(_state_, _module_).
-            1. Return _pc_.[[Promise]].
-          </emu-alg>
-
-          <emu-note>
-            The _hostDefined_ parameter can be used to pass additional information necessary to fetch the imported modules. It is used, for example, by HTML to set the correct fetch destination for <code>&lt;link rel="preload" as="..."&gt;</code> tags.
-            <code>import()</code> expressions never set the _hostDefined_ parameter.
-          </emu-note>
 
           <emu-clause id="sec-InnerModuleLoading" type="abstract operation">
             <h1>
@@ -789,62 +863,11 @@ contributors: Nicolò Ribaudo
               ): ~unused~
             </h1>
             <dl class="header">
-              <dt>description</dt>
-              <dd>It is used by LoadRequestedModules to recursively perform the actual loading process for _module_'s dependency graph.</dd>
             </dl>
-
-            <emu-alg>
-              1. Assert: _state_.[[IsLoading]] is *true*.
-              1. If _module_ is a Cyclic Module Record, _module_.[[Status]] is ~new~, and _state_.[[Visited]] does not contain _module_, then
-                1. Append _module_ to _state_.[[Visited]].
-                1. Let _requestedModulesCount_ be the number of elements in _module_.[[RequestedModules]].
-                1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] + _requestedModulesCount_.
-                1. <del>For each String _required_ of _module_.[[RequestedModules]], do</del>
-                1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
-                  1. <ins>Let _specifier_ be _required_.[[Specifier]].</ins>
-                  1. If _module_.[[LoadedModules]] contains a Record whose [[Specifier]] is <del>_required_</del><ins>_specifier_</ins>, then
-                    1. Let _record_ be that Record.
-                    1. Perform InnerModuleLoading(_state_, _record_.[[Module]]).
-                  1. Else,
-                    1. Perform HostLoadImportedModule(_module_, <del>_required_</del><ins>_specifier_</ins>, _state_.[[HostDefined]], _state_).
-                    1. NOTE: HostLoadImportedModule will call FinishLoadingImportedModule, which re-enters the graph loading process through ContinueModuleLoading.
-                  1. If _state_.[[IsLoading]] is *false*, return ~unused~.
-              1. Assert: _state_.[[PendingModulesCount]] ≥ 1.
-              1. Set _state_.[[PendingModulesCount]] to _state_.[[PendingModulesCount]] - 1.
-              1. If _state_.[[PendingModulesCount]] = 0, then
-                1. Set _state_.[[IsLoading]] to *false*.
-                1. For each Cyclic Module Record _loaded_ of _state_.[[Visited]], do
-                  1. If _loaded_.[[Status]] is ~new~, set _loaded_.[[Status]] to ~unlinked~.
-                1. Perform ! Call(_state_.[[PromiseCapability]].[[Resolve]], *undefined*, « *undefined* »).
-              1. Return ~unused~.
-            </emu-alg>
 
             <emu-note>
               <ins>There is no special handling for ModuleRequests whose [[Phase]] is ~defer~: any error from loading or parsing the corresponding modules will make InnerModuleLoading fail.</ins>
             </emu-note>
-          </emu-clause>
-
-          <emu-clause id="sec-ContinueModuleLoading" type="abstract operation">
-            <h1>
-              ContinueModuleLoading (
-                _state_: a GraphLoadingState Record,
-                _moduleCompletion_: either a normal completion containing a Module Record or a throw completion,
-              ): ~unused~
-            </h1>
-            <dl class="header">
-              <dt>description</dt>
-              <dd>It is used to re-enter the loading process after a call to HostLoadImportedModule.</dd>
-            </dl>
-
-            <emu-alg>
-              1. If _state_.[[IsLoading]] is *false*, return ~unused~.
-              1. If _moduleCompletion_ is a normal completion, then
-                1. Perform InnerModuleLoading(_state_, _moduleCompletion_.[[Value]]).
-              1. Else,
-                1. Set _state_.[[IsLoading]] to *false*.
-                1. Perform ! Call(_state_.[[PromiseCapability]].[[Reject]], *undefined*, « _moduleCompletion_.[[Value]] »).
-              1. Return ~unused~.
-            </emu-alg>
           </emu-clause>
         </emu-clause>
 
@@ -853,25 +876,7 @@ contributors: Nicolò Ribaudo
           <dl class="header">
             <dt>for</dt>
             <dd>a Cyclic Module Record _module_</dd>
-
-            <dt>description</dt>
-            <dd>On success, Link transitions this module's [[Status]] from ~unlinked~ to ~linked~. On failure, an exception is thrown and this module's [[Status]] remains ~unlinked~. (Most of the work is done by the auxiliary function InnerModuleLinking.)</dd>
           </dl>
-
-          <emu-alg>
-            1. Assert: _module_.[[Status]] is one of ~unlinked~, ~linked~, ~evaluating-async~, or ~evaluated~.
-            1. Let _stack_ be a new empty List.
-            1. Let _result_ be Completion(InnerModuleLinking(_module_, _stack_, 0)).
-            1. If _result_ is an abrupt completion, then
-              1. For each Cyclic Module Record _m_ of _stack_, do
-                1. Assert: _m_.[[Status]] is ~linking~.
-                1. Set _m_.[[Status]] to ~unlinked~.
-              1. Assert: _module_.[[Status]] is ~unlinked~.
-              1. Return ? _result_.
-            1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
-            1. Assert: _stack_ is empty.
-            1. Return ~unused~.
-          </emu-alg>
 
           <emu-clause id="sec-InnerModuleLinking" type="abstract operation" oldids="sec-innermoduleinstantiation">
             <h1>
@@ -882,44 +887,7 @@ contributors: Nicolò Ribaudo
               ): either a normal completion containing a non-negative integer or a throw completion
             </h1>
             <dl class="header">
-              <dt>description</dt>
-              <dd>It is used by Link to perform the actual linking process for _module_, as well as recursively on all other modules in the dependency graph. The _stack_ and _index_ parameters, as well as a module's [[DFSIndex]] and [[DFSAncestorIndex]] fields, keep track of the depth-first search (DFS) traversal. In particular, [[DFSAncestorIndex]] is used to discover strongly connected components (SCCs), such that all modules in an SCC transition to ~linked~ together.</dd>
             </dl>
-
-            <emu-alg>
-              1. If _module_ is not a Cyclic Module Record, then
-                1. Perform ? _module_.Link().
-                1. Return _index_.
-              1. If _module_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~, then
-                1. Return _index_.
-              1. Assert: _module_.[[Status]] is ~unlinked~.
-              1. Set _module_.[[Status]] to ~linking~.
-              1. Set _module_.[[DFSIndex]] to _index_.
-              1. Set _module_.[[DFSAncestorIndex]] to _index_.
-              1. Set _index_ to _index_ + 1.
-              1. Append _module_ to _stack_.
-              1. <del>For each String _required_ of _module_.[[RequestedModules]], do</del>
-              1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
-                1. Let _requiredModule_ be GetImportedModule(_module_, _required_<ins>.[[Specifier]]</ins>).
-                1. Set _index_ to ? InnerModuleLinking(_requiredModule_, _stack_, _index_).
-                1. If _requiredModule_ is a Cyclic Module Record, then
-                  1. Assert: _requiredModule_.[[Status]] is one of ~linking~, ~linked~, ~evaluating-async~, or ~evaluated~.
-                  1. Assert: _requiredModule_.[[Status]] is ~linking~ if and only if _stack_ contains _requiredModule_.
-                  1. If _requiredModule_.[[Status]] is ~linking~, then
-                    1. Set _module_.[[DFSAncestorIndex]] to min(_module_.[[DFSAncestorIndex]], _requiredModule_.[[DFSAncestorIndex]]).
-              1. Perform ? _module_.InitializeEnvironment().
-              1. Assert: _module_ occurs exactly once in _stack_.
-              1. Assert: _module_.[[DFSAncestorIndex]] ≤ _module_.[[DFSIndex]].
-              1. If _module_.[[DFSAncestorIndex]] = _module_.[[DFSIndex]], then
-                1. Let _done_ be *false*.
-                1. Repeat, while _done_ is *false*,
-                  1. Let _requiredModule_ be the last element of _stack_.
-                  1. Remove the last element of _stack_.
-                  1. Assert: _requiredModule_ is a Cyclic Module Record.
-                  1. Set _requiredModule_.[[Status]] to ~linked~.
-                  1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
-              1. Return _index_.
-            </emu-alg>
 
             <emu-note>
               <ins>There is no special handling for ModuleRequests whose [[Phase]] is ~defer~: any error from linking the corresponding modules will make InnerModuleLinking fail.</ins>
@@ -1008,7 +976,7 @@ contributors: Nicolò Ribaudo
                 1. <ins>Else if _evaluationList_ does not contain _requiredModule_, then</ins>
                   1. <ins>Append _requiredModule_ to _evaluationList_.</ins>
               1. Append _module_ to _stack_.
-              1. <del>For each String _required_ of _module_.[[RequestedModules]], do</del>
+              1. <del>For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do</del>
                 1. <del>Let _requiredModule_ be GetImportedModule(_module_, _required_).</del>
               1. <ins>For each Module Record _requiredModule_ of _evaluationList_, do</ins>
                 1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
@@ -1841,6 +1809,44 @@ contributors: Nicolò Ribaudo
         </emu-clause>
       </emu-clause>
 
+      <emu-clause id="sec-AllImportAttributesSupported" type="abstract operation">
+        <h1>
+          AllImportAttributesSupported (
+            _attributes_: a List of ImportAttribute Records,
+          ): a Boolean
+        </h1>
+        <dl class="header">
+          <dt>description</dt>
+          <dd></dd>
+        </dl>
+        <emu-alg>
+          1. Let _supported_ be HostGetSupportedImportAttributes().
+          1. For each ImportAttribute Record _attribute_ of _attributes_, do
+            1. If _supported_ does not contain _attribute_.[[Key]], return *false*.
+          1. Return *true*.
+        </emu-alg>
+
+        <emu-clause id="sec-hostgetsupportedimportattributes" type="host-defined abstract operation">
+          <h1>HostGetSupportedImportAttributes ( ): a List of Strings</h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It allows host environments to specify which import attributes they support. Only attributes with supported keys will be provided to the host.</dd>
+          </dl>
+
+          <p>An implementation of HostGetSupportedImportAttributes must conform to the following requrements:</p>
+
+          <ul>
+            <li>It must return a List of Strings, each indicating a supported attribute.</li>
+
+            <li>Each time this operation is called, it must return the same List with the same contents in the same order.</li>
+          </ul>
+
+          <p>The default implementation of HostGetSupportedImportAttributes is to return a new empty List.</p>
+
+          <emu-note>The purpose of requiring the host to specify its supported import attributes, rather than passing all attributes to the host and letting it then choose which ones it wants to handle, is to ensure that unsupported attributes are handled in a consistent way across different hosts.</emu-note>
+        </emu-clause>
+      </emu-clause>
+
       <emu-clause id="sec-getmodulenamespace" type="abstract operation" number="10">
         <h1>
           GetModuleNamespace (
@@ -1876,9 +1882,9 @@ contributors: Nicolò Ribaudo
       <h2>Syntax</h2>
       <emu-grammar type="definition">
         ImportDeclaration :
-          `import` ImportClause FromClause `;`
-          <ins>`import` `defer` NameSpaceImport FromClause `;`</ins>
-          `import` ModuleSpecifier `;`
+          `import` ImportClause FromClause WithClause? `;`
+          <ins>`import` `defer` NameSpaceImport FromClause WithClause? `;`</ins>
+          `import` ModuleSpecifier WithClause? `;`
 
         ImportClause :
           ImportedDefaultBinding
@@ -1914,6 +1920,18 @@ contributors: Nicolò Ribaudo
 
         ImportedBinding :
           BindingIdentifier[~Yield, +Await]
+
+        WithClause :
+          `with` `{` `}`
+          `with` `{` WithEntries `,`? `}`
+
+        WithEntries :
+          AttributeKey `:` StringLiteral
+          AttributeKey `:` StringLiteral `,` WithEntries
+
+        AttributeKey :
+          IdentifierName
+          StringLiteral
       </emu-grammar>
 
       <emu-clause id="sec-imports-static-semantics-early-errors">
@@ -1948,208 +1966,20 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-        <emu-grammar>ImportDeclaration : `import` ImportClause FromClause `;`</emu-grammar>
+        <emu-grammar>ImportDeclaration : `import` ImportClause FromClause WithClause? `;`</emu-grammar>
         <emu-alg>
           1. Let _module_ be <del>the sole element of ModuleRequests</del><ins>SV</ins> of |FromClause|.
           1. Return ImportEntriesForModule of |ImportClause| with arguments _module_.
         </emu-alg>
-        <emu-grammar><ins>ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`</ins></emu-grammar>
+        <emu-grammar><ins>ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`</ins></emu-grammar>
         <emu-alg>
           1. <ins>Let _module_ be SV of |FromClause|.</ins>
           1. <ins>Return ImportEntriesForModule of |NameSpaceImport| with arguments _module_.</ins>
         </emu-alg>
-        <emu-grammar>ImportDeclaration : `import` ModuleSpecifier `;`</emu-grammar>
+        <emu-grammar>ImportDeclaration : `import` ModuleSpecifier WithClause? `;`</emu-grammar>
         <emu-alg>
           1. Return a new empty List.
         </emu-alg>
-      </emu-clause>
-    </emu-clause>
-
-    <emu-clause id="sec-exports">
-      <h1>Exports</h1>
-
-      <h2>Syntax</h2>
-      <emu-grammar type="definition">
-        ExportDeclaration :
-          `export` ExportFromClause FromClause `;`
-          `export` NamedExports `;`
-          `export` VariableStatement[~Yield, +Await]
-          `export` Declaration[~Yield, +Await]
-          `export` `default` HoistableDeclaration[~Yield, +Await, +Default]
-          `export` `default` ClassDeclaration[~Yield, +Await, +Default]
-          `export` `default` [lookahead &notin; { `function`, `async` [no LineTerminator here] `function`, `class` }] AssignmentExpression[+In, ~Yield, +Await] `;`
-
-        ExportFromClause :
-          `*`
-          `*` `as` ModuleExportName
-          NamedExports
-
-        NamedExports :
-          `{` `}`
-          `{` ExportsList `}`
-          `{` ExportsList `,` `}`
-
-        ExportsList :
-          ExportSpecifier
-          ExportsList `,` ExportSpecifier
-
-        ExportSpecifier :
-          ModuleExportName
-          ModuleExportName `as` ModuleExportName
-      </emu-grammar>
-
-      <emu-clause id="sec-exports-static-semantics-early-errors">
-        <h1>Static Semantics: Early Errors</h1>
-        <emu-grammar>ExportDeclaration : `export` NamedExports `;`</emu-grammar>
-        <ul>
-          <li>
-            It is a Syntax Error if ReferencedBindings of |NamedExports| contains any |StringLiteral|s.
-          </li>
-          <li>
-            For each |IdentifierName| _n_ in ReferencedBindings of |NamedExports|: It is a Syntax Error if StringValue of _n_ is a |ReservedWord| or the StringValue of _n_ is one of *"implements"*, *"interface"*, *"let"*, *"package"*, *"private"*, *"protected"*, *"public"*, or *"static"*.
-          </li>
-        </ul>
-        <emu-note>
-          <p>The above rule means that each ReferencedBindings of |NamedExports| is treated as an |IdentifierReference|.</p>
-        </emu-note>
-      </emu-clause>
-
-      <emu-clause id="sec-static-semantics-exportednames" type="sdo" number="3">
-        <h1>Static Semantics: ExportedNames ( ): a List of Strings</h1>
-        <dl class="header">
-        </dl>
-        <emu-note>
-          <p>ExportedNames are the externally visible names that a |Module| explicitly maps to one of its local name bindings.</p>
-        </emu-note>
-        <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
-        <emu-alg>
-          1. Let _names1_ be ExportedNames of |ModuleItemList|.
-          1. Let _names2_ be ExportedNames of |ModuleItem|.
-          1. Return the list-concatenation of _names1_ and _names2_.
-        </emu-alg>
-        <emu-grammar>ModuleItem : ExportDeclaration</emu-grammar>
-        <emu-alg>
-          1. Return the ExportedNames of |ExportDeclaration|.
-        </emu-alg>
-        <emu-grammar>
-          ModuleItem :
-            ImportDeclaration
-            StatementListItem
-        </emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>ExportFromClause : `*`</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>ExportFromClause : `*` `as` ModuleExportName</emu-grammar>
-        <emu-alg>
-          1. Return a List whose sole element is the StringValue of |ModuleExportName|.
-        </emu-alg>
-        <emu-grammar>ExportFromClause : NamedExports</emu-grammar>
-        <emu-alg>
-          1. Return the ExportedNames of |NamedExports|.
-        </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` VariableStatement</emu-grammar>
-        <emu-alg>
-          1. Return the BoundNames of |VariableStatement|.
-        </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` Declaration</emu-grammar>
-        <emu-alg>
-          1. Return the BoundNames of |Declaration|.
-        </emu-alg>
-        <emu-grammar>
-          ExportDeclaration :
-            `export` `default` HoistableDeclaration
-            `export` `default` ClassDeclaration
-            `export` `default` AssignmentExpression `;`
-        </emu-grammar>
-        <emu-alg>
-          1. Return « *"default"* ».
-        </emu-alg>
-        <emu-grammar>NamedExports : `{` `}`</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>ExportsList : ExportsList `,` ExportSpecifier</emu-grammar>
-        <emu-alg>
-          1. Let _names1_ be the ExportedNames of |ExportsList|.
-          1. Let _names2_ be the ExportedNames of |ExportSpecifier|.
-          1. Return the list-concatenation of _names1_ and _names2_.
-        </emu-alg>
-        <emu-grammar>ExportSpecifier : ModuleExportName</emu-grammar>
-        <emu-alg>
-          1. Return a List whose sole element is the StringValue of |ModuleExportName|.
-        </emu-alg>
-        <emu-grammar>ExportSpecifier : ModuleExportName `as` ModuleExportName</emu-grammar>
-        <emu-alg>
-          1. Return a List whose sole element is the StringValue of the second |ModuleExportName|.
-        </emu-alg>
-      </emu-clause>
-
-      <emu-clause id="sec-static-semantics-exportentries" type="sdo" number="4">
-        <h1>Static Semantics: ExportEntries ( ): a List of ExportEntry Records</h1>
-        <dl class="header">
-        </dl>
-        <emu-grammar>Module : [empty]</emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
-        <emu-alg>
-          1. Let _entries1_ be ExportEntries of |ModuleItemList|.
-          1. Let _entries2_ be ExportEntries of |ModuleItem|.
-          1. Return the list-concatenation of _entries1_ and _entries2_.
-        </emu-alg>
-        <emu-grammar>
-          ModuleItem :
-            ImportDeclaration
-            StatementListItem
-        </emu-grammar>
-        <emu-alg>
-          1. Return a new empty List.
-        </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` NamedExports `;`</emu-grammar>
-        <emu-alg>
-          1. Return ExportEntriesForModule of |NamedExports| with argument *null*.
-        </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` VariableStatement</emu-grammar>
-        <emu-alg>
-          1. Let _entries_ be a new empty List.
-          1. Let _names_ be the BoundNames of |VariableStatement|.
-          1. For each element _name_ of _names_, do
-            1. Append the ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: _name_, [[ExportName]]: _name_ } to _entries_.
-          1. Return _entries_.
-        </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` Declaration</emu-grammar>
-        <emu-alg>
-          1. Let _entries_ be a new empty List.
-          1. Let _names_ be the BoundNames of |Declaration|.
-          1. For each element _name_ of _names_, do
-            1. Append the ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: _name_, [[ExportName]]: _name_ } to _entries_.
-          1. Return _entries_.
-        </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` `default` HoistableDeclaration</emu-grammar>
-        <emu-alg>
-          1. Let _names_ be BoundNames of |HoistableDeclaration|.
-          1. Let _localName_ be the sole element of _names_.
-          1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: _localName_, [[ExportName]]: *"default"* }.
-        </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` `default` ClassDeclaration</emu-grammar>
-        <emu-alg>
-          1. Let _names_ be BoundNames of |ClassDeclaration|.
-          1. Let _localName_ be the sole element of _names_.
-          1. Return a List whose sole element is a new ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: _localName_, [[ExportName]]: *"default"* }.
-        </emu-alg>
-        <emu-grammar>ExportDeclaration : `export` `default` AssignmentExpression `;`</emu-grammar>
-        <emu-alg>
-          1. Let _entry_ be the ExportEntry Record { [[ModuleRequest]]: *null*, [[ImportName]]: *null*, [[LocalName]]: *"\*default\*"*, [[ExportName]]: *"default"* }.
-          1. Return « _entry_ ».
-        </emu-alg>
-        <emu-note>
-          <p>*"\*default\*"* is used within this specification as a synthetic name for anonymous default export values. See <emu-xref href="#note-star-default-star">this note</emu-xref> for more details.</p>
-        </emu-note>
       </emu-clause>
     </emu-clause>
   </emu-clause>
