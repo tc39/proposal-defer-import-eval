@@ -9,6 +9,8 @@ stage: 2
 contributors: Nicolò Ribaudo
 </pre>
 
+<emu-note type="editor">The diff markers in this proposal are on top of <a href="https://github.com/tc39/ecma262/pull/3057">tc39/ecma262#3057</a> (Import Attributes).</emu-note>
+
 <emu-clause id="sec-ordinary-and-exotic-objects-behaviours" number="10">
   <h1>Ordinary and Exotic Objects Behaviours</h1>
 
@@ -59,13 +61,13 @@ contributors: Nicolò Ribaudo
           </tr>
           <tr>
             <td>
-              [[Deferred]]
+              <ins>[[Deferred]]</ins>
             </td>
             <td>
-              a Boolean
+              <ins>a Boolean</ins>
             </td>
             <td>
-              Whether this module namespace was obtained through `import defer`/`import.defer()`. Deferred namespaces can have side effects when accessing properties on them.
+              <ins>Whether this module namespace was obtained through `import defer`/`import.defer()`. Deferred namespaces can have side effects when accessing properties on them.</ins>
             </td>
           </tr>
         </table>
@@ -521,8 +523,6 @@ contributors: Nicolò Ribaudo
 
     <emu-clause id="sec-module-semantics">
       <h1>Module Semantics</h1>
-
-      <emu-note type="editor">The diff markers in this section are on top of <a href="https://github.com/tc39/ecma262/pull/3057">tc39/ecma262#3057</a> (Import Attributes).</emu-note>
 
       <emu-clause id="sec-modulerequest-record">
         <h1><ins>ModuleRequest Records</ins></h1>
