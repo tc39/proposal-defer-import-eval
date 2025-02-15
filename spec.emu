@@ -257,13 +257,13 @@ contributors: Nicolò Ribaudo
           <ins>
             IsSymbolLikeNamespaceKey (
               _P_: a property key,
-              _ns_: a Module Namespace Exotic Object,
+              _ns_: a module namespace exotic object,
             ): a Boolean
           </ins>
         </h1>
         <dl class="header">
           <dt>description</dt>
-          <dd>It determines if a property key corresponds to a potential ordinary property of _ns_, rather than being mapped to one of the module exports.</dd>
+          <dd>It determines if a property of _ns_ with key _P_ would be an ordinary property, rather than being mapped to one of the module exports.</dd>
         </dl>
 
         <emu-alg>
@@ -277,13 +277,13 @@ contributors: Nicolò Ribaudo
         <h1>
           <ins>
             GetModuleExportsList (
-              _O_: a Module Namespace Exotic Object,
+              _O_: a module namespace exotic object,
             ): either a normal completion containing a List of Strings, or a throw completion
           </ins>
         </h1>
         <dl class="header">
           <dt>description</dt>
-          <dd>It returns a List whose elements are the String values of the names of the module's exports, triggering module evaluation if needed.</dd>
+          <dd>It returns a List whose elements are the names of the module's exports, triggering module evaluation if needed.</dd>
         </dl>
         <emu-alg>
           1. If _O_.[[Deferred]] is *true*, then
@@ -304,7 +304,7 @@ contributors: Nicolò Ribaudo
           </h1>
           <dl class="header"></dl>
           <emu-alg>
-            1. If _seen_ is not provided, let _seen_ be a new empty List.
+            1. If _seen_ is not present, set _seen_ to a new empty List.
             1. If _seen_ contains _module_, return *true*.
             1. Append _module_ to _seen_.
             1. If _module_.[[Status]] is ~evaluated~, return *true*.
@@ -522,11 +522,13 @@ contributors: Nicolò Ribaudo
     <emu-clause id="sec-module-semantics">
       <h1>Module Semantics</h1>
 
+      <emu-note type="editor">The diff markers in this section are on top of <a href="https://github.com/tc39/ecma262/pull/3057">tc39/ecma262#3057</a> (Import Attributes).</emu-note>
+
       <emu-clause id="sec-modulerequest-record">
         <h1><ins>ModuleRequest Records</ins></h1>
 
-        <p>A <dfn id="modulerequest-record" variants="ModuleRequest Records">ModuleRequest Record</dfn> represents the request to import a module up to a given phase. It consists of the following fields:</p>
-        <emu-table id="table-modulerequest-fields" caption="ModuleRequest Record fields">
+        <p>A <dfn id="modulerequest-record" variants="ModuleRequest Records">ModuleRequest Record</dfn> represents the request to import a module with given import attributes <ins>and import phase</ins>. It consists of the following fields:</p>
+        <emu-table id="table-modulerequest-fields" caption="ModuleRequest Record Fields">
           <table>
             <tbody>
               <tr>
@@ -545,7 +547,7 @@ contributors: Nicolò Ribaudo
                   [[Specifier]]
                 </td>
                 <td>
-                  String
+                  a String
                 </td>
                 <td>
                   The module specifier
@@ -553,26 +555,58 @@ contributors: Nicolò Ribaudo
               </tr>
               <tr>
                 <td>
-                  [[Phase]]
+                  [[Attributes]]
                 </td>
                 <td>
-                  ~defer~ or ~evaluation~
+                  a List of ImportAttribute Records
                 </td>
                 <td>
-                  The target import phase
+                  The import attributes
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <ins>[[Phase]]</ins>
+                </td>
+                <td>
+                  <ins>~defer~ or ~evaluation~</ins>
+                </td>
+                <td>
+                  <ins>The target import phase</ins>
                 </td>
               </tr>
             </tbody>
           </table>
         </emu-table>
 
-        <emu-note type="editor">In general, this proposal replaces places where module specifiers are passed around with ModuleRequest Records. For example, several syntax-directed operations, such as ModuleRequests produce Lists of ModuleRequest Records rather than Lists of Strings which are interpreted as module specifiers. Some algorithms like ImportEntries and ImportEntriesForModule pass around ModuleRequest Records rather than Strings, in a way which doesn't require any particular textual change. Additionally, record fields in Cyclic Module Records and Source Text Module Records which contained Lists of Strings are replaced by Lists of ModuleRequest Records, as indicated above.</emu-note>
+        <emu-clause id="sec-ModuleRequestsEqual" type="abstract operation">
+          <h1>
+            ModuleRequestsEqual (
+              _left_: a ModuleRequest Record or a LoadedModuleRequest Record,
+              _right_: a ModuleRequest Record or a LoadedModuleRequest Record,
+            ): a Boolean
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>&zwj;<ins>It checks whether the two ModuleRequest Records have the same specifier and attributes.</ins></dd>
+          </dl>
+
+          <emu-alg>
+            1. If _left_.[[Specifier]] is not _right_.[[Specifier]], return *false*.
+            1. Let _leftAttrs_ be _left_.[[Attributes]].
+            1. Let _rightAttrs_ be _right_.[[Attributes]].
+            1. Let _leftAttrsCount_ be the number of elements in _leftAttrs_.
+            1. Let _rightAttrsCount_ be the number of elements in _rightAttrs_.
+            1. If _leftAttrsCount_ ≠ _rightAttrsCount_, return *false*.
+            1. For each ImportAttribute Record _l_ of _leftAttrs_, do
+              1. If _rightAttrs_ does not contain an ImportAttribute Record _r_ such that _l_.[[Key]] is _r_.[[Key]] and _l_.[[Value]] is _r_.[[Value]], return *false*.
+            1. Return *true*.
+          </emu-alg>
+        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-static-semantics-modulerequests" type="sdo" number="3">
-        <h1>
-          Static Semantics: ModuleRequests ( ): a List of <del>Strings</del><ins>ModuleRequest Records</ins>
-        </h1>
+        <h1>Static Semantics: ModuleRequests ( ): a List of ModuleRequest Records</h1>
         <dl class="header">
         </dl>
         <emu-grammar>Module : [empty]</emu-grammar>
@@ -585,19 +619,12 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
         <emu-alg>
-          1. Let <del>_moduleNames_</del><ins>_requests_</ins> be ModuleRequests of |ModuleItemList|.
-          1. Let <del>_additionalNames_</del><ins>_additionalRequests_</ins> be ModuleRequests of |ModuleItem|.
-          1. <del>For each String _name_ of _additionalNames_, do</del>
-          1. <ins>For each ModuleRequest Record _mr_ of _additionalRequests_, do</ins>
-            1. <ins>Let _found_ be *false*.</ins>
-            1. <ins>For each ModuleRequest Record _mr2_ of _requests_, do</ins>
-              1. <ins>If _mr_.[[Specifier]] is _mr2_.[[Specifier]] and _mr_.[[Phase]] is _mr2_.[[Phase]], then</ins>
-                1. <ins>Assert: _found_ is *false*.</ins>
-                1. <ins>Set _found_ to *true*.</ins>
-            1. <del>If _moduleNames_ does not contain _name_, then</del>
-            1. <ins>If _found_ is *false*, then</ins>
-              1. Append <del>_name_</del><ins>_mr_</ins> to <del>_moduleNames_</del><ins>_requests_</ins>.
-          1. Return <del>_moduleNames_</del><ins>_requests_</ins>.
+          1. Let _requests_ be the ModuleRequests of |ModuleItemList|.
+          1. Let _additionalRequests_ be the ModuleRequests of |ModuleItem|.
+          1. For each ModuleRequest Record _mr_ of _additionalRequests_, do
+            1. If _requests_ does not contain a ModuleRequest Record _mr2_ such that ModuleRequestsEqual(_mr_, _mr2_) is *true* <ins>and _mr_.[[Phase]] is _mr2_.[[Phase]]</ins>, then
+              1. Append _mr_ to _requests_.
+          1. Return _requests_.
         </emu-alg>
         <emu-grammar>ModuleItem : StatementListItem</emu-grammar>
         <emu-alg>
@@ -607,16 +634,15 @@ contributors: Nicolò Ribaudo
           ImportDeclaration : `import` ImportClause FromClause `;`
         </emu-grammar>
         <emu-alg>
-          1. <del>Return ModuleRequests of |FromClause|.</del>
-          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: ~evaluation~ }.</ins>
+          1. Let _specifier_ be the SV of |FromClause|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », <ins>[[Phase]]: ~evaluation~</ins> }.
         </emu-alg>
         <emu-grammar>
           <ins>ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`</ins>
         </emu-grammar>
         <emu-alg>
           1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: ~defer~ }.</ins>
+          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~ }.</ins>
         </emu-alg>
         <emu-grammar><del>ModuleSpecifier : StringLiteral</del></emu-grammar>
         <emu-alg>
@@ -628,7 +654,7 @@ contributors: Nicolò Ribaudo
         <emu-alg>
           1. <del>Return ModuleRequests of |FromClause|.</del>
           1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
-          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Phase]]: ~evaluation~ }.</ins>
+          1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~evaluation~ }.</ins>
         </emu-alg>
         <emu-grammar>
           ExportDeclaration :
@@ -694,7 +720,7 @@ contributors: Nicolò Ribaudo
                 an Object or ~empty~
               </td>
               <td>
-                The Module Namespace Object (<emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>) whose [[Deferred]] slot is **false**, if one has been created for this module.
+                The Module Namespace Object (<emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>) whose [[Deferred]] slot is *false*, if one has been created for this module.
               </td>
             </tr>
             <tr>
@@ -705,7 +731,7 @@ contributors: Nicolò Ribaudo
                 <ins>an Object or ~empty~</ins>
               </td>
               <td>
-                <ins>The Module Namespace Object (<emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>) whose [[Deferred]] slot is **true**, if one has been requested for this module.</ins>
+                <ins>The Module Namespace Object (<emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>) whose [[Deferred]] slot is *true*, if one has been requested for this module.</ins>
               </td>
             </tr>
             <tr>
@@ -725,256 +751,8 @@ contributors: Nicolò Ribaudo
 
       <emu-clause id="sec-cyclic-module-records" number="5">
         <h1>Cyclic Module Records</h1>
-        <p>A <dfn id="cyclic-module-record" variants="Cyclic Module Records">Cyclic Module Record</dfn> is used to represent information about a module that can participate in dependency cycles with other modules that are subclasses of the Cyclic Module Record type. Module Records that are not subclasses of the Cyclic Module Record type must not participate in dependency cycles with Source Text Module Records.</p>
-        <p>In addition to the fields defined in <emu-xref href="#table-module-record-fields"></emu-xref> Cyclic Module Records have the additional fields listed in <emu-xref href="#table-cyclic-module-fields"></emu-xref></p>
-        <emu-table id="table-cyclic-module-fields" caption="Additional Fields of Cyclic Module Records">
-          <table>
-            <tr>
-              <th>
-                Field Name
-              </th>
-              <th>
-                Value Type
-              </th>
-              <th>
-                Meaning
-              </th>
-            </tr>
-            <tr>
-              <td>
-                [[Status]]
-              </td>
-              <td>
-                ~new~, ~unlinked~, ~linking~, ~linked~, ~evaluating~, ~evaluating-async~, or ~evaluated~
-              </td>
-              <td>
-                Initially ~new~. Transitions to ~unlinked~, ~linking~, ~linked~, ~evaluating~, possibly ~evaluating-async~, ~evaluated~ (in that order) as the module progresses throughout its lifecycle. ~evaluating-async~ indicates this module is queued to execute on completion of its asynchronous dependencies or it is a module whose [[HasTLA]] field is *true* that has been executed and is pending top-level completion.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[EvaluationError]]
-              </td>
-              <td>
-                a throw completion or ~empty~
-              </td>
-              <td>
-                A throw completion representing the exception that occurred during evaluation. *undefined* if no exception occurred or if [[Status]] is not ~evaluated~.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[DFSIndex]]
-              </td>
-              <td>
-                an integer or ~empty~
-              </td>
-              <td>
-                Auxiliary field used during Link and Evaluate only. If [[Status]] is either ~linking~ or ~evaluating~, this non-negative number records the point at which the module was first visited during the depth-first traversal of the dependency graph.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[DFSAncestorIndex]]
-              </td>
-              <td>
-                an integer or ~empty~
-              </td>
-              <td>
-                Auxiliary field used during Link and Evaluate only. If [[Status]] is either ~linking~ or ~evaluating~, this is either the module's own [[DFSIndex]] or that of an "earlier" module in the same strongly connected component.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[RequestedModules]]
-              </td>
-              <td>
-                a List of <del>Strings</del><ins>ModuleRequest Records</ins>
-              </td>
-              <td>
-                A List of all the |ModuleSpecifier| strings used by the module represented by this record to request the importation of a module, <ins>along with their maximum specified import phase (~defer~ or ~evaluation~)</ins>. The List is in source text occurrence order.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[LoadedModules]]
-              </td>
-              <td>
-                a List of Records with fields [[Specifier]] (a String) and [[Module]] (a Module Record)
-              </td>
-              <td>
-                A map from the specifier strings used by the module represented by this record to request the importation of a module to the resolved Module Record. The list does not contain two different Records with the same [[Specifier]].
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[CycleRoot]]
-              </td>
-              <td>
-                a Cyclic Module Record or ~empty~
-              </td>
-              <td>
-                The first visited module of the cycle, the root DFS ancestor of the strongly connected component. For a module not in a cycle, this would be the module itself. Once Evaluate has completed, a module's [[DFSAncestorIndex]] is the [[DFSIndex]] of its [[CycleRoot]].
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[HasTLA]]
-              </td>
-              <td>
-                a Boolean
-              </td>
-              <td>
-                Whether this module is individually asynchronous (for example, if it's a Source Text Module Record containing a top-level await). Having an asynchronous dependency does not mean this field is *true*. This field must not change after the module is parsed.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[AsyncEvaluation]]
-              </td>
-              <td>
-                a Boolean
-              </td>
-              <td>
-                Whether this module is either itself asynchronous or has an asynchronous dependency. Note: The order in which this field is set is used to order queued executions, see <emu-xref href="#sec-async-module-execution-fulfilled"></emu-xref>.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[TopLevelCapability]]
-              </td>
-              <td>
-                a PromiseCapability Record or ~empty~
-              </td>
-              <td>
-                If this module is the [[CycleRoot]] of some cycle, and Evaluate() was called on some module in that cycle, this field contains the PromiseCapability Record for that entire evaluation. It is used to settle the Promise object that is returned from the Evaluate() abstract method. This field will be ~empty~ for any dependencies of that module, unless a top-level Evaluate() has been initiated for some of those dependencies.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[AsyncParentModules]]
-              </td>
-              <td>
-                a List of Cyclic Module Records
-              </td>
-              <td>
-                If this module or a dependency has [[HasTLA]] *true*, and execution is in progress, this tracks the parent importers of this module for the top-level execution job. These parent modules will not start executing before this module has successfully completed execution.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[PendingAsyncDependencies]]
-              </td>
-              <td>
-                an integer or ~empty~
-              </td>
-              <td>
-                If this module has any asynchronous dependencies, this tracks the number of asynchronous dependency modules remaining to execute for this module. A module with asynchronous dependencies will be executed when this field reaches 0 and there are no execution errors.
-              </td>
-            </tr>
-          </table>
-        </emu-table>
-        <p>In addition to the methods defined in <emu-xref href="#table-abstract-methods-of-module-records"></emu-xref> Cyclic Module Records have the additional methods listed in <emu-xref href="#table-cyclic-module-methods"></emu-xref></p>
-        <emu-table id="table-cyclic-module-methods" caption="Additional Abstract Methods of Cyclic Module Records">
-          <table>
-            <tr>
-              <th>
-                Method
-              </th>
-              <th>
-                Purpose
-              </th>
-            </tr>
-            <tr>
-              <td>
-                InitializeEnvironment()
-              </td>
-              <td>
-                Initialize the Environment Record of the module, including resolving all imported bindings, and create the module's execution context.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                ExecuteModule( [ _promiseCapability_ ] )
-              </td>
-              <td>
-                Evaluate the module's code within its execution context. If this module has *true* in [[HasTLA]], then a PromiseCapability Record is passed as an argument, and the method is expected to resolve or reject the given capability. In this case, the method must not throw an exception, but instead reject the PromiseCapability Record if necessary.
-              </td>
-            </tr>
-          </table>
-        </emu-table>
 
-        <p>A <dfn id="graphloadingstate-record" variants="GraphLoadingState Records">GraphLoadingState Record</dfn> is a Record that contains information about the loading process of a module graph. It's used to continue loading after a call to HostLoadImportedModule. Each GraphLoadingState Record has the fields defined in <emu-xref href="#table-graphloadingstate-record-fields"></emu-xref>:</p>
-        <emu-table id="table-graphloadingstate-record-fields" caption="GraphLoadingState Record Fields">
-          <table>
-            <tr>
-              <th>
-                Field Name
-              </th>
-              <th>
-                Value Type
-              </th>
-              <th>
-                Meaning
-              </th>
-            </tr>
-            <tr>
-              <td>
-                [[PromiseCapability]]
-              </td>
-              <td>
-                a PromiseCapability Record
-              </td>
-              <td>
-                The promise to resolve when the loading process finishes.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[IsLoading]]
-              </td>
-              <td>
-                a Boolean
-              </td>
-              <td>
-                It is true if the loading process has not finished yet, neither successfully nor with an error.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[PendingModulesCount]]
-              </td>
-              <td>
-                a non-negative integer
-              </td>
-              <td>
-                It tracks the number of pending HostLoadImportedModule calls.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[Visited]]
-              </td>
-              <td>
-                a List of Cyclic Module Records
-              </td>
-              <td>
-                It is a list of the Cyclic Module Records that have been already loaded by the current loading process, to avoid infinite loops with circular dependencies.
-              </td>
-            </tr>
-            <tr>
-              <td>
-                [[HostDefined]]
-              </td>
-              <td>
-                anything (default value is ~empty~)
-              </td>
-              <td>
-                It contains host-defined data to pass from the LoadRequestedModules caller to HostLoadImportedModule.
-              </td>
-            </tr>
-          </table>
-        </emu-table>
+        <p>A <dfn id="cyclic-module-record" variants="Cyclic Module Records">Cyclic Module Record</dfn> is used to represent information about a module that can participate in dependency cycles with other modules that are subclasses of the Cyclic Module Record type. Module Records that are not subclasses of the Cyclic Module Record type must not participate in dependency cycles with Source Text Module Records.</p>
 
         <emu-clause id="sec-LoadRequestedModules" type="concrete method">
           <h1>
@@ -1161,7 +939,7 @@ contributors: Nicolò Ribaudo
 
           <emu-alg>
             1. <del>Assert: This call to Evaluate is not happening at the same time as another call to Evaluate within the surrounding agent.</del>.
-            1. <ins>Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~evaluating~ or a status earlier than ~linked~.</ins>
+            1. <ins>Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~evaluating~, ~linking~, ~unlinked~, or ~new~.</ins>
             1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
             1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, set _module_ to _module_.[[CycleRoot]].
             1. If _module_.[[TopLevelCapability]] is not ~empty~, then
@@ -1290,12 +1068,13 @@ contributors: Nicolò Ribaudo
             </dl>
 
             <emu-alg>
-              1. Assert: If _module_ is a Cyclic Module Record, _module_.[[HasTLA]] is *false* and all its asynchronous transitive dependencies have already been evaluated.
+              1. Assert: If _module_ is a Cyclic Module Record, _module_.[[HasTLA]] is *false*.
+              1. [declared="m"] Assert: For each Cyclic Module Record _m_ that it a transitive dependency of _module_, either _m_.[[HasTLA]] is *false* or _m_.[[Status]] is ~evaluated~.
               1. Let _promise_ be ! _module_.Evaluate().
               1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
               1. If _promise_.[[PromiseState]] is ~rejected~, then
-                1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
-              1. Return NormalCompletion(~unused~).
+                1. Throw _promise_.[[PromiseResult]].
+              1. Return ~unused~.
             </emu-alg>
           </emu-clause>
 
@@ -1310,11 +1089,11 @@ contributors: Nicolò Ribaudo
             </h1>
             <dl class="header">
               <dt>description</dt>
-              <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an async dependency is found.</dd>
+              <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency is found.</dd>
             </dl>
 
             <emu-alg>
-              1. If _seen_ is not specified, let _seen_ be a new empty List.
+              1. If _seen_ is not present, set _seen_ to a new empty List.
               1. Let _result_ be a new empty List.
               1. If _seen_ contains _module_, return _result_.
               1. Append _module_ to _seen_.
@@ -2067,7 +1846,7 @@ contributors: Nicolò Ribaudo
           GetModuleNamespace (
             _module_: an instance of a concrete subclass of Module Record,
             <ins>_phase_: ~defer~ or ~evaluation~,</ins>
-          ): a Module Namespace Object or ~empty~
+          ): a Module Namespace Object
         </h1>
         <dl class="header">
           <dt>description</dt>
@@ -2076,7 +1855,7 @@ contributors: Nicolò Ribaudo
 
         <emu-alg>
           1. Assert: If _module_ is a Cyclic Module Record, then _module_.[[Status]] is not ~new~ or ~unlinked~.
-          1. <ins>If _phase_ is ~defer~, let _namespace_ be _module_.[[DeferredNamespace]], otherwise</ins> let _namespace_ be _module_.[[Namespace]].
+          1. <ins>If _phase_ is ~defer~, let _namespace_ be _module_.[[DeferredNamespace]]. Otherwise,</ins> let _namespace_ be _module_.[[Namespace]].
           1. If _namespace_ is ~empty~, then
             1. Let _exportedNames_ be _module_.GetExportedNames().
             1. Let _unambiguousNames_ be a new empty List.
