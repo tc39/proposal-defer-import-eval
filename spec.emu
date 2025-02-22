@@ -313,8 +313,8 @@ contributors: Nicolò Ribaudo
             1. If _module_.[[Status]] is ~evaluating~ or ~evaluating-async~, return *false*.
             1. Assert: _module_.[[Status]] is ~linked~.
             1. If _module_.[[HasTLA]] is *true*, return *false*.
-            1. For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do
-              1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).
+            1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
+              1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
               1. If ReadyForSyncExecution(_requiredModule_, _seen_) is *false*, then
                 1. Return *false*.
             1. Return *true*.
@@ -966,9 +966,9 @@ contributors: Nicolò Ribaudo
               1. Set _module_.[[PendingAsyncDependencies]] to 0.
               1. Set _index_ to _index_ + 1.
               1. <ins>Let _evaluationList_ be a new empty List.</ins>
-              1. <ins>For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do</ins>
-                1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).</ins>
-                1. <ins>If _required_.[[Phase]] is ~defer~, then</ins>
+              1. <ins>For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do</ins>
+                1. <ins>Let _requiredModule_ be GetImportedModule(_module_, _request_).</ins>
+                1. <ins>If _request_.[[Phase]] is ~defer~, then</ins>
                   1. <ins>Let _additionalModules_ be GatherAsynchronousTransitiveDependencies(_requiredModule_).</ins>
                   1. <ins>For each Module Record _additionalModule_ of _additionalModules_, do</ins>
                     1. <ins>If _evaluationList_ does not contain _additionalModule_, then</ins>
@@ -977,7 +977,7 @@ contributors: Nicolò Ribaudo
                   1. <ins>Append _requiredModule_ to _evaluationList_.</ins>
               1. Append _module_ to _stack_.
               1. <del>For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do</del>
-                1. <del>Let _requiredModule_ be GetImportedModule(_module_, _required_).</del>
+                1. <del>Let _requiredModule_ be GetImportedModule(_module_, _request_).</del>
               1. <ins>For each Module Record _requiredModule_ of _evaluationList_, do</ins>
                 1. Set _index_ to ? InnerModuleEvaluation(_requiredModule_, _stack_, _index_).
                 1. If _requiredModule_ is a Cyclic Module Record, then
@@ -1070,8 +1070,8 @@ contributors: Nicolò Ribaudo
               1. If _module_.[[HasTLA]] is *true*, then
                 1. Append _module_ to _result_.
                 1. Return _result_.
-              1. For each ModuleRequest Record _required_ of _module_.[[RequestedModules]], do
-                1. Let _requiredModule_ be GetImportedModule(_module_, _required_.[[Specifier]]).
+              1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
+                1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
                 1. Let _additionalModules_ be GatherAsynchronousTransitiveDependencies(_requiredModule_, _seen_).
                 1. For each Module Record _m_ of _additionalModules_, do
                   1. If _result_ does not contain _m_, append _m_ to _result_.
