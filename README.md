@@ -347,38 +347,40 @@ not acheive the characteristics we are looking for.
 
 #### Why `import defer *` gives a different namespace object from `import *`?
 
-If a deferred module throws while being evaluated, `ns.foo` will throw the evaluation error:
+Module namespace objects of modules that are _already evaluated_ and threw during evaluation do not re-throw an error on
+property access:
 
 ```js
 // module-that-throws1
+import * as self from 'module-that-throws1';
+globalThis.ns1 = self;
 export let a = 1;
 throw new Error("oops");
 ```
 ```js
 // main1.js
-import defer * as ns1 from 'module-that-throws1';
-try { ns1.a } catch (e) { console.log('caught', e) } // logs "oops"
+import("module-that-throws1").finally(() => {
+  console.log(globalThis.ns1.a); // Doesn't throw, logs '1'
+});
 ```
 
-Module namespace objects of modules that are _already evaluated_ and threw during evaluation do now re-throw an error on
-property access:
+Deferred namespaces are different. If the module throws while being evaluated, `deferredNamespace.foo` will always throw the evaluation error:
+
 ```js
 // module-that-throws2
-import * as ns2 from 'module-that-throws2';
-globalThis.ns2 = ns2;
 export let a = 1;
 throw new Error("oops");
 ```
 ```js
 // main2.js
-import("module-that-throws2").finally(() => {
-  try { ns2.a } catch (e) { console.log('caught', e) } // Doesn't throw
-});
+import defer * as ns2 from 'module-that-throws2';
+
+try { ns2.a } catch (e) { console.log(e.message) } // logs "oops"
 ```
 
-This is not a problem today, because having access to the namespace object of a module that threw during evaluation is incredibly rare. However, it would be incredibly more common with `import defer` declarations. To guarantee that the behavior of `main1.js` is not affected by module previously loaded (and to avoid race conditions), `ns2.foo` must throw even if `module-that-throws` is already evaluated, and thus it cannot be the same namespace object as `import *`.
+Before this proposal having access to a namespace object of a module that threw during evaluation is incredibly rare. However, it becomes more common with `import defer` declarations. The `import defer` in `main2.js` would have a race condition if it errored only when `module-that-throws2` has already been loaded by something else, instead the error will always be deffered until the namespace is accessed. As `ns2.a` must throw even if `module-that-throws2` is already evaluated, and thus it cannot be the same namespace object as `import *`.
 
-Another approach we considered (and discarded) was to always suppress evaluation errors on namespace property access, so that in the ecample above `ns1.a` would be guaranteed to _never_ throw and thus not be affected by unrelated modules that might have already triggered evaluation of `module-that-throws`.
+Another approach we considered (and discarded) was to always suppress evaluation errors on namespace property access, so that in the ecample above `ns2.a` would be guaranteed to _never_ throw and thus not be affected by unrelated modules that might have already triggered evaluation of `module-that-throws`.
 
 #### Why not re-use import attributes (`import * as ns from "mod" with { defer: true }`)?
 
