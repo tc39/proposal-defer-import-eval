@@ -380,7 +380,7 @@ try { ns2.a } catch (e) { console.log(e.message) } // logs "oops"
 
 Before this proposal having access to a namespace object of a module that threw during evaluation is incredibly rare. However, it becomes more common with `import defer` declarations. The `import defer` in `main2.js` would have a race condition if it errored only when `module-that-throws2` has already been loaded by something else, instead the error will always be deffered until the namespace is accessed. As `ns2.a` must throw even if `module-that-throws2` is already evaluated, and thus it cannot be the same namespace object as `import *`.
 
-Another approach we considered (and discarded) was to always suppress evaluation errors on namespace property access, so that in the ecample above `ns2.a` would be guaranteed to _never_ throw and thus not be affected by unrelated modules that might have already triggered evaluation of `module-that-throws`.
+Another approach we considered (and discarded) was to always suppress evaluation errors on namespace property access, so that in the example above `ns2.a` would be guaranteed to _never_ throw and thus not be affected by unrelated modules that might have already triggered evaluation of `module-that-throws`.
 
 #### Why not re-use import attributes (`import * as ns from "mod" with { defer: true }`)?
 
