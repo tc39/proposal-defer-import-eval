@@ -458,57 +458,17 @@ contributors: Nicolò Ribaudo
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « a newly created *TypeError* object »).
               1. Return _promiseCapability_.[[Promise]].
             1. Sort _attributes_ according to the lexicographic order of their [[Key]] field, treating the value of each such field as a sequence of UTF-16 code unit values. NOTE: This sorting is observable only in that hosts are prohibited from changing behaviour based on the order in which attributes are enumerated.
-          1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attributes_ }.
-          1. <ins>Let _payload_ be a new DynamicImportState Record { [[PromiseCapability]]: _promiseCapability_, [[Phase]]: _phase_ }.</ins>
-          1. Perform HostLoadImportedModule(_referrer_, _moduleRequest_, ~empty~, <del>_promiseCapability_</del><ins>_payload_</ins>).
+          1. Let _moduleRequest_ be a new ModuleRequest Record { [[Specifier]]: _specifierString_, [[Attributes]]: _attributes_, <ins>[[Phase]]: _phase_</ins> }.
+          1. Perform HostLoadImportedModule(_referrer_, _moduleRequest_, ~empty~, _promiseCapability_).
           1. Return _promiseCapability_.[[Promise]].
         </emu-alg>
-
-        <p><ins>A <dfn id="dynamicimportstate-record" variants="DynamicImportState Records">DynamicImportState Record</dfn> is a Record that contains information about a dynamic import call. It's used to continue loading after a call to HostLoadImportedModule. Each DynamicImportState Record has the fields defined in <emu-xref href="#table-dynamicimportstate-record-fields"></emu-xref>:</ins></p>
-        <emu-table id="table-dynamicimportstate-record-fields" caption="DynamicImportState Record Fields">
-          <table>
-            <tr>
-              <th>
-                Field Name
-              </th>
-              <th>
-                Value Type
-              </th>
-              <th>
-                Meaning
-              </th>
-            </tr>
-            <tr>
-              <td>
-                <ins>[[PromiseCapability]]</ins>
-              </td>
-              <td>
-                <ins>a PromiseCapability Record</ins>
-              </td>
-              <td>
-                <ins>The promise to resolve when the loading process finishes.</ins>
-              </td>
-            </tr>
-            <tr>
-              <td>
-                <ins>[[Phase]]</ins>
-              </td>
-              <td>
-                <ins>~defer~ or ~evaluation~</ins>
-              </td>
-              <td>
-                <ins>The target import phase</ins>
-              </td>
-            </tr>
-          </table>
-        </emu-table>
 
         <emu-clause id="sec-ContinueDynamicImport" type="abstract operation">
           <h1>
             ContinueDynamicImport (
-              <del>_promiseCapability_: a PromiseCapability Record,</del>
-              <ins>_payload_: a DynamicImportState Record,</ins>
+              _promiseCapability_: a PromiseCapability Record,
               _moduleCompletion_: either a normal completion containing a Module Record or a throw completion,
+              <ins>_phase_</ins>: ~defer~ or ~evaluation~,
             ): ~unused~
           </h1>
           <dl class="header">
@@ -516,8 +476,6 @@ contributors: Nicolò Ribaudo
             <dd>It completes the process of a dynamic import originally started by an <emu-xref href="#sec-import-calls">`import()`</emu-xref> call, resolving or rejecting the promise returned by that call as appropriate.</dd>
           </dl>
           <emu-alg>
-            1. <ins>Let _promiseCapability_ be _payload_.[[PromiseCapability]].</ins>
-            1. <ins>Let _phase_ be _payload_.[[Phase]].</ins>
             1. If _moduleCompletion_ is an abrupt completion, then
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _moduleCompletion_.[[Value]] &raquo;).
               1. Return ~UNUSED~.
@@ -760,7 +718,7 @@ contributors: Nicolò Ribaudo
         </emu-alg>
       </emu-clause>
 
-      <emu-clause id="sec-abstract-module-records">
+      <emu-clause id="sec-abstract-module-records" number="4">
         <h1>Abstract Module Records</h1>
         <p>A <dfn variants="Module Records">Module Record</dfn> encapsulates structural information about the imports and exports of a single module. This information is used to link the imports and exports of sets of connected modules. A Module Record includes four fields that are only used when evaluating a module.</p>
         <p>For specification purposes Module Record values are values of the Record specification type and can be thought of as existing in a simple object-oriented hierarchy where Module Record is an abstract class with both abstract and concrete subclasses. This specification defines the abstract subclass named Cyclic Module Record and its concrete subclass named Source Text Module Record. Other specifications and implementations may define additional Module Record subclasses corresponding to alternative module definition facilities that they defined.</p>
@@ -1809,45 +1767,34 @@ contributors: Nicolò Ribaudo
         </emu-clause>
       </emu-clause>
 
-      <emu-clause id="sec-AllImportAttributesSupported" type="abstract operation">
+      <emu-clause id="sec-FinishLoadingImportedModule" type="abstract operation" oldids="sec-finishdynamicimport" number="11">
         <h1>
-          AllImportAttributesSupported (
-            _attributes_: a List of ImportAttribute Records,
-          ): a Boolean
+          FinishLoadingImportedModule (
+            _referrer_: a Script Record, a Cyclic Module Record, or a Realm Record,
+            _moduleRequest_: a ModuleRequest Record,
+            _payload_: a GraphLoadingState Record or a PromiseCapability Record,
+            _result_: either a normal completion containing a Module Record or a throw completion,
+          ): ~unused~
         </h1>
         <dl class="header">
           <dt>description</dt>
           <dd></dd>
         </dl>
         <emu-alg>
-          1. Let _supported_ be HostGetSupportedImportAttributes().
-          1. For each ImportAttribute Record _attribute_ of _attributes_, do
-            1. If _supported_ does not contain _attribute_.[[Key]], return *false*.
-          1. Return *true*.
+          1. If _result_ is a normal completion, then
+            1. If _referrer_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsEqual(_record_, _moduleRequest_) is *true*, then
+              1. Assert: _record_.[[Module]] and _result_.[[Value]] are the same Module Record.
+            1. Else,
+              1. Append the LoadedModuleRequest Record { [[Specifier]]: _moduleRequest_.[[Specifier]], [[Attributes]]: _moduleRequest_.[[Attributes]], [[Module]]: _result_.[[Value]] } to _referrer_.[[LoadedModules]].
+          1. If _payload_ is a GraphLoadingState Record, then
+            1. Perform ContinueModuleLoading(_payload_, _result_).
+          1. Else,
+            1. Perform ContinueDynamicImport(_payload_, _result_, <ins>_moduleRequest_.[[Phase]]</ins>).
+          1. Return ~unused~.
         </emu-alg>
-
-        <emu-clause id="sec-hostgetsupportedimportattributes" type="host-defined abstract operation">
-          <h1>HostGetSupportedImportAttributes ( ): a List of Strings</h1>
-          <dl class="header">
-            <dt>description</dt>
-            <dd>It allows host environments to specify which import attributes they support. Only attributes with supported keys will be provided to the host.</dd>
-          </dl>
-
-          <p>An implementation of HostGetSupportedImportAttributes must conform to the following requrements:</p>
-
-          <ul>
-            <li>It must return a List of Strings, each indicating a supported attribute.</li>
-
-            <li>Each time this operation is called, it must return the same List with the same contents in the same order.</li>
-          </ul>
-
-          <p>The default implementation of HostGetSupportedImportAttributes is to return a new empty List.</p>
-
-          <emu-note>The purpose of requiring the host to specify its supported import attributes, rather than passing all attributes to the host and letting it then choose which ones it wants to handle, is to ensure that unsupported attributes are handled in a consistent way across different hosts.</emu-note>
-        </emu-clause>
       </emu-clause>
 
-      <emu-clause id="sec-getmodulenamespace" type="abstract operation" number="10">
+      <emu-clause id="sec-getmodulenamespace" type="abstract operation" number="13">
         <h1>
           GetModuleNamespace (
             _module_: an instance of a concrete subclass of Module Record,
