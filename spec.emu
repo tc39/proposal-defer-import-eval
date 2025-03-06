@@ -468,7 +468,7 @@ contributors: Nicolò Ribaudo
             ContinueDynamicImport (
               _promiseCapability_: a PromiseCapability Record,
               _moduleCompletion_: either a normal completion containing a Module Record or a throw completion,
-              <ins>_phase_</ins>: ~defer~ or ~evaluation~,
+              <ins>_phase_: ~defer~ or ~evaluation~,</ins>
             ): ~unused~
           </h1>
           <dl class="header">
@@ -478,28 +478,28 @@ contributors: Nicolò Ribaudo
           <emu-alg>
             1. If _moduleCompletion_ is an abrupt completion, then
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _moduleCompletion_.[[Value]] &raquo;).
-              1. Return ~UNUSED~.
+              1. Return ~unused~.
             1. Let _module_ be _moduleCompletion_.[[Value]].
             1. Let _loadPromise_ be _module_.LoadRequestedModules().
             1. Let _rejectedClosure_ be a new Abstract Closure with parameters (_reason_) that captures _promiseCapability_ and performs the following steps when called:
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _reason_ &raquo;).
-              1. Return ~UNUSED~.
+              1. Return ~unused~.
             1. Let _onRejected_ be CreateBuiltinFunction(_rejectedClosure_, 1, *""*, &laquo; &raquo;).
             1. Let _linkAndEvaluateClosure_ be a new Abstract Closure with no parameters that captures _module_, _promiseCapability_, <ins>_phase_</ins> and _onRejected_ and performs the following steps when called:
               1. Let _link_ be Completion(_module_.Link()).
               1. If _link_ is an abrupt completion, then
                 1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _link_.[[Value]] &raquo;).
-                1. Return ~UNUSED~.
+                1. Return ~unused~.
               1. <del>Let _evaluatePromise_ be _module_.Evaluate().</del>
               1. Let _fulfilledClosure_ be a new Abstract Closure with no parameters that captures _module_, <ins>_phase_,</ins> and _promiseCapability_ and performs the following steps when called:
                 1. Let _namespace_ be GetModuleNamespace(_module_, <ins>_phase_</ins>).
                 1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, &laquo; _namespace_ &raquo;).
-                1. Return ~UNUSED~.
+                1. Return ~unused~.
               1. <ins>If _phase_ is ~defer~, then</ins>
                 1. <ins>Let _evaluationList_ be GatherAsynchronousTransitiveDependencies(_module_).</ins>
                 1. <ins>If _evaluationList_ is empty, then</ins>
                   1. <ins>Perform _fulfilledClosure_().</ins>
-                  1. <ins>Return ~UNUSED~.</ins>
+                  1. <ins>Return ~unused~.</ins>
                 1. <ins>Let _asyncDepsEvaluationPromises_ be a new empty List.</ins>
                 1. <ins>For each Module Record _dep_ of _evaluationList_, append _dep_.Evaluate() to _asyncDepsEvaluationPromises_.</ins>
                 1. <ins>Let _iterator_ be CreateListIteratorRecord(_asyncDepsEvaluationPromises_).</ins>
@@ -510,10 +510,10 @@ contributors: Nicolò Ribaudo
                 1. <ins>Let _evaluatePromise_ be _module_.Evaluate().</ins>
               1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledClosure_, *""*, 0, &laquo; &raquo;).
               1. Perform PerformPromiseThen(_evaluatePromise_, _onFulfilled_, _onRejected_).
-              1. Return ~UNUSED~.
+              1. Return ~unused~.
             1. Let _linkAndEvaluate_ be CreateBuiltinFunction(_linkAndEvaluateClosure_, *""*, 0, &laquo; &raquo;).
             1. Perform PerformPromiseThen(_loadPromise_, _linkAndEvaluate_, _onRejected_).
-            1. Return ~UNUSED~.
+            1. Return ~unused~.
           </emu-alg>
         </emu-clause>
       </emu-clause>
@@ -955,7 +955,8 @@ contributors: Nicolò Ribaudo
                 1. Set _module_.[[AsyncEvaluation]] to *true*.
                 1. NOTE: The order in which module records have their [[AsyncEvaluation]] fields transition to *true* is significant. (See <emu-xref href="#sec-async-module-execution-fulfilled"></emu-xref>.)
                 1. If _module_.[[PendingAsyncDependencies]] = 0, perform ExecuteAsyncModule(_module_).
-              1. Otherwise, perform ? <emu-meta effects="user-code">_module_.ExecuteModule()</emu-meta>.
+              1. Else,
+                1. Perform ? <emu-meta effects="user-code">_module_.ExecuteModule()</emu-meta>.
               1. Assert: _module_ occurs exactly once in _stack_.
               1. Assert: _module_.[[DFSAncestorIndex]] ≤ _module_.[[DFSIndex]].
               1. If _module_.[[DFSAncestorIndex]] = _module_.[[DFSIndex]], then
