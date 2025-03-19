@@ -16,6 +16,7 @@ Slides:
 - 2023-07 - [Deferred import evaluation for Stage 2](https://docs.google.com/presentation/d/1rSsVsFsnXQZ8pEGFwAGiVbVqndr4DHEUqTGEM9Au0_4) ([notes](https://github.com/tc39/notes/blob/main/meetings/2023-07/july-11.md#deferred-import-evaluation))
 - 2024-04 - [Deferred import evaluation for Stage 2.7](https://docs.google.com/presentation/d/1oPEF8nA9Iq5cAqjN-FqMigNNfz6lWCUbNfIsEjRXf4Y/edit#slide=id.p)
 - 2024-06 - [Deferred import evaluation for Stage 2.7 (2)](https://docs.google.com/presentation/d/1EjV6QbT4bvcOdWj-gCLwP5fcEWRfewzbrI3vOI11LA8/edit#slide=id.p)
+- 2025-01 - [`import defer` for Stage 3](https://docs.google.com/presentation/d/1LjsJhdTIP3wgo1odtVa-qbfyGU5M1W9YMm0AtKnJJKk)
 
 ## Background
 
