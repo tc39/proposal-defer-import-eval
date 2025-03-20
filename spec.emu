@@ -9,8 +9,6 @@ stage: 2
 contributors: Nicolò Ribaudo
 </pre>
 
-<emu-note type="editor">The diff markers in this proposal are on top of <a href="https://github.com/tc39/ecma262/pull/3057">tc39/ecma262#3057</a> (Import Attributes).</emu-note>
-
 <emu-clause id="sec-ordinary-and-exotic-objects-behaviours" number="10">
   <h1>Ordinary and Exotic Objects Behaviours</h1>
 
