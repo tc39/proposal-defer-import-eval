@@ -894,6 +894,7 @@ contributors: Nicolò Ribaudo
             1. If _result_ is an abrupt completion, then
               1. For each Cyclic Module Record _m_ of _stack_, do
                 1. Assert: _m_.[[Status]] is ~evaluating~.
+                1. Assert: _m_.[[AsyncEvaluationOrder]] is ~unset~.
                 1. Set _m_.[[Status]] to ~evaluated~.
                 1. Set _m_.[[EvaluationError]] to _result_.
               1. Assert: _module_.[[Status]] is ~evaluated~.
@@ -902,8 +903,9 @@ contributors: Nicolò Ribaudo
             1. Else,
               1. Assert: _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
               1. Assert: _module_.[[EvaluationError]] is ~empty~.
-              1. If _module_.[[AsyncEvaluation]] is *false*, then
-                1. Assert: _module_.[[Status]] is ~evaluated~.
+              1. If _module_.[[Status]] is ~evaluated~, then
+                1. NOTE: This implies that evaluation of _module_ completed synchronously.
+                1. Assert: _module_.[[AsyncEvaluationOrder]] is ~unset~.
                 1. Perform ! Call(_capability_.[[Resolve]], *undefined*, « *undefined* »).
               1. Assert: _stack_ is empty.
             1. Return _capability_.[[Promise]].
@@ -964,13 +966,12 @@ contributors: Nicolò Ribaudo
                     1. Set _requiredModule_ to _requiredModule_.[[CycleRoot]].
                     1. Assert: _requiredModule_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
                     1. If _requiredModule_.[[EvaluationError]] is not ~empty~, return ? _requiredModule_.[[EvaluationError]].
-                  1. If _requiredModule_.[[AsyncEvaluation]] is *true*, then
+                  1. If _requiredModule_.[[AsyncEvaluationOrder]] is an integer, then
                     1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
                     1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
               1. If _module_.[[PendingAsyncDependencies]] > 0 or _module_.[[HasTLA]] is *true*, then
-                1. Assert: _module_.[[AsyncEvaluation]] is *false*.
-                1. Set _module_.[[AsyncEvaluation]] to *true*.
-                1. NOTE: The order in which module records have their [[AsyncEvaluation]] fields transition to *true* is significant. (See <emu-xref href="#sec-async-module-execution-fulfilled"></emu-xref>.)
+                1. Assert: _module_.[[AsyncEvaluationOrder]] is ~unset~.
+                1. Set _module_.[[AsyncEvaluationOrder]] to IncrementModuleAsyncEvaluationCount().
                 1. If _module_.[[PendingAsyncDependencies]] = 0, perform ExecuteAsyncModule(_module_).
               1. Else,
                 1. Perform ? <emu-meta effects="user-code">_module_.ExecuteModule()</emu-meta>.
@@ -982,10 +983,9 @@ contributors: Nicolò Ribaudo
                   1. Let _requiredModule_ be the last element of _stack_.
                   1. Remove the last element of _stack_.
                   1. Assert: _requiredModule_ is a Cyclic Module Record.
-                  1. If _requiredModule_.[[AsyncEvaluation]] is *false*, then
-                    1. Set _requiredModule_.[[Status]] to ~evaluated~.
-                  1. Else,
-                    1. Set _requiredModule_.[[Status]] to ~evaluating-async~.
+                  1. Assert: _requiredModule_.[[AsyncEvaluationOrder]] is either an integer or ~unset~.
+                  1. If _requiredModule_.[[AsyncEvaluationOrder]] is ~unset~, set _requiredModule_.[[Status]] to ~evaluated~.
+                  1. Otherwise, set _requiredModule_.[[Status]] to ~evaluating-async~.
                   1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
                   1. Set _requiredModule_.[[CycleRoot]] to _module_.
               1. Return _index_.
