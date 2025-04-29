@@ -3958,6 +3958,7 @@ p.ECMAaddress {
     <p>This specification defines several kinds of built-in <emu-xref href="#exotic-object"><a href="https://tc39.es/ecma262/#exotic-object">exotic objects</a></emu-xref>. These objects generally behave similar to <emu-xref href="#ordinary-object"><a href="https://tc39.es/ecma262/#ordinary-object">ordinary objects</a></emu-xref> except for a few specific situations. The following <emu-xref href="#exotic-object"><a href="https://tc39.es/ecma262/#exotic-object">exotic objects</a></emu-xref> use the <emu-xref href="#ordinary-object"><a href="https://tc39.es/ecma262/#ordinary-object">ordinary object</a></emu-xref> internal methods except where it is explicitly specified otherwise below:</p>
 
     <!-- NOTE!!!!: the oldids here is new, don't forget it in the ecma262 PR -->
+
     <emu-clause id="sec-module-namespace-exotic-objects" oldids="sec-module-namespace-objects" number="6"><span id="sec-module-namespace-objects"></span>
       <h1><span class="secnum">10.4.6</span> Module Namespace Exotic Objects</h1>
       <p>A <emu-xref href="#module-namespace-exotic-object" id="_ref_23"><a href="#module-namespace-exotic-object">module namespace exotic object</a></emu-xref> is an <emu-xref href="#exotic-object"><a href="https://tc39.es/ecma262/#exotic-object">exotic object</a></emu-xref> that exposes the bindings exported from an ECMAScript <emu-nt id="_ref_182"><a href="#prod-Module">Module</a></emu-nt> (See <emu-xref href="#sec-exports"><a href="https://tc39.es/ecma262/#sec-exports">16.2.3</a></emu-xref>). There is a one-to-one correspondence between the String-keyed own properties of a <emu-xref href="#module-namespace-exotic-object" id="_ref_24"><a href="#module-namespace-exotic-object">module namespace exotic object</a></emu-xref> and the binding names exported by the <emu-nt id="_ref_183"><a href="#prod-Module">Module</a></emu-nt>. The exported bindings include any bindings that are indirectly exported using <code>export *</code> export items. Each String-valued own <emu-xref href="#property-key"><a href="https://tc39.es/ecma262/#property-key">property key</a></emu-xref> is the <emu-xref aoid="StringValue"><a href="https://tc39.es/ecma262/#sec-static-semantics-stringvalue">StringValue</a></emu-xref> of the corresponding exported binding name. These are the only String-keyed properties of a <emu-xref href="#module-namespace-exotic-object" id="_ref_25"><a href="#module-namespace-exotic-object">module namespace exotic object</a></emu-xref>. Each such property has the attributes { <var class="field">[[Writable]]</var>: <emu-val>true</emu-val>, <var class="field">[[Enumerable]]</var>: <emu-val>true</emu-val>, <var class="field">[[Configurable]]</var>: <emu-val>false</emu-val> }. <emu-xref href="#module-namespace-exotic-object" id="_ref_26"><a href="#module-namespace-exotic-object">Module namespace exotic objects</a></emu-xref> are not extensible.</p>
@@ -4143,7 +4144,7 @@ p.ECMAaddress {
       <emu-note type="editor"><span class="note">Editor's Note</span><div class="note-contents">
         The changes to this section are intended to mirror the changes proposed by the
         <a href="https://tc39.es/proposal-source-phase-imports/#sec-import-calls">Source
-        Phase Imports</a> proposal, but adapted to the <emu-const>defer</emu-const> phase.
+          Phase Imports</a> proposal, but adapted to the <emu-const>defer</emu-const> phase.
       </div></emu-note>
 
       <emu-clause id="sec-import-call-runtime-semantics-evaluation" type="sdo">
@@ -4260,7 +4261,7 @@ p.ECMAaddress {
         <emu-clause id="sec-ContinueDynamicImport" type="abstract operation" aoid="ContinueDynamicImport">
           <h1><span class="secnum">13.3.10.4.1</span> ContinueDynamicImport ( <var>promiseCapability</var>, <var>moduleCompletion</var>, <ins><var>phase</var></ins> )</h1>
           <p>The abstract operation ContinueDynamicImport takes arguments <var>promiseCapability</var> (a <emu-xref href="#sec-promisecapability-records"><a href="https://tc39.es/ecma262/#sec-promisecapability-records">PromiseCapability Record</a></emu-xref>), <var>moduleCompletion</var> (either a <emu-xref href="#sec-completion-record-specification-type"><a href="https://tc39.es/ecma262/#sec-completion-record-specification-type">normal completion containing</a></emu-xref> a <emu-xref href="#sec-abstract-module-records" id="_ref_67"><a href="#sec-abstract-module-records">Module Record</a></emu-xref> or a <emu-xref href="#sec-completion-record-specification-type"><a href="https://tc39.es/ecma262/#sec-completion-record-specification-type">throw completion</a></emu-xref>), and <ins><var>phase</var> (<emu-const>defer</emu-const> or <emu-const>evaluation</emu-const>)</ins> and returns <emu-const>unused</emu-const>. It completes the process of a dynamic import originally started by an <emu-xref href="#sec-import-calls" id="_ref_4"><a href="#sec-import-calls"><code>import()</code></a></emu-xref> call, resolving or rejecting the promise returned by that call as appropriate. It performs the following steps when called:</p>
-          <emu-alg><ol><li>If <var>moduleCompletion</var> is an <emu-xref href="#sec-completion-record-specification-type"><a href="https://tc39.es/ecma262/#sec-completion-record-specification-type">abrupt completion</a></emu-xref>, then<ol><li>Perform !&nbsp;<emu-xref aoid="Call"><a href="https://tc39.es/ecma262/#sec-call">Call</a></emu-xref>(<var>promiseCapability</var>.<var class="field">[[Reject]]</var>, <emu-val>undefined</emu-val>, « <var>moduleCompletion</var>.<var class="field">[[Value]]</var> »).</li><li>Return <emu-const>unused</emu-const>.</li></ol></li><li>Let <var>module</var> be <var>moduleCompletion</var>.<var class="field">[[Value]]</var>.</li><li>Let <var>loadPromise</var> be <var>module</var>.LoadRequestedModules().</li><li>Let <var>rejectedClosure</var> be a new <emu-xref href="#sec-abstract-closure"><a href="https://tc39.es/ecma262/#sec-abstract-closure">Abstract Closure</a></emu-xref> with parameters (<var>reason</var>) that captures <var>promiseCapability</var> and performs the following steps when called:<ol><li>Perform !&nbsp;<emu-xref aoid="Call"><a href="https://tc39.es/ecma262/#sec-call">Call</a></emu-xref>(<var>promiseCapability</var>.<var class="field">[[Reject]]</var>, <emu-val>undefined</emu-val>, « <var>reason</var> »).</li><li>Return <emu-const>unused</emu-const>.</li></ol></li><li>Let <var>onRejected</var> be <emu-xref aoid="CreateBuiltinFunction"><a href="https://tc39.es/ecma262/#sec-createbuiltinfunction">CreateBuiltinFunction</a></emu-xref>(<var>rejectedClosure</var>, 1, <emu-val>""</emu-val>, « »).</li><li>Let <var>linkAndEvaluateClosure</var> be a new <emu-xref href="#sec-abstract-closure"><a href="https://tc39.es/ecma262/#sec-abstract-closure">Abstract Closure</a></emu-xref> with no parameters that captures <var>module</var>, <var>promiseCapability</var>, <ins><var>phase</var></ins> and <var>onRejected</var> and performs the following steps when called:<ol><li>Let <var>link</var> be <emu-xref aoid="Completion"><a href="https://tc39.es/ecma262/#sec-completion-ao">Completion</a></emu-xref>(<var>module</var>.Link()).</li><li>If <var>link</var> is an <emu-xref href="#sec-completion-record-specification-type"><a href="https://tc39.es/ecma262/#sec-completion-record-specification-type">abrupt completion</a></emu-xref>, then<ol><li>Perform !&nbsp;<emu-xref aoid="Call"><a href="https://tc39.es/ecma262/#sec-call">Call</a></emu-xref>(<var>promiseCapability</var>.<var class="field">[[Reject]]</var>, <emu-val>undefined</emu-val>, « <var>link</var>.<var class="field">[[Value]]</var> »).</li><li>Return <emu-const>unused</emu-const>.</li></ol></li><li><del>Let <var>evaluatePromise</var> be <var>module</var>.Evaluate().</del></li><li>Let <var>fulfilledClosure</var> be a new <emu-xref href="#sec-abstract-closure"><a href="https://tc39.es/ecma262/#sec-abstract-closure">Abstract Closure</a></emu-xref> with no parameters that captures <var>module</var>, <ins><var>phase</var>,</ins> and <var>promiseCapability</var> and performs the following steps when called:<ol><li>Let <var>namespace</var> be <emu-xref aoid="GetModuleNamespace" id="_ref_68"><a href="#sec-getmodulenamespace">GetModuleNamespace</a></emu-xref>(<var>module</var>, <ins><var>phase</var></ins>).</li><li>Perform !&nbsp;<emu-xref aoid="Call"><a href="https://tc39.es/ecma262/#sec-call">Call</a></emu-xref>(<var>promiseCapability</var>.<var class="field">[[Resolve]]</var>, <emu-val>undefined</emu-val>, « <var>namespace</var> »).</li><li>Return <emu-const>unused</emu-const>.</li></ol></li><li><ins>If <var>phase</var> is <emu-const>defer</emu-const>, then</ins><ol><li><ins>Let <var>evaluationList</var> be <emu-xref aoid="GatherAsynchronousTransitiveDependencies" id="_ref_69"><a href="#sec-GatherAsynchronousTransitiveDependencies">GatherAsynchronousTransitiveDependencies</a></emu-xref>(<var>module</var>).</ins></li><li><ins>If <var>evaluationList</var> is empty, then</ins><ol><li><ins>Perform <var>fulfilledClosure</var>().</ins></li><li><ins>Return <emu-const>unused</emu-const>.</ins></li></ol></li><li><ins>Let <var>asyncDepsEvaluationPromises</var> be a new empty <emu-xref href="#sec-list-and-record-specification-type"><a href="https://tc39.es/ecma262/#sec-list-and-record-specification-type">List</a></emu-xref>.</ins></li><li><ins>For each <emu-xref href="#sec-abstract-module-records" id="_ref_70"><a href="#sec-abstract-module-records">Module Record</a></emu-xref> <var>dep</var> of <var>evaluationList</var>, append <var>dep</var>.Evaluate() to <var>asyncDepsEvaluationPromises</var>.</ins></li><li><ins>Let <var>iterator</var> be <emu-xref aoid="CreateListIteratorRecord"><a href="https://tc39.es/ecma262/#sec-createlistiteratorRecord">CreateListIteratorRecord</a></emu-xref>(<var>asyncDepsEvaluationPromises</var>).</ins></li><li><ins>Let <var>pc</var> be !&nbsp;<emu-xref aoid="NewPromiseCapability"><a href="https://tc39.es/ecma262/#sec-newpromisecapability">NewPromiseCapability</a></emu-xref>(<emu-xref href="#sec-promise-constructor"><a href="https://tc39.es/ecma262/#sec-promise-constructor">%Promise%</a></emu-xref>).</ins></li><li><ins>Let <var>evaluatePromise</var> be !&nbsp;<emu-xref aoid="PerformPromiseAll"><a href="https://tc39.es/ecma262/#sec-performpromiseall">PerformPromiseAll</a></emu-xref>(<var>iterator</var>, <emu-xref href="#sec-promise-constructor"><a href="https://tc39.es/ecma262/#sec-promise-constructor">%Promise%</a></emu-xref>, <var>pc</var>, %Promise.resolve%).</ins></li></ol></li><li><ins>Else,</ins><ol><li><ins><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>phase</var> is <emu-const>evaluation</emu-const>.</ins></li><li><ins>Let <var>evaluatePromise</var> be <var>module</var>.Evaluate().</ins></li></ol></li><li>Let <var>onFulfilled</var> be <emu-xref aoid="CreateBuiltinFunction"><a href="https://tc39.es/ecma262/#sec-createbuiltinfunction">CreateBuiltinFunction</a></emu-xref>(<var>fulfilledClosure</var>, <emu-val>""</emu-val>, 0, « »).</li><li>Perform <emu-xref aoid="PerformPromiseThen"><a href="https://tc39.es/ecma262/#sec-performpromisethen">PerformPromiseThen</a></emu-xref>(<var>evaluatePromise</var>, <var>onFulfilled</var>, <var>onRejected</var>).</li><li>Return <emu-const>unused</emu-const>.</li></ol></li><li>Let <var>linkAndEvaluate</var> be <emu-xref aoid="CreateBuiltinFunction"><a href="https://tc39.es/ecma262/#sec-createbuiltinfunction">CreateBuiltinFunction</a></emu-xref>(<var>linkAndEvaluateClosure</var>, <emu-val>""</emu-val>, 0, « »).</li><li>Perform <emu-xref aoid="PerformPromiseThen"><a href="https://tc39.es/ecma262/#sec-performpromisethen">PerformPromiseThen</a></emu-xref>(<var>loadPromise</var>, <var>linkAndEvaluate</var>, <var>onRejected</var>).</li><li>Return <emu-const>unused</emu-const>.</li></ol></emu-alg>
+          <emu-alg><ol><li>If <var>moduleCompletion</var> is an <emu-xref href="#sec-completion-record-specification-type"><a href="https://tc39.es/ecma262/#sec-completion-record-specification-type">abrupt completion</a></emu-xref>, then<ol><li>Perform !&nbsp;<emu-xref aoid="Call"><a href="https://tc39.es/ecma262/#sec-call">Call</a></emu-xref>(<var>promiseCapability</var>.<var class="field">[[Reject]]</var>, <emu-val>undefined</emu-val>, « <var>moduleCompletion</var>.<var class="field">[[Value]]</var>&nbsp;»).</li><li>Return <emu-const>unused</emu-const>.</li></ol></li><li>Let <var>module</var> be <var>moduleCompletion</var>.<var class="field">[[Value]]</var>.</li><li>Let <var>loadPromise</var> be <var>module</var>.LoadRequestedModules().</li><li>Let <var>rejectedClosure</var> be a new <emu-xref href="#sec-abstract-closure"><a href="https://tc39.es/ecma262/#sec-abstract-closure">Abstract Closure</a></emu-xref> with parameters (<var>reason</var>) that captures <var>promiseCapability</var> and performs the following steps when called:<ol><li>Perform !&nbsp;<emu-xref aoid="Call"><a href="https://tc39.es/ecma262/#sec-call">Call</a></emu-xref>(<var>promiseCapability</var>.<var class="field">[[Reject]]</var>, <emu-val>undefined</emu-val>, « <var>reason</var>&nbsp;»).</li><li>Return <emu-const>unused</emu-const>.</li></ol></li><li>Let <var>onRejected</var> be <emu-xref aoid="CreateBuiltinFunction"><a href="https://tc39.es/ecma262/#sec-createbuiltinfunction">CreateBuiltinFunction</a></emu-xref>(<var>rejectedClosure</var>, 1, <emu-val>""</emu-val>, «&nbsp;»).</li><li>Let <var>linkAndEvaluateClosure</var> be a new <emu-xref href="#sec-abstract-closure"><a href="https://tc39.es/ecma262/#sec-abstract-closure">Abstract Closure</a></emu-xref> with no parameters that captures <var>module</var>, <var>promiseCapability</var>, <ins><var>phase</var></ins> and <var>onRejected</var> and performs the following steps when called:<ol><li>Let <var>link</var> be <emu-xref aoid="Completion"><a href="https://tc39.es/ecma262/#sec-completion-ao">Completion</a></emu-xref>(<var>module</var>.Link()).</li><li>If <var>link</var> is an <emu-xref href="#sec-completion-record-specification-type"><a href="https://tc39.es/ecma262/#sec-completion-record-specification-type">abrupt completion</a></emu-xref>, then<ol><li>Perform !&nbsp;<emu-xref aoid="Call"><a href="https://tc39.es/ecma262/#sec-call">Call</a></emu-xref>(<var>promiseCapability</var>.<var class="field">[[Reject]]</var>, <emu-val>undefined</emu-val>, « <var>link</var>.<var class="field">[[Value]]</var>&nbsp;»).</li><li>Return <emu-const>unused</emu-const>.</li></ol></li><li><del>Let <var>evaluatePromise</var> be <var>module</var>.Evaluate().</del></li><li>Let <var>fulfilledClosure</var> be a new <emu-xref href="#sec-abstract-closure"><a href="https://tc39.es/ecma262/#sec-abstract-closure">Abstract Closure</a></emu-xref> with no parameters that captures <var>module</var>, <ins><var>phase</var>,</ins> and <var>promiseCapability</var> and performs the following steps when called:<ol><li>Let <var>namespace</var> be <emu-xref aoid="GetModuleNamespace" id="_ref_68"><a href="#sec-getmodulenamespace">GetModuleNamespace</a></emu-xref>(<var>module</var>, <ins><var>phase</var></ins>).</li><li>Perform !&nbsp;<emu-xref aoid="Call"><a href="https://tc39.es/ecma262/#sec-call">Call</a></emu-xref>(<var>promiseCapability</var>.<var class="field">[[Resolve]]</var>, <emu-val>undefined</emu-val>, « <var>namespace</var>&nbsp;»).</li><li>Return <emu-const>unused</emu-const>.</li></ol></li><li><ins>If <var>phase</var> is <emu-const>defer</emu-const>, then</ins><ol><li><ins>Let <var>evaluationList</var> be <emu-xref aoid="GatherAsynchronousTransitiveDependencies" id="_ref_69"><a href="#sec-GatherAsynchronousTransitiveDependencies">GatherAsynchronousTransitiveDependencies</a></emu-xref>(<var>module</var>).</ins></li><li><ins>If <var>evaluationList</var> is empty, then</ins><ol><li><ins>Perform <var>fulfilledClosure</var>().</ins></li><li><ins>Return <emu-const>unused</emu-const>.</ins></li></ol></li><li><ins>Let <var>asyncDepsEvaluationPromises</var> be a new empty <emu-xref href="#sec-list-and-record-specification-type"><a href="https://tc39.es/ecma262/#sec-list-and-record-specification-type">List</a></emu-xref>.</ins></li><li><ins>For each <emu-xref href="#sec-abstract-module-records" id="_ref_70"><a href="#sec-abstract-module-records">Module Record</a></emu-xref> <var>dep</var> of <var>evaluationList</var>, append <var>dep</var>.Evaluate() to <var>asyncDepsEvaluationPromises</var>.</ins></li><li><ins>Let <var>iterator</var> be <emu-xref aoid="CreateListIteratorRecord"><a href="https://tc39.es/ecma262/#sec-createlistiteratorRecord">CreateListIteratorRecord</a></emu-xref>(<var>asyncDepsEvaluationPromises</var>).</ins></li><li><ins>Let <var>pc</var> be !&nbsp;<emu-xref aoid="NewPromiseCapability"><a href="https://tc39.es/ecma262/#sec-newpromisecapability">NewPromiseCapability</a></emu-xref>(<emu-xref href="#sec-promise-constructor"><a href="https://tc39.es/ecma262/#sec-promise-constructor">%Promise%</a></emu-xref>).</ins></li><li><ins>Let <var>evaluatePromise</var> be !&nbsp;<emu-xref aoid="PerformPromiseAll"><a href="https://tc39.es/ecma262/#sec-performpromiseall">PerformPromiseAll</a></emu-xref>(<var>iterator</var>, <emu-xref href="#sec-promise-constructor"><a href="https://tc39.es/ecma262/#sec-promise-constructor">%Promise%</a></emu-xref>, <var>pc</var>, %Promise.resolve%).</ins></li></ol></li><li><ins>Else,</ins><ol><li><ins><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>phase</var> is <emu-const>evaluation</emu-const>.</ins></li><li><ins>Let <var>evaluatePromise</var> be <var>module</var>.Evaluate().</ins></li></ol></li><li>Let <var>onFulfilled</var> be <emu-xref aoid="CreateBuiltinFunction"><a href="https://tc39.es/ecma262/#sec-createbuiltinfunction">CreateBuiltinFunction</a></emu-xref>(<var>fulfilledClosure</var>, <emu-val>""</emu-val>, 0, «&nbsp;»).</li><li>Perform <emu-xref aoid="PerformPromiseThen"><a href="https://tc39.es/ecma262/#sec-performpromisethen">PerformPromiseThen</a></emu-xref>(<var>evaluatePromise</var>, <var>onFulfilled</var>, <var>onRejected</var>).</li><li>Return <emu-const>unused</emu-const>.</li></ol></li><li>Let <var>linkAndEvaluate</var> be <emu-xref aoid="CreateBuiltinFunction"><a href="https://tc39.es/ecma262/#sec-createbuiltinfunction">CreateBuiltinFunction</a></emu-xref>(<var>linkAndEvaluateClosure</var>, <emu-val>""</emu-val>, 0, «&nbsp;»).</li><li>Perform <emu-xref aoid="PerformPromiseThen"><a href="https://tc39.es/ecma262/#sec-performpromisethen">PerformPromiseThen</a></emu-xref>(<var>loadPromise</var>, <var>linkAndEvaluate</var>, <var>onRejected</var>).</li><li>Return <emu-const>unused</emu-const>.</li></ol></emu-alg>
         </emu-clause>
       </emu-clause>
     </emu-clause>
@@ -4322,53 +4323,51 @@ p.ECMAaddress {
         <p>A <dfn id="modulerequest-record" variants="ModuleRequest Records" tabindex="-1">ModuleRequest Record</dfn> represents the request to import a module with given import attributes <ins>and import phase</ins>. It consists of the following fields:</p>
         <emu-table id="table-modulerequest-fields" caption="ModuleRequest Record Fields"><figure><figcaption>Table 2: <emu-xref href="#modulerequest-record" id="_ref_71"><a href="#modulerequest-record">ModuleRequest Record</a></emu-xref> Fields</figcaption>
           <table>
-            <tbody>
-              <tr>
-                <th>
-                  Field Name
-                </th>
-                <th>
-                  Value Type
-                </th>
-                <th>
-                  Meaning
-                </th>
-              </tr>
-              <tr>
-                <td>
-                  <var class="field">[[Specifier]]</var>
-                </td>
-                <td>
-                  a String
-                </td>
-                <td>
-                  The module specifier
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <var class="field">[[Attributes]]</var>
-                </td>
-                <td>
-                  a <emu-xref href="#sec-list-and-record-specification-type"><a href="https://tc39.es/ecma262/#sec-list-and-record-specification-type">List</a></emu-xref> of <emu-xref href="#importattribute-record"><a href="https://tc39.es/ecma262/#importattribute-record">ImportAttribute Records</a></emu-xref>
-                </td>
-                <td>
-                  The import attributes
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <ins><var class="field">[[Phase]]</var></ins>
-                </td>
-                <td>
-                  <ins><emu-const>defer</emu-const> or <emu-const>evaluation</emu-const></ins>
-                </td>
-                <td>
-                  <ins>The target import phase</ins>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+            <tbody><tr>
+              <th>
+                Field Name
+              </th>
+              <th>
+                Value Type
+              </th>
+              <th>
+                Meaning
+              </th>
+            </tr>
+            <tr>
+              <td>
+                <var class="field">[[Specifier]]</var>
+              </td>
+              <td>
+                a String
+              </td>
+              <td>
+                The module specifier
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <var class="field">[[Attributes]]</var>
+              </td>
+              <td>
+                a <emu-xref href="#sec-list-and-record-specification-type"><a href="https://tc39.es/ecma262/#sec-list-and-record-specification-type">List</a></emu-xref> of <emu-xref href="#importattribute-record"><a href="https://tc39.es/ecma262/#importattribute-record">ImportAttribute Records</a></emu-xref>
+              </td>
+              <td>
+                The import attributes
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <ins><var class="field">[[Phase]]</var></ins>
+              </td>
+              <td>
+                <ins><emu-const>defer</emu-const> or <emu-const>evaluation</emu-const></ins>
+              </td>
+              <td>
+                <ins>The target import phase</ins>
+              </td>
+            </tr>
+          </tbody></table>
         </figure></emu-table>
 
         <emu-clause id="sec-ModuleRequestsEqual" type="abstract operation" aoid="ModuleRequestsEqual">

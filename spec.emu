@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <meta charset="utf8">
 <link rel="stylesheet" href="./spec.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
@@ -17,6 +17,7 @@ contributors: Nicolò Ribaudo
     <p>This specification defines several kinds of built-in exotic objects. These objects generally behave similar to ordinary objects except for a few specific situations. The following exotic objects use the ordinary object internal methods except where it is explicitly specified otherwise below:</p>
 
     <!-- NOTE!!!!: the oldids here is new, don't forget it in the ecma262 PR -->
+
     <emu-clause id="sec-module-namespace-exotic-objects" oldids="sec-module-namespace-objects" number="6">
       <h1>Module Namespace Exotic Objects</h1>
       <p>A module namespace exotic object is an exotic object that exposes the bindings exported from an ECMAScript |Module| (See <emu-xref href="#sec-exports"></emu-xref>). There is a one-to-one correspondence between the String-keyed own properties of a module namespace exotic object and the binding names exported by the |Module|. The exported bindings include any bindings that are indirectly exported using `export *` export items. Each String-valued own property key is the StringValue of the corresponding exported binding name. These are the only String-keyed properties of a module namespace exotic object. Each such property has the attributes { [[Writable]]: *true*, [[Enumerable]]: *true*, [[Configurable]]: *false* }. Module namespace exotic objects are not extensible.</p>
@@ -254,12 +255,10 @@ contributors: Nicolò Ribaudo
 
       <emu-clause id="sec-IsSymbolLikeNamespaceKey" type="abstract operation">
         <h1>
-          <ins>
-            IsSymbolLikeNamespaceKey (
-              _P_: a property key,
-              _ns_: a module namespace exotic object,
-            ): a Boolean
-          </ins>
+          <ins>IsSymbolLikeNamespaceKey (
+            _P_: a property key,
+            _ns_: a module namespace exotic object,
+          ): a Boolean</ins>
         </h1>
         <dl class="header">
           <dt>description</dt>
@@ -275,11 +274,9 @@ contributors: Nicolò Ribaudo
 
       <emu-clause id="sec-GetModuleExportsList" type="abstract operation">
         <h1>
-          <ins>
-            GetModuleExportsList (
-              _O_: a module namespace exotic object,
-            ): either a normal completion containing a List of Strings, or a throw completion
-          </ins>
+          <ins>GetModuleExportsList (
+            _O_: a module namespace exotic object,
+          ): either a normal completion containing a List of Strings, or a throw completion</ins>
         </h1>
         <dl class="header">
           <dt>description</dt>
@@ -295,12 +292,10 @@ contributors: Nicolò Ribaudo
 
         <emu-clause id="sec-ReadyForSyncExecution" type="abstract operation">
           <h1>
-            <ins>
-              ReadyForSyncExecution (
-                _module_: a Cyclic Module Record,
-                optional _seen_: a List of Module Records,
-              ): a Boolean
-            </ins>
+            <ins>ReadyForSyncExecution (
+              _module_: a Cyclic Module Record,
+              optional _seen_: a List of Module Records,
+            ): a Boolean</ins>
           </h1>
           <dl class="header"></dl>
           <emu-alg>
@@ -337,9 +332,9 @@ contributors: Nicolò Ribaudo
         <ins>`import` `.` `defer` ImportCallArguments[?Yield, ?Await]</ins>
 
       <ins>
-        ImportCallArguments[Yield, Await] :
-          `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`
-          `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`
+      ImportCallArguments[Yield, Await] :
+        `(` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`
+        `(` AssignmentExpression[+In, ?Yield, ?Await] `,` AssignmentExpression[+In, ?Yield, ?Await] `,`? `)`
       </ins>
     </emu-grammar>
 
@@ -349,7 +344,7 @@ contributors: Nicolò Ribaudo
       <emu-note type="editor">
         The changes to this section are intended to mirror the changes proposed by the
         <a href="https://tc39.es/proposal-source-phase-imports/#sec-import-calls">Source
-        Phase Imports</a> proposal, but adapted to the ~defer~ phase.
+          Phase Imports</a> proposal, but adapted to the ~defer~ phase.
       </emu-note>
 
       <emu-clause id="sec-import-call-runtime-semantics-evaluation" type="sdo">
@@ -475,23 +470,23 @@ contributors: Nicolò Ribaudo
           </dl>
           <emu-alg>
             1. If _moduleCompletion_ is an abrupt completion, then
-              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _moduleCompletion_.[[Value]] &raquo;).
+              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « _moduleCompletion_.[[Value]] »).
               1. Return ~unused~.
             1. Let _module_ be _moduleCompletion_.[[Value]].
             1. Let _loadPromise_ be _module_.LoadRequestedModules().
             1. Let _rejectedClosure_ be a new Abstract Closure with parameters (_reason_) that captures _promiseCapability_ and performs the following steps when called:
-              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _reason_ &raquo;).
+              1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « _reason_ »).
               1. Return ~unused~.
-            1. Let _onRejected_ be CreateBuiltinFunction(_rejectedClosure_, 1, *""*, &laquo; &raquo;).
+            1. Let _onRejected_ be CreateBuiltinFunction(_rejectedClosure_, 1, *""*, « »).
             1. Let _linkAndEvaluateClosure_ be a new Abstract Closure with no parameters that captures _module_, _promiseCapability_, <ins>_phase_</ins> and _onRejected_ and performs the following steps when called:
               1. Let _link_ be Completion(_module_.Link()).
               1. If _link_ is an abrupt completion, then
-                1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, &laquo; _link_.[[Value]] &raquo;).
+                1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « _link_.[[Value]] »).
                 1. Return ~unused~.
               1. <del>Let _evaluatePromise_ be _module_.Evaluate().</del>
               1. Let _fulfilledClosure_ be a new Abstract Closure with no parameters that captures _module_, <ins>_phase_,</ins> and _promiseCapability_ and performs the following steps when called:
                 1. Let _namespace_ be GetModuleNamespace(_module_, <ins>_phase_</ins>).
-                1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, &laquo; _namespace_ &raquo;).
+                1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, « _namespace_ »).
                 1. Return ~unused~.
               1. <ins>If _phase_ is ~defer~, then</ins>
                 1. <ins>Let _evaluationList_ be GatherAsynchronousTransitiveDependencies(_module_).</ins>
@@ -506,10 +501,10 @@ contributors: Nicolò Ribaudo
               1. <ins>Else,</ins>
                 1. <ins>Assert: _phase_ is ~evaluation~.</ins>
                 1. <ins>Let _evaluatePromise_ be _module_.Evaluate().</ins>
-              1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledClosure_, *""*, 0, &laquo; &raquo;).
+              1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledClosure_, *""*, 0, « »).
               1. Perform PerformPromiseThen(_evaluatePromise_, _onFulfilled_, _onRejected_).
               1. Return ~unused~.
-            1. Let _linkAndEvaluate_ be CreateBuiltinFunction(_linkAndEvaluateClosure_, *""*, 0, &laquo; &raquo;).
+            1. Let _linkAndEvaluate_ be CreateBuiltinFunction(_linkAndEvaluateClosure_, *""*, 0, « »).
             1. Perform PerformPromiseThen(_loadPromise_, _linkAndEvaluate_, _onRejected_).
             1. Return ~unused~.
           </emu-alg>
@@ -555,52 +550,50 @@ contributors: Nicolò Ribaudo
         <p>A <dfn id="modulerequest-record" variants="ModuleRequest Records">ModuleRequest Record</dfn> represents the request to import a module with given import attributes <ins>and import phase</ins>. It consists of the following fields:</p>
         <emu-table id="table-modulerequest-fields" caption="ModuleRequest Record Fields">
           <table>
-            <tbody>
-              <tr>
-                <th>
-                  Field Name
-                </th>
-                <th>
-                  Value Type
-                </th>
-                <th>
-                  Meaning
-                </th>
-              </tr>
-              <tr>
-                <td>
-                  [[Specifier]]
-                </td>
-                <td>
-                  a String
-                </td>
-                <td>
-                  The module specifier
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  [[Attributes]]
-                </td>
-                <td>
-                  a List of ImportAttribute Records
-                </td>
-                <td>
-                  The import attributes
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <ins>[[Phase]]</ins>
-                </td>
-                <td>
-                  <ins>~defer~ or ~evaluation~</ins>
-                </td>
-                <td>
-                  <ins>The target import phase</ins>
-                </td>
-              </tr>
-            </tbody>
+            <tr>
+              <th>
+                Field Name
+              </th>
+              <th>
+                Value Type
+              </th>
+              <th>
+                Meaning
+              </th>
+            </tr>
+            <tr>
+              <td>
+                [[Specifier]]
+              </td>
+              <td>
+                a String
+              </td>
+              <td>
+                The module specifier
+              </td>
+            </tr>
+            <tr>
+              <td>
+                [[Attributes]]
+              </td>
+              <td>
+                a List of ImportAttribute Records
+              </td>
+              <td>
+                The import attributes
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <ins>[[Phase]]</ins>
+              </td>
+              <td>
+                <ins>~defer~ or ~evaluation~</ins>
+              </td>
+              <td>
+                <ins>The target import phase</ins>
+              </td>
+            </tr>
           </table>
         </emu-table>
 
@@ -981,11 +974,9 @@ contributors: Nicolò Ribaudo
 
           <emu-clause id="sec-EvaluateSync" type="abstract operation">
             <h1>
-              <ins>
-                EvaluateSync (
-                  _module_: a Module Record,
-                ): either a normal completion containing ~unused~ or a throw completion
-              </ins>
+              <ins>EvaluateSync (
+                _module_: a Module Record,
+              ): either a normal completion containing ~unused~ or a throw completion</ins>
             </h1>
             <dl class="header">
               <dt>description</dt>
@@ -1005,12 +996,10 @@ contributors: Nicolò Ribaudo
 
           <emu-clause id="sec-GatherAsynchronousTransitiveDependencies" type="abstract operation">
             <h1>
-              <ins>
-                GatherAsynchronousTransitiveDependencies (
-                  _module_: a Module Record,
-                  optional _seen_: a List of Module Records
-                ): a List of Module Records
-              </ins>
+              <ins>GatherAsynchronousTransitiveDependencies (
+                _module_: a Module Record,
+                optional _seen_: a List of Module Records,
+              ): a List of Module Records</ins>
             </h1>
             <dl class="header">
               <dt>description</dt>
