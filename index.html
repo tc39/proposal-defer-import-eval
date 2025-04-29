@@ -4689,7 +4689,7 @@ p.ECMAaddress {
           <p>First consider the following simple module graph:</p>
 
           <emu-figure id="figure-module-graph-simple" caption="A simple module graph"><figure><figcaption>Figure 1: A simple module graph</figcaption>
-            <img alt="A module graph in which module A depends on module B, and module B depends on module C" width="121" height="211" src="img/module-graph-simple.svg">
+            <img alt="A module graph in which module A depends on module B, and module B depends on module C" width="60" height="198" src="img/module-graph-simple.svg">
           </figure></emu-figure>
 
           <p>Let's first assume that there are no error conditions. When a <emu-xref href="#host"><a href="https://tc39.es/ecma262/#host">host</a></emu-xref> first calls <var>A</var>.LoadRequestedModules(), this will complete successfully by assumption, and recursively load the dependencies of <var>B</var> and <var>C</var> as well (respectively, <var>C</var> and none), and then set <var>A</var>.<var class="field">[[Status]]</var> = <var>B</var>.<var class="field">[[Status]]</var> = <var>C</var>.<var class="field">[[Status]]</var> = <emu-const>unlinked</emu-const>. Then, when the <emu-xref href="#host"><a href="https://tc39.es/ecma262/#host">host</a></emu-xref> calls <var>A</var>.Link(), it will complete successfully (again by assumption) such that <var>A</var>.<var class="field">[[Status]]</var> = <var>B</var>.<var class="field">[[Status]]</var> = <var>C</var>.<var class="field">[[Status]]</var> = linked. These preparatory steps can be performed at any time. Later, when the <emu-xref href="#host"><a href="https://tc39.es/ecma262/#host">host</a></emu-xref> is ready to incur any possible side effects of the modules, it can call <var>A</var>.Evaluate(), which will complete successfully, returning a Promise resolving to <emu-val>undefined</emu-val> (again by assumption), recursively having evaluated first <var>C</var> and then <var>B</var>. Each module's <var class="field">[[Status]]</var> at this point will be <emu-const>evaluated</emu-const>.</p>
@@ -4701,7 +4701,7 @@ p.ECMAaddress {
           <p>Now consider a different type of error condition:</p>
 
           <emu-figure id="figure-module-graph-missing" caption="A module graph with an unresolvable module"><figure><figcaption>Figure 2: A module graph with an unresolvable module</figcaption>
-            <img alt="A module graph in which module A depends on a missing (unresolvable) module, represented by ???" width="121" height="121" src="img/module-graph-missing.svg">
+            <img alt="A module graph in which module A depends on a missing (unresolvable) module, represented by ???" width="60" height="121" src="img/module-graph-missing.svg">
           </figure></emu-figure>
 
           <p>In this scenario, module <var>A</var> declares a dependency on some other module, but no <emu-xref href="#sec-abstract-module-records" id="_ref_131"><a href="#sec-abstract-module-records">Module Record</a></emu-xref> exists for that module, i.e. <emu-xref aoid="HostLoadImportedModule"><a href="https://tc39.es/ecma262/#sec-HostLoadImportedModule">HostLoadImportedModule</a></emu-xref> calls <emu-xref aoid="FinishLoadingImportedModule" id="_ref_132"><a href="#sec-FinishLoadingImportedModule">FinishLoadingImportedModule</a></emu-xref> with an exception when asked for it. This could occur for a variety of reasons, such as the corresponding resource not existing, or the resource existing but <emu-xref aoid="ParseModule"><a href="https://tc39.es/ecma262/#sec-parsemodule">ParseModule</a></emu-xref> returning some errors when trying to parse the resulting source text. <emu-xref href="#host"><a href="https://tc39.es/ecma262/#host">Hosts</a></emu-xref> can choose to expose the cause of failure via the completion they pass to <emu-xref aoid="FinishLoadingImportedModule" id="_ref_133"><a href="#sec-FinishLoadingImportedModule">FinishLoadingImportedModule</a></emu-xref>. In any case, this exception causes a loading failure, which results in <var>A</var>'s <var class="field">[[Status]]</var> remaining <emu-const>new</emu-const>.</p>
@@ -4710,7 +4710,7 @@ p.ECMAaddress {
           <ul>
             <li><emu-xref aoid="Evaluation"><a href="https://tc39.es/ecma262/#sec-evaluation">Evaluation</a></emu-xref> must be only performed once, as it can cause side effects; it is thus important to remember whether evaluation has already been performed, even if unsuccessfully. (In the error case, it makes sense to also remember the exception because otherwise subsequent Evaluate() calls would have to synthesize a new one.)</li>
             <li>Linking, on the other hand, is side-effect-free, and thus even if it fails, it can be retried at a later time with no issues.</li>
-            <li>Loading closely interacts with the <emu-xref href="#host"><a href="https://tc39.es/ecma262/#host">host</a></emu-xref>, and it may be desiderable for some of them to allow users to retry failed loads (for example, if the failure is caused by temporarily bad network conditions).</li>
+            <li>Loading closely interacts with the <emu-xref href="#host"><a href="https://tc39.es/ecma262/#host">host</a></emu-xref>, and it may be desirable for some of them to allow users to retry failed loads (for example, if the failure is caused by temporarily bad network conditions).</li>
           </ul>
 
           <p>Now, consider a module graph with a cycle:</p>
@@ -4727,7 +4727,7 @@ p.ECMAaddress {
 
           <p>Now consider a case where <var>A</var> has a linking error; for example, it tries to import a binding from <var>C</var> that does not exist. In that case, the above steps still occur, including the early return from the second call to <emu-xref aoid="InnerModuleLinking" id="_ref_141"><a href="#sec-InnerModuleLinking">InnerModuleLinking</a></emu-xref> on <var>A</var>. However, once we unwind back to the original <emu-xref aoid="InnerModuleLinking" id="_ref_142"><a href="#sec-InnerModuleLinking">InnerModuleLinking</a></emu-xref> on <var>A</var>, it fails during InitializeEnvironment, namely right after <var>C</var>.ResolveExport(). The thrown <emu-val>SyntaxError</emu-val> exception propagates up to <var>A</var>.Link, which resets all modules that are currently on its <var>stack</var> (these are always exactly the modules that are still <emu-const>linking</emu-const>). Hence both <var>A</var> and <var>B</var> become <emu-const>unlinked</emu-const>. Note that <var>C</var> is left as <emu-const>linked</emu-const>.</p>
 
-          <p>Alternatively, consider a case where <var>A</var> has an evaluation error; for example, its source code throws an exception. In that case, the evaluation-time analog of the above steps still occurs, including the early return from the second call to <emu-xref aoid="InnerModuleEvaluation" id="_ref_143"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>A</var>. However, once we unwind back to the original <emu-xref aoid="InnerModuleEvaluation" id="_ref_144"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>A</var>, it fails by assumption. The exception thrown propagates up to <var>A</var>.Evaluate(), which records the error in all modules that are currently on its <var>stack</var> (i.e., the modules that are still <emu-const>evaluating</emu-const>) as well as via <var class="field">[[AsyncParentModules]]</var>, which form a chain for modules which contain or depend on top-level <code>await</code> through the whole dependency graph through the <emu-xref aoid="AsyncModuleExecutionRejected"><a href="https://tc39.es/ecma262/#sec-async-module-execution-rejected">AsyncModuleExecutionRejected</a></emu-xref> algorithm. Hence both <var>A</var> and <var>B</var> become <emu-const>evaluated</emu-const> and the exception is recorded in both <var>A</var> and <var>B</var>'s <var class="field">[[EvaluationError]]</var> fields, while <var>C</var> is left as <emu-const>evaluated</emu-const> with no <var class="field">[[EvaluationError]]</var>.</p>
+          <p>Alternatively, consider a case where <var>A</var> has an evaluation error; for example, its source code throws an exception. In that case, the evaluation-time analogue of the above steps still occurs, including the early return from the second call to <emu-xref aoid="InnerModuleEvaluation" id="_ref_143"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>A</var>. However, once we unwind back to the original <emu-xref aoid="InnerModuleEvaluation" id="_ref_144"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>A</var>, it fails by assumption. The exception thrown propagates up to <var>A</var>.Evaluate(), which records the error in all modules that are currently on its <var>stack</var> (i.e., the modules that are still <emu-const>evaluating</emu-const>) as well as via <var class="field">[[AsyncParentModules]]</var>, which form a chain for modules which contain or depend on top-level <code>await</code> through the whole dependency graph through the <emu-xref aoid="AsyncModuleExecutionRejected"><a href="https://tc39.es/ecma262/#sec-async-module-execution-rejected">AsyncModuleExecutionRejected</a></emu-xref> algorithm. Hence both <var>A</var> and <var>B</var> become <emu-const>evaluated</emu-const> and the exception is recorded in both <var>A</var> and <var>B</var>'s <var class="field">[[EvaluationError]]</var> fields, while <var>C</var> is left as <emu-const>evaluated</emu-const> with no <var class="field">[[EvaluationError]]</var>.</p>
 
           <p>Lastly, consider a module graph with a cycle, where all modules complete asynchronously:</p>
           <emu-figure id="figure-module-graph-cycle-async" caption="An asynchronous cyclic module graph"><figure><figcaption>Figure 4: An asynchronous cyclic module graph</figcaption>
@@ -4735,9 +4735,9 @@ p.ECMAaddress {
           </figure></emu-figure>
           <p>Loading and linking happen as before, and all modules end up with <var class="field">[[Status]]</var> set to <emu-const>linked</emu-const>.</p>
 
-          <p>Calling <var>A</var>.Evaluate() calls <emu-xref aoid="InnerModuleEvaluation" id="_ref_145"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>A</var>, <var>B</var>, and <var>D</var>, which all transition to <emu-const>evaluating</emu-const>. Then <emu-xref aoid="InnerModuleEvaluation" id="_ref_146"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> is called on <var>A</var> again, which is a no-op because it is already <emu-const>evaluating</emu-const>. At this point, <var>D</var>.<var class="field">[[PendingAsyncDependencies]]</var> is 0, so <emu-xref aoid="ExecuteAsyncModule"><a href="https://tc39.es/ecma262/#sec-execute-async-module">ExecuteAsyncModule</a></emu-xref>(<var>D</var>) is called and we call <var>D</var>.ExecuteModule with a new PromiseCapability tracking the asynchronous execution of <var>D</var>. We unwind back to the <emu-xref aoid="InnerModuleEvaluation" id="_ref_147"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>B</var>, setting <var>B</var>.<var class="field">[[PendingAsyncDependencies]]</var> to 1 and <var>B</var>.<var class="field">[[AsyncEvaluation]]</var> to <emu-val>true</emu-val>. We unwind back to the original <emu-xref aoid="InnerModuleEvaluation" id="_ref_148"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>A</var>, setting <var>A</var>.<var class="field">[[PendingAsyncDependencies]]</var> to 1. In the next iteration of the loop over <var>A</var>'s dependencies, we call <emu-xref aoid="InnerModuleEvaluation" id="_ref_149"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>C</var> and thus on <var>D</var> (again a no-op) and <var>E</var>. As <var>E</var> has no dependencies and is not part of a cycle, we call <emu-xref aoid="ExecuteAsyncModule"><a href="https://tc39.es/ecma262/#sec-execute-async-module">ExecuteAsyncModule</a></emu-xref>(<var>E</var>) in the same manner as <var>D</var> and <var>E</var> is immediately removed from the stack. We unwind once more to the original <emu-xref aoid="InnerModuleEvaluation" id="_ref_150"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>A</var>, setting <var>C</var>.<var class="field">[[AsyncEvaluation]]</var> to <emu-val>true</emu-val>. Now we finish the loop over <var>A</var>'s dependencies, set <var>A</var>.<var class="field">[[AsyncEvaluation]]</var> to <emu-val>true</emu-val>, and remove the entire strongly connected component from the stack, transitioning all of the modules to <emu-const>evaluating-async</emu-const> at once. At this point, the fields of the modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-1" id="_ref_8"><a href="#table-module-graph-cycle-async-fields-1">Table 4</a></emu-xref>.</p>
+          <p>Calling <var>A</var>.Evaluate() calls <emu-xref aoid="InnerModuleEvaluation" id="_ref_145"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>A</var>, <var>B</var>, and <var>D</var>, which all transition to <emu-const>evaluating</emu-const>. Then <emu-xref aoid="InnerModuleEvaluation" id="_ref_146"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> is called on <var>A</var> again, which is a no-op because it is already <emu-const>evaluating</emu-const>. At this point, <var>D</var>.<var class="field">[[PendingAsyncDependencies]]</var> is 0, so <emu-xref aoid="ExecuteAsyncModule"><a href="https://tc39.es/ecma262/#sec-execute-async-module">ExecuteAsyncModule</a></emu-xref>(<var>D</var>) is called and we call <var>D</var>.ExecuteModule with a new PromiseCapability tracking the asynchronous execution of <var>D</var>. We unwind back to the <emu-xref aoid="InnerModuleEvaluation" id="_ref_147"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>B</var>, setting <var>B</var>.<var class="field">[[PendingAsyncDependencies]]</var> to 1 and <var>B</var>.<var class="field">[[AsyncEvaluationOrder]]</var> to 1. We unwind back to the original <emu-xref aoid="InnerModuleEvaluation" id="_ref_148"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>A</var>, setting <var>A</var>.<var class="field">[[PendingAsyncDependencies]]</var> to 1. In the next iteration of the loop over <var>A</var>'s dependencies, we call <emu-xref aoid="InnerModuleEvaluation" id="_ref_149"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>C</var> and thus on <var>D</var> (again a no-op) and <var>E</var>. As <var>E</var> has no dependencies and is not part of a cycle, we call <emu-xref aoid="ExecuteAsyncModule"><a href="https://tc39.es/ecma262/#sec-execute-async-module">ExecuteAsyncModule</a></emu-xref>(<var>E</var>) in the same manner as <var>D</var> and <var>E</var> is immediately removed from the stack. We unwind once more to the <emu-xref aoid="InnerModuleEvaluation" id="_ref_150"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref> on <var>C</var>, setting <var>C</var>.<var class="field">[[AsyncEvaluationOrder]]</var> to 3. Now we finish the loop over <var>A</var>'s dependencies, set <var>A</var>.<var class="field">[[AsyncEvaluationOrder]]</var> to 4, and remove the entire strongly connected component from the stack, transitioning all of the modules to <emu-const>evaluating-async</emu-const> at once. At this point, the fields of the modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-1" id="_ref_8"><a href="#table-module-graph-cycle-async-fields-1">Table 4</a></emu-xref>.</p>
 
-          <emu-table id="table-module-graph-cycle-async-fields-1" class="module-overflow" caption="Module fields after the initial Evaluate() call"><figure><figcaption>Table 4: Module fields after the initial Evaluate() call</figcaption>
+          <emu-table id="table-module-graph-cycle-async-fields-1" caption="Module fields after the initial Evaluate() call"><figure><figcaption>Table 4: Module fields after the initial Evaluate() call</figcaption>
             <table>
               <thead>
                 <tr>
@@ -4758,8 +4758,8 @@ p.ECMAaddress {
                 <th><var class="field">[[DFSIndex]]</var></th>
                 <td>0</td>
                 <td>1</td>
-                <td>2</td>
                 <td>3</td>
+                <td>2</td>
                 <td>4</td>
               </tr>
               <tr>
@@ -4779,12 +4779,12 @@ p.ECMAaddress {
                 <td><emu-const>evaluating-async</emu-const></td>
               </tr>
               <tr>
-                <th><var class="field">[[AsyncEvaluation]]</var></th>
-                <td><emu-val>true</emu-val></td>
-                <td><emu-val>true</emu-val></td>
-                <td><emu-val>true</emu-val></td>
-                <td><emu-val>true</emu-val></td>
-                <td><emu-val>true</emu-val></td>
+                <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
+                <td>4</td>
+                <td>1</td>
+                <td>3</td>
+                <td>0</td>
+                <td>2*</td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -4807,7 +4807,7 @@ p.ECMAaddress {
 
           <p>Let us assume that <var>E</var> finishes executing first. When that happens, <emu-xref aoid="AsyncModuleExecutionFulfilled"><a href="https://tc39.es/ecma262/#sec-async-module-execution-fulfilled">AsyncModuleExecutionFulfilled</a></emu-xref> is called, <var>E</var>.<var class="field">[[Status]]</var> is set to <emu-const>evaluated</emu-const> and <var>C</var>.<var class="field">[[PendingAsyncDependencies]]</var> is decremented to become 1. The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-2" id="_ref_9"><a href="#table-module-graph-cycle-async-fields-2">Table 5</a></emu-xref>.</p>
 
-          <emu-table id="table-module-graph-cycle-async-fields-2" class="module-overflow" caption="Module fields after module _E_ finishes executing"><figure><figcaption>Table 5: Module fields after module <var>E</var> finishes executing</figcaption>
+          <emu-table id="table-module-graph-cycle-async-fields-2" caption="Module fields after module _E_ finishes executing"><figure><figcaption>Table 5: Module fields after module <var>E</var> finishes executing</figcaption>
             <table>
               <thead>
                 <tr>
@@ -4823,7 +4823,7 @@ p.ECMAaddress {
               </thead>
               <tbody><tr>
                 <th><var class="field">[[DFSIndex]]</var></th>
-                <td>2</td>
+                <td>3</td>
                 <td>4</td>
               </tr>
               <tr>
@@ -4837,9 +4837,9 @@ p.ECMAaddress {
                 <td><emu-const>evaluated</emu-const></td>
               </tr>
               <tr>
-                <th><var class="field">[[AsyncEvaluation]]</var></th>
-                <td><emu-val>true</emu-val></td>
-                <td><emu-val>true</emu-val></td>
+                <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
+                <td>3</td>
+                <td>2</td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -4854,9 +4854,9 @@ p.ECMAaddress {
             </tbody></table>
           </figure></emu-table>
 
-          <p><var>D</var> is next to finish (as it was the only module that was still executing). When that happens, <emu-xref aoid="AsyncModuleExecutionFulfilled"><a href="https://tc39.es/ecma262/#sec-async-module-execution-fulfilled">AsyncModuleExecutionFulfilled</a></emu-xref> is called again and <var>D</var>.<var class="field">[[Status]]</var> is set to <emu-const>evaluated</emu-const>. Then <var>B</var>.<var class="field">[[PendingAsyncDependencies]]</var> is decremented to become 0, <emu-xref aoid="ExecuteAsyncModule"><a href="https://tc39.es/ecma262/#sec-execute-async-module">ExecuteAsyncModule</a></emu-xref> is called on <var>B</var>, and it starts executing. <var>C</var>.<var class="field">[[PendingAsyncDependencies]]</var> is also decremented to become 0, and <var>C</var> starts executing (potentially in parallel to <var>B</var> if <var>B</var> contains an <code>await</code>). The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-3" id="_ref_10"><a href="#table-module-graph-cycle-async-fields-3">Table 6</a></emu-xref>.</p>
+          <p><var>D</var> is next to finish (as it was the only module that was still executing). When that happens, <emu-xref aoid="AsyncModuleExecutionFulfilled"><a href="https://tc39.es/ecma262/#sec-async-module-execution-fulfilled">AsyncModuleExecutionFulfilled</a></emu-xref> is called again and <var>D</var>.<var class="field">[[Status]]</var> is set to <emu-const>evaluated</emu-const>. Its ancestors available for execution are <var>B</var> (whose <var class="field">[[AsyncEvaluationOrder]]</var> is 1) and <var>C</var> (whose <var class="field">[[AsyncEvaluationOrder]]</var> is 3), thus <var>B</var> will be handled first: <var>B</var>.<var class="field">[[PendingAsyncDependencies]]</var> is decremented to become 0, <emu-xref aoid="ExecuteAsyncModule"><a href="https://tc39.es/ecma262/#sec-execute-async-module">ExecuteAsyncModule</a></emu-xref> is called on <var>B</var>, and it starts executing. <var>C</var>.<var class="field">[[PendingAsyncDependencies]]</var> is also decremented to become 0, and <var>C</var> starts executing (potentially in parallel to <var>B</var> if <var>B</var> contains an <code>await</code>). The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-3" id="_ref_10"><a href="#table-module-graph-cycle-async-fields-3">Table 6</a></emu-xref>.</p>
 
-          <emu-table id="table-module-graph-cycle-async-fields-3" class="module-overflow" caption="Module fields after module _D_ finishes executing"><figure><figcaption>Table 6: Module fields after module <var>D</var> finishes executing</figcaption>
+          <emu-table id="table-module-graph-cycle-async-fields-3" caption="Module fields after module _D_ finishes executing"><figure><figcaption>Table 6: Module fields after module <var>D</var> finishes executing</figcaption>
             <table>
               <thead>
                 <tr>
@@ -4874,8 +4874,8 @@ p.ECMAaddress {
               <tbody><tr>
                 <th><var class="field">[[DFSIndex]]</var></th>
                 <td>1</td>
-                <td>2</td>
                 <td>3</td>
+                <td>2</td>
               </tr>
               <tr>
                 <th><var class="field">[[DFSAncestorIndex]]</var></th>
@@ -4890,10 +4890,10 @@ p.ECMAaddress {
                 <td><emu-const>evaluated</emu-const></td>
               </tr>
               <tr>
-                <th><var class="field">[[AsyncEvaluation]]</var></th>
-                <td><emu-val>true</emu-val></td>
-                <td><emu-val>true</emu-val></td>
-                <td><emu-val>true</emu-val></td>
+                <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
+                <td>1</td>
+                <td>3</td>
+                <td>0</td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -4912,7 +4912,7 @@ p.ECMAaddress {
 
           <p>Let us assume that <var>C</var> finishes executing next. When that happens, <emu-xref aoid="AsyncModuleExecutionFulfilled"><a href="https://tc39.es/ecma262/#sec-async-module-execution-fulfilled">AsyncModuleExecutionFulfilled</a></emu-xref> is called again, <var>C</var>.<var class="field">[[Status]]</var> is set to <emu-const>evaluated</emu-const> and <var>A</var>.<var class="field">[[PendingAsyncDependencies]]</var> is decremented to become 1. The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-4" id="_ref_11"><a href="#table-module-graph-cycle-async-fields-4">Table 7</a></emu-xref>.</p>
 
-          <emu-table id="table-module-graph-cycle-async-fields-4" class="module-overflow" caption="Module fields after module _C_ finishes executing"><figure><figcaption>Table 7: Module fields after module <var>C</var> finishes executing</figcaption>
+          <emu-table id="table-module-graph-cycle-async-fields-4" caption="Module fields after module _C_ finishes executing"><figure><figcaption>Table 7: Module fields after module <var>C</var> finishes executing</figcaption>
             <table>
               <thead>
                 <tr>
@@ -4929,7 +4929,7 @@ p.ECMAaddress {
               <tbody><tr>
                 <th><var class="field">[[DFSIndex]]</var></th>
                 <td>0</td>
-                <td>2</td>
+                <td>3</td>
               </tr>
               <tr>
                 <th><var class="field">[[DFSAncestorIndex]]</var></th>
@@ -4942,9 +4942,9 @@ p.ECMAaddress {
                 <td><emu-const>evaluated</emu-const></td>
               </tr>
               <tr>
-                <th><var class="field">[[AsyncEvaluation]]</var></th>
-                <td><emu-val>true</emu-val></td>
-                <td><emu-val>true</emu-val></td>
+                <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
+                <td>4</td>
+                <td>3</td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -4961,7 +4961,7 @@ p.ECMAaddress {
 
           <p>Then, <var>B</var> finishes executing. When that happens, <emu-xref aoid="AsyncModuleExecutionFulfilled"><a href="https://tc39.es/ecma262/#sec-async-module-execution-fulfilled">AsyncModuleExecutionFulfilled</a></emu-xref> is called again and <var>B</var>.<var class="field">[[Status]]</var> is set to <emu-const>evaluated</emu-const>. <var>A</var>.<var class="field">[[PendingAsyncDependencies]]</var> is decremented to become 0, so <emu-xref aoid="ExecuteAsyncModule"><a href="https://tc39.es/ecma262/#sec-execute-async-module">ExecuteAsyncModule</a></emu-xref> is called and it starts executing. The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-5" id="_ref_12"><a href="#table-module-graph-cycle-async-fields-5">Table 8</a></emu-xref>.</p>
 
-          <emu-table id="table-module-graph-cycle-async-fields-5" class="module-overflow" caption="Module fields after module _B_ finishes executing"><figure><figcaption>Table 8: Module fields after module <var>B</var> finishes executing</figcaption>
+          <emu-table id="table-module-graph-cycle-async-fields-5" caption="Module fields after module _B_ finishes executing"><figure><figcaption>Table 8: Module fields after module <var>B</var> finishes executing</figcaption>
             <table>
               <thead>
                 <tr>
@@ -4991,9 +4991,9 @@ p.ECMAaddress {
                 <td><emu-const>evaluated</emu-const></td>
               </tr>
               <tr>
-                <th><var class="field">[[AsyncEvaluation]]</var></th>
-                <td><emu-val>true</emu-val></td>
-                <td><emu-val>true</emu-val></td>
+                <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
+                <td>4</td>
+                <td>1</td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -5010,7 +5010,7 @@ p.ECMAaddress {
 
           <p>Finally, <var>A</var> finishes executing. When that happens, <emu-xref aoid="AsyncModuleExecutionFulfilled"><a href="https://tc39.es/ecma262/#sec-async-module-execution-fulfilled">AsyncModuleExecutionFulfilled</a></emu-xref> is called again and <var>A</var>.<var class="field">[[Status]]</var> is set to <emu-const>evaluated</emu-const>. At this point, the Promise in <var>A</var>.<var class="field">[[TopLevelCapability]]</var> (which was returned from <var>A</var>.Evaluate()) is resolved, and this concludes the handling of this module graph. The fields of the updated module are as given in <emu-xref href="#table-module-graph-cycle-async-fields-6" id="_ref_13"><a href="#table-module-graph-cycle-async-fields-6">Table 9</a></emu-xref>.</p>
 
-          <emu-table id="table-module-graph-cycle-async-fields-6" class="module-overflow" caption="Module fields after module _A_ finishes executing"><figure><figcaption>Table 9: Module fields after module <var>A</var> finishes executing</figcaption>
+          <emu-table id="table-module-graph-cycle-async-fields-6" caption="Module fields after module _A_ finishes executing"><figure><figcaption>Table 9: Module fields after module <var>A</var> finishes executing</figcaption>
             <table>
               <thead>
                 <tr>
@@ -5036,8 +5036,8 @@ p.ECMAaddress {
                 <td><emu-const>evaluated</emu-const></td>
               </tr>
               <tr>
-                <th><var class="field">[[AsyncEvaluation]]</var></th>
-                <td><emu-val>true</emu-val></td>
+                <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
+                <td>4</td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -5052,7 +5052,7 @@ p.ECMAaddress {
 
           <p>Alternatively, consider a failure case where <var>C</var> fails execution and returns an error before <var>B</var> has finished executing. When that happens, <emu-xref aoid="AsyncModuleExecutionRejected"><a href="https://tc39.es/ecma262/#sec-async-module-execution-rejected">AsyncModuleExecutionRejected</a></emu-xref> is called, which sets <var>C</var>.<var class="field">[[Status]]</var> to <emu-const>evaluated</emu-const> and <var>C</var>.<var class="field">[[EvaluationError]]</var> to the error. It then propagates this error to all of the AsyncParentModules by performing <emu-xref aoid="AsyncModuleExecutionRejected"><a href="https://tc39.es/ecma262/#sec-async-module-execution-rejected">AsyncModuleExecutionRejected</a></emu-xref> on each of them. The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-7" id="_ref_14"><a href="#table-module-graph-cycle-async-fields-7">Table 10</a></emu-xref>.</p>
 
-          <emu-table id="table-module-graph-cycle-async-fields-7" class="module-overflow" caption="Module fields after module _C_ finishes with an error"><figure><figcaption>Table 10: Module fields after module <var>C</var> finishes with an error</figcaption>
+          <emu-table id="table-module-graph-cycle-async-fields-7" caption="Module fields after module _C_ finishes with an error"><figure><figcaption>Table 10: Module fields after module <var>C</var> finishes with an error</figcaption>
             <table>
               <thead>
                 <tr>
@@ -5069,12 +5069,12 @@ p.ECMAaddress {
               <tbody><tr>
                 <th><var class="field">[[DFSIndex]]</var></th>
                 <td>0</td>
-                <td>2</td>
+                <td>3</td>
               </tr>
               <tr>
                 <th><var class="field">[[DFSAncestorIndex]]</var></th>
                 <td>0</td>
-                <td>1</td>
+                <td>0</td>
               </tr>
               <tr>
                 <th><var class="field">[[Status]]</var></th>
@@ -5082,9 +5082,9 @@ p.ECMAaddress {
                 <td><emu-const>evaluated</emu-const></td>
               </tr>
               <tr>
-                <th><var class="field">[[AsyncEvaluation]]</var></th>
-                <td><emu-val>true</emu-val></td>
-                <td><emu-val>true</emu-val></td>
+                <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
+                <td>4</td>
+                <td>3</td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -5094,7 +5094,7 @@ p.ECMAaddress {
               <tr>
                 <th><var class="field">[[PendingAsyncDependencies]]</var></th>
                 <td>1 (<var>B</var>)</td>
-                <td>0</td>
+                <th>0</th>
               </tr>
               <tr>
                 <th><var class="field">[[EvaluationError]]</var></th>
@@ -5106,7 +5106,7 @@ p.ECMAaddress {
 
           <p><var>A</var> will be rejected with the same error as <var>C</var> since <var>C</var> will call <emu-xref aoid="AsyncModuleExecutionRejected"><a href="https://tc39.es/ecma262/#sec-async-module-execution-rejected">AsyncModuleExecutionRejected</a></emu-xref> on <var>A</var> with <var>C</var>'s error. <var>A</var>.<var class="field">[[Status]]</var> is set to <emu-const>evaluated</emu-const>. At this point the Promise in <var>A</var>.<var class="field">[[TopLevelCapability]]</var> (which was returned from <var>A</var>.Evaluate()) is rejected. The fields of the updated module are as given in <emu-xref href="#table-module-graph-cycle-async-fields-8" id="_ref_15"><a href="#table-module-graph-cycle-async-fields-8">Table 11</a></emu-xref>.</p>
 
-          <emu-table id="table-module-graph-cycle-async-fields-8" class="module-overflow" caption="Module fields after module _A_ is rejected"><figure><figcaption>Table 11: Module fields after module <var>A</var> is rejected</figcaption>
+          <emu-table id="table-module-graph-cycle-async-fields-8" caption="Module fields after module _A_ is rejected"><figure><figcaption>Table 11: Module fields after module <var>A</var> is rejected</figcaption>
             <table>
               <thead>
                 <tr>
@@ -5132,8 +5132,8 @@ p.ECMAaddress {
                 <td><emu-const>evaluated</emu-const></td>
               </tr>
               <tr>
-                <th><var class="field">[[AsyncEvaluation]]</var></th>
-                <td><emu-val>true</emu-val></td>
+                <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
+                <td>4</td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -5145,6 +5145,7 @@ p.ECMAaddress {
               </tr>
               <tr>
                 <th><var class="field">[[EvaluationError]]</var></th>
+
                 <td><var>C</var>'s <emu-xref aoid="Evaluation"><a href="https://tc39.es/ecma262/#sec-evaluation">Evaluation</a></emu-xref> Error</td>
               </tr>
             </tbody></table>
@@ -5152,7 +5153,7 @@ p.ECMAaddress {
 
           <p>Then, <var>B</var> finishes executing without an error. When that happens, <emu-xref aoid="AsyncModuleExecutionFulfilled"><a href="https://tc39.es/ecma262/#sec-async-module-execution-fulfilled">AsyncModuleExecutionFulfilled</a></emu-xref> is called again and <var>B</var>.<var class="field">[[Status]]</var> is set to <emu-const>evaluated</emu-const>. <emu-xref aoid="GatherAvailableAncestors"><a href="https://tc39.es/ecma262/#sec-gather-available-ancestors">GatherAvailableAncestors</a></emu-xref> is called on <var>B</var>. However, <var>A</var>.<var class="field">[[CycleRoot]]</var> is <var>A</var> which has an evaluation error, so it will not be added to the returned <var>sortedExecList</var> and <emu-xref aoid="AsyncModuleExecutionFulfilled"><a href="https://tc39.es/ecma262/#sec-async-module-execution-fulfilled">AsyncModuleExecutionFulfilled</a></emu-xref> will return without further processing. Any future importer of <var>B</var> will resolve the rejection of <var>B</var>.<var class="field">[[CycleRoot]]</var>.<var class="field">[[EvaluationError]]</var> from the evaluation error from <var>C</var> that was set on the cycle root <var>A</var>. The fields of the updated modules are as given in <emu-xref href="#table-module-graph-cycle-async-fields-9" id="_ref_16"><a href="#table-module-graph-cycle-async-fields-9">Table 12</a></emu-xref>.</p>
 
-          <emu-table id="table-module-graph-cycle-async-fields-9" class="module-overflow" caption="Module fields after module _B_ finishes executing in an erroring graph"><figure><figcaption>Table 12: Module fields after module <var>B</var> finishes executing in an erroring graph</figcaption>
+          <emu-table id="table-module-graph-cycle-async-fields-9" caption="Module fields after module _B_ finishes executing in an erroring graph"><figure><figcaption>Table 12: Module fields after module <var>B</var> finishes executing in an erroring graph</figcaption>
             <table>
               <thead>
                 <tr>
@@ -5182,9 +5183,9 @@ p.ECMAaddress {
                 <td><emu-const>evaluated</emu-const></td>
               </tr>
               <tr>
-                <th><var class="field">[[AsyncEvaluation]]</var></th>
-                <td><emu-val>true</emu-val></td>
-                <td><emu-val>true</emu-val></td>
+                <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
+                <td>4</td>
+                <td>1</td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
