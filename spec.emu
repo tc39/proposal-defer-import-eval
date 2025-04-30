@@ -1621,11 +1621,11 @@ contributors: Nicolò Ribaudo
                   <td>~evaluated~</td>
                 </tr>
                 <tr>
-                  <th>[[AsyncEvaluation]]</th>
-                  <td>*true*</td>
-                  <td>*false*</td>
-                  <td>*true*</td>
-                  <td>*false*</td>
+                  <th>[[AsyncEvaluationOrder]]</th>
+                  <td>1</td>
+                  <td>~unset~</td>
+                  <td>0</td>
+                  <td>~unset~</td>
                 </tr>
                 <tr>
                   <th>[[AsyncParentModules]]</th>
@@ -1670,11 +1670,11 @@ contributors: Nicolò Ribaudo
                   <td>~evaluated~</td>
                 </tr>
                 <tr>
-                  <th>[[AsyncEvaluation]]</th>
-                  <td>*true*</td>
-                  <td>*false*</td>
-                  <td>*true*</td>
-                  <td>*false*</td>
+                  <th>[[AsyncEvaluationOrder]]</th>
+                  <td>1</td>
+                  <td>~unset~</td>
+                  <td>0</td>
+                  <td>~unset~</td>
                 </tr>
                 <tr>
                   <th>[[AsyncParentModules]]</th>
@@ -1721,11 +1721,11 @@ contributors: Nicolò Ribaudo
                   <td>~evaluated~</td>
                 </tr>
                 <tr>
-                  <th>[[AsyncEvaluation]]</th>
-                  <td>*true*</td>
-                  <td>*false*</td>
-                  <td>*true*</td>
-                  <td>*false*</td>
+                  <th>[[AsyncEvaluationOrder]]</th>
+                  <td>1</td>
+                  <td>~unset~</td>
+                  <td>0</td>
+                  <td>~unset~</td>
                 </tr>
                 <tr>
                   <th>[[AsyncParentModules]]</th>
@@ -1783,10 +1783,10 @@ contributors: Nicolò Ribaudo
                   <td>~evaluating-async~</td>
                 </tr>
                 <tr>
-                  <th>[[AsyncEvaluation]]</th>
-                  <td>*true*</td>
-                  <td>*false*</td>
-                  <td>*true*</td>
+                  <th>[[AsyncEvaluationOrder]]</th>
+                  <td>1</td>
+                  <td>~UNSET~</td>
+                  <td>0</td>
                 </tr>
                 <tr>
                   <th>[[AsyncParentModules]]</th>
@@ -1833,10 +1833,10 @@ contributors: Nicolò Ribaudo
                   <td>~evaluated~</td>
                 </tr>
                 <tr>
-                  <th>[[AsyncEvaluation]]</th>
-                  <td>*true*</td>
-                  <td>*false*</td>
-                  <td>*true*</td>
+                  <th>[[AsyncEvaluationOrder]]</th>
+                  <td>1</td>
+                  <td>~UNSET~</td>
+                  <td>0</td>
                 </tr>
                 <tr>
                   <th>[[AsyncParentModules]]</th>
