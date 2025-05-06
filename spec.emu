@@ -312,7 +312,7 @@ contributors: Nicolò Ribaudo
           1. If _O_.[[Deferred]] is *true*, then
             1. Let _m_ be _O_.[[Module]].
             1. If _m_ is a Cyclic Module Record, _m_.[[Status]] is not ~evaluated~, and ReadyForSyncExecution(_m_) is *false*, throw a *TypeError* exception.
-            1. Perform ? EvaluateSync(_m_).
+            1. Perform ? EvaluateModuleSync(_m_).
           1. Return _O_.[[Exports]].
         </emu-alg>
 
@@ -812,6 +812,30 @@ contributors: Nicolò Ribaudo
             </tr>
           </table>
         </emu-table>
+
+        <emu-clause id="sec-EvaluateModuleSync" type="abstract operation">
+          <h1>
+            EvaluateModuleSync (
+              _module_: a Module Record,
+            ): either a normal completion containing ~unused~ or a throw completion
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It synchronously evaluates _module_, provided that the caller guarantees that _module_'s evaluation will return an already settled promise.</dd>
+          </dl>
+
+          <emu-alg>
+            1. <del>Assert: _module_ is not a Cyclic Module Record.</del>
+            1. <ins>Assert: If _module_ is a Cyclic Module Record, ReadyForSyncExecution(_module_) is *true*.</ins>
+            1. Let _promise_ be _module_.Evaluate().
+            1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
+            1. If _promise_.[[PromiseState]] is ~rejected~, then
+              1. If _promise_.[[PromiseIsHandled]] is *false*, perform HostPromiseRejectionTracker(_promise_, *"handle"*).
+              1. Set _promise_.[[PromiseIsHandled]] to *true*.
+              1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
+            1. Return ~unused~.
+          </emu-alg>
+        </emu-clause>
       </emu-clause>
 
       <emu-clause id="sec-cyclic-module-records" number="5">
@@ -926,11 +950,7 @@ contributors: Nicolò Ribaudo
 
             <emu-alg>
               1. If _module_ is not a Cyclic Module Record, then
-                1. <del>Let _promise_ be ! _module_.Evaluate().</del>
-                1. <del>Assert: _promise_.[[PromiseState]] is not ~pending~.</del>
-                1. <del>If _promise_.[[PromiseState]] is ~rejected~, then</del>
-                  1. <del>Return ThrowCompletion(_promise_.[[PromiseResult]]).</del>
-                1. <ins>Perform ? EvaluateSync(_module_).</ins>
+                1. Perform ? EvaluateModuleSync(_module_).
                 1. Return _index_.
               1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
                 1. If _module_.[[EvaluationError]] is ~empty~, return _index_.
@@ -996,28 +1016,6 @@ contributors: Nicolò Ribaudo
             <emu-note>
               <p>Any modules depending on a module of an asynchronous cycle when that cycle is not ~evaluating~ will instead depend on the execution of the root of the cycle via [[CycleRoot]]. This ensures that the cycle state can be treated as a single strongly connected component through its root module state.</p>
             </emu-note>
-          </emu-clause>
-
-          <emu-clause id="sec-EvaluateSync" type="abstract operation">
-            <h1>
-              <ins>EvaluateSync (
-                _module_: a Module Record,
-              ): either a normal completion containing ~unused~ or a throw completion</ins>
-            </h1>
-            <dl class="header">
-              <dt>description</dt>
-              <dd>It synchronously evaluates _module_ provided it is ready for synchronous execution.</dd>
-            </dl>
-
-            <emu-alg>
-              1. Assert: If _module_ is a Cyclic Module Record, _module_.[[HasTLA]] is *false*.
-              1. [declared="m"] Assert: For each Cyclic Module Record _m_ that it a transitive dependency of _module_, either _m_.[[HasTLA]] is *false* or _m_.[[Status]] is ~evaluated~.
-              1. Let _promise_ be ! _module_.Evaluate().
-              1. Assert: _promise_.[[PromiseState]] is either ~fulfilled~ or ~rejected~.
-              1. If _promise_.[[PromiseState]] is ~rejected~, then
-                1. Throw _promise_.[[PromiseResult]].
-              1. Return ~unused~.
-            </emu-alg>
           </emu-clause>
 
           <emu-clause id="sec-GatherAsynchronousTransitiveDependencies" type="abstract operation">
