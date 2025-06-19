@@ -78,10 +78,10 @@ contributors: Nicolò Ribaudo
               [[Exports]]
             </td>
             <td>
-              a List of Strings
+              <ins>~empty~</ins> or a List of Strings
             </td>
             <td>
-              A List whose elements are the String values of the exported names exposed as own properties of this object. The list is ordered as if an Array of those String values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_.
+              A List whose elements are the String values of the exported names exposed as own properties of this object. The list is ordered as if an Array of those String values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_. <ins>It is only ever used as a cache by GetModuleExportsList.</ins>
             </td>
           </tr>
           <tr>
@@ -247,7 +247,7 @@ contributors: Nicolò Ribaudo
         <h1>
           ModuleNamespaceCreate (
             _module_: a Module Record,
-            _exports_: a List of Strings,
+            <del>_exports_: a List of Strings,</del>
             <ins>_phase_: ~defer~ or ~evaluation~,</ins>
           ): a module namespace exotic object
         </h1>
@@ -261,17 +261,14 @@ contributors: Nicolò Ribaudo
           1. Let _M_ be MakeBasicObject(_internalSlotsList_).
           1. Set _M_'s essential internal methods to the definitions specified in <emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>.
           1. Set _M_.[[Module]] to _module_.
-          1. [declared="comparefn"] Let _sortedExports_ be a List whose elements are the elements of _exports_ ordered as if an Array of the same values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_.
-          1. Set _M_.[[Exports]] to _sortedExports_.
+          1. <del>Let _sortedExports_ be a List whose elements are the elements of _exports_ ordered as if an Array of the same values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_.</del>
+          1. Set _M_.[[Exports]] to <del>_sortedExports_</del><ins>~empty~</ins>.
           1. <del>Create own properties of _M_ corresponding to the definitions in <emu-xref href="#sec-module-namespace-objects"></emu-xref>.</del>
+          1. <del>Set _module_.[[Namespace]] to _M_.</del>
           1. <ins>If _phase_ is ~defer~, then</ins>
-            1. <ins>Assert: _module_.[[DeferredNamespace]] is ~empty~.</ins>
-            1. <ins>Set _module_.[[DeferredNamespace]] to _M_.</ins>
             1. <ins>Set _M_.[[Deferred]] to *true*.</ins>
             1. <ins>Let _toStringTag_ be *"Deferred Module"*.</ins>
           1. <ins>Else,</ins>
-            1. <ins>Assert: _module_.[[Namespace]] is ~empty~.</ins>
-            1. Set _module_.[[Namespace]] to _M_.
             1. <ins>Set _M_.[[Deferred]] to *false*.</ins>
             1. <ins>Let _toStringTag_ be *"Module"*.</ins>
           1. <ins>Create an own data property of _M_ named %Symbol.toStringTag% whose [[Value]] is _toStringTag_ and whose [[Writable]], [[Enumerable]], and [[Configurable]] attributes are *false*.</ins>
@@ -306,15 +303,34 @@ contributors: Nicolò Ribaudo
         </h1>
         <dl class="header">
           <dt>description</dt>
-          <dd>It returns a List whose elements are the names of the module's exports, triggering module evaluation if needed.</dd>
+          <dd>The returned Strings are the String values of the names of the module's exports, ordered as if an Array of those String values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_. It triggers module evauation if _O_ is a namespace object coming from a deferred import.</dd>
         </dl>
+
+        <emu-note type="editor">
+          <p>Steps <emu-xref href="#step-get-unambiguous-names-start"></emu-xref> to <emu-xref href="#step-get-unambiguous-names-end"></emu-xref>, as well as the note at the end, were originally part of the GetModuleNamespace abstract operation. The diff in those steps is relative to that original version.</p>
+          <p>Steps <emu-xref href="#step-sort-names-first"></emu-xref> and <emu-xref href="#step-sort-names-second"></emu-xref> were originally part of ModuleNamespaceCreate.</p>
+        </emu-note>
+
         <emu-alg>
+          1. Let _m_ be _O_.[[Module]].
+          1. If _O_.[[Exports]] is ~empty~, then
+            1. [id="step-get-unambiguous-names-start"] Let _exportedNames_ be <del>_module_</del><ins>_m_</ins>.GetExportedNames().
+            1. Let _unambiguousNames_ be a new empty List.
+            1. [id="step-get-unambiguous-names-end"] For each element _name_ of _exportedNames_, do
+              1. <ins>If IsSymbolLikeNamespaceKey(_name_, _O_) is *false*, then</ins>
+                1. Let _resolution_ be <del>_module_</del><ins>_m_</ins>.ResolveExport(_name_).
+                1. If _resolution_ is a ResolvedBinding Record, append _name_ to _unambiguousNames_.
+            1. [id="step-sort-names-first"] Let _sortedExports_ be a List whose elements are the elements of _unambiguousNames_ ordered as if an Array of the same values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_.
+            1. [id="step-sort-names-second"] Set _O_.[[Exports]] to _sortedExports_.
           1. If _O_.[[Deferred]] is *true*, then
-            1. Let _m_ be _O_.[[Module]].
             1. If ReadyForSyncExecution(_m_) is *false*, throw a *TypeError* exception.
             1. Perform ? EvaluateModuleSync(_m_).
           1. Return _O_.[[Exports]].
         </emu-alg>
+
+        <emu-note>
+          <p><del>GetModuleNamespace never throws.</del><ins>Steps <emu-xref href="#step-get-unambiguous-names-start"></emu-xref> to <emu-xref href="#step-get-unambiguous-names-end"></emu-xref> never throw.</ins>. Instead, unresolvable names are simply excluded from the namespace at this point. They will lead to a real linking error later unless they are all ambiguous star exports that are not explicitly requested anywhere.</p>
+        </emu-note>
 
         <emu-clause id="sec-ReadyForSyncExecution" type="abstract operation">
           <h1>
@@ -1978,16 +1994,21 @@ contributors: Nicolò Ribaudo
           1. Assert: If _module_ is a Cyclic Module Record, then _module_.[[Status]] is not ~new~ or ~unlinked~.
           1. <ins>If _phase_ is ~defer~, let _namespace_ be _module_.[[DeferredNamespace]]. Otherwise,</ins> let _namespace_ be _module_.[[Namespace]].
           1. If _namespace_ is ~empty~, then
-            1. Let _exportedNames_ be _module_.GetExportedNames().
-            1. Let _unambiguousNames_ be a new empty List.
-            1. For each element _name_ of _exportedNames_, do
-              1. Let _resolution_ be _module_.ResolveExport(_name_).
-              1. If _resolution_ is a ResolvedBinding Record, append _name_ to _unambiguousNames_.
-            1. Set _namespace_ to ModuleNamespaceCreate(_module_, _unambiguousNames_, <ins>_phase_</ins>).
+            1. <del>Let _exportedNames_ be _module_.GetExportedNames().</del>
+            1. <del>Let _unambiguousNames_ be a new empty List.</del>
+            1. <del>For each element _name_ of _exportedNames_, do</del>
+              1. <del>Let _resolution_ be _module_.ResolveExport(_name_).</del>
+              1. <del>If _resolution_ is a ResolvedBinding Record, append _name_ to _unambiguousNames_.</del>
+            1. Set _namespace_ to ModuleNamespaceCreate(_module_, <del>_unambiguousNames_,</del> <ins>_phase_</ins>).
+            1. <ins>If _phase_ is ~defer~, then</ins>
+              1. <ins>Set _module_.[[DeferredNamespace]] to _namespace_.</ins>
+            1. <ins>Else,</ins>
+              1. <ins>Set _module_.[[Namespace]] to _namespace_.</ins>
           1. Return _namespace_.
         </emu-alg>
+
         <emu-note>
-          <p>GetModuleNamespace never throws. Instead, unresolvable names are simply excluded from the namespace at this point. They will lead to a real linking error later unless they are all ambiguous star exports that are not explicitly requested anywhere.</p>
+          <del>GetModuleNamespace never throws. Instead, unresolvable names are simply excluded from the namespace at this point. They will lead to a real linking error later unless they are all ambiguous star exports that are not explicitly requested anywhere.</del>
         </emu-note>
       </emu-clause>
     </emu-clause>
