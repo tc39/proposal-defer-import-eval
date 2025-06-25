@@ -81,7 +81,7 @@ contributors: Nicolò Ribaudo
               <ins>~empty~</ins> or a List of Strings
             </td>
             <td>
-              A List whose elements are the String values of the exported names exposed as own properties of this object. The list is ordered as if an Array of those String values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_. <ins>It is only ever used as a cache by GetModuleExportsList.</ins>
+              A List whose elements are the String values of the exported names exposed as own properties of this object. The list is ordered as if an Array of those String values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_. <ins>It is only ever set by PopulateModuleNamespaceExportsList, and only read by GetModuleExportsList.</ins>
             </td>
           </tr>
           <tr>
@@ -235,9 +235,6 @@ contributors: Nicolò Ribaudo
         </dl>
         <emu-alg>
           1. Let _exports_ be <del>_O_.[[Exports]]</del><ins>? GetModuleExportsList(_O_)</ins>.
-          1. <ins>If _O_.[[Deferred]] is *true*, and _exports_ contains *"then"*, then</ins>
-            1. <ins>Set _exports_ to a copy of _exports_.</ins>
-            1. <ins>Remove *"then"* from _exports_.</ins>
           1. Let _symbolKeys_ be OrdinaryOwnPropertyKeys(_O_).
           1. Return the list-concatenation of _exports_ and _symbolKeys_.
         </emu-alg>
@@ -276,6 +273,45 @@ contributors: Nicolò Ribaudo
         </emu-alg>
       </emu-clause>
 
+      <emu-clause id="sec-PopulateModuleNamespaceExportsList" type="abstract operation">
+        <h1>
+          <ins>PopulateModuleNamespaceExportsList (
+            _O_: a module namespace exotic object,
+          ): ~unused~</ins>
+        </h1>
+        <dl class="header">
+          <dt>description</dt>
+          <dd>It initializes _O_'s [[Exports]] field to a List of the Strings values of the names of the module's exports, ordered as if an Array of those String values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_.</dd>
+        </dl>
+
+        <emu-note type="editor">
+          <p>Steps <emu-xref href="#step-get-unambiguous-names-start"></emu-xref> to <emu-xref href="#step-get-unambiguous-names-end"></emu-xref>, as well as the note at the end, were originally part of the GetModuleNamespace abstract operation. The diff in those steps is relative to that original version.</p>
+          <p>Steps <emu-xref href="#step-sort-names-first"></emu-xref> and <emu-xref href="#step-sort-names-second"></emu-xref> were originally part of ModuleNamespaceCreate.</p>
+        </emu-note>
+
+        <emu-alg>
+          1. Assert: _O_.[[Exports]] is ~empty~.
+          1. <ins>Let _module_ be _O_.[[Module]].</ins>
+          1. [id="step-get-unambiguous-names-start"] Let _exportedNames_ be _module_.GetExportedNames().
+          1. Let _unambiguousNames_ be a new empty List.
+          1. [id="step-get-unambiguous-names-end"] For each element _name_ of _exportedNames_, do
+            1. <ins>If IsSymbolLikeNamespaceKey(_name_, _O_) is *false*, then</ins>
+              1. Let _resolution_ be _module_.ResolveExport(_name_).
+              1. If _resolution_ is a ResolvedBinding Record, append _name_ to _unambiguousNames_.
+          1. [id="step-sort-names-first"] Let _sortedExports_ be a List whose elements are the elements of _unambiguousNames_ ordered as if an Array of the same values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_.
+          1. [id="step-sort-names-second"] Set _O_.[[Exports]] to _sortedExports_.
+          1. Return ~unused~.
+        </emu-alg>
+
+        <emu-note>
+          <del>GetModuleNamespace</del><ins>PopulateModuleNamespaceExportsList</ins> never throws. Instead, unresolvable names are simply excluded from the namespace at this point. They will lead to a real linking error later unless they are all ambiguous star exports that are not explicitly requested anywhere.
+        </emu-note>
+
+        <emu-note>
+          <ins>If _O_.[[Deferred]] is *true*, _O_.[[Exports]] will never contain the string *"then"*.</ins>
+        </emu-note>
+      </emu-clause>
+
       <emu-clause id="sec-IsSymbolLikeNamespaceKey" type="abstract operation">
         <h1>
           <ins>IsSymbolLikeNamespaceKey (
@@ -306,31 +342,15 @@ contributors: Nicolò Ribaudo
           <dd>The returned Strings are the String values of the names of the module's exports, ordered as if an Array of those String values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_. It triggers module evauation if _O_ is a namespace object coming from a deferred import.</dd>
         </dl>
 
-        <emu-note type="editor">
-          <p>Steps <emu-xref href="#step-get-unambiguous-names-start"></emu-xref> to <emu-xref href="#step-get-unambiguous-names-end"></emu-xref>, as well as the note at the end, were originally part of the GetModuleNamespace abstract operation. The diff in those steps is relative to that original version.</p>
-          <p>Steps <emu-xref href="#step-sort-names-first"></emu-xref> and <emu-xref href="#step-sort-names-second"></emu-xref> were originally part of ModuleNamespaceCreate.</p>
-        </emu-note>
-
         <emu-alg>
-          1. Let _m_ be _O_.[[Module]].
-          1. If _O_.[[Exports]] is ~empty~, then
-            1. [id="step-get-unambiguous-names-start"] Let _exportedNames_ be <del>_module_</del><ins>_m_</ins>.GetExportedNames().
-            1. Let _unambiguousNames_ be a new empty List.
-            1. [id="step-get-unambiguous-names-end"] For each element _name_ of _exportedNames_, do
-              1. <ins>If IsSymbolLikeNamespaceKey(_name_, _O_) is *false*, then</ins>
-                1. Let _resolution_ be <del>_module_</del><ins>_m_</ins>.ResolveExport(_name_).
-                1. If _resolution_ is a ResolvedBinding Record, append _name_ to _unambiguousNames_.
-            1. [id="step-sort-names-first"] Let _sortedExports_ be a List whose elements are the elements of _unambiguousNames_ ordered as if an Array of the same values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_.
-            1. [id="step-sort-names-second"] Set _O_.[[Exports]] to _sortedExports_.
           1. If _O_.[[Deferred]] is *true*, then
+            1. If _O_.[[Exports]] is ~empty~, perform PopulateModuleNamespaceExportsList(_O_).
+            1. Let _m_ be _O_.[[Module]].
             1. If ReadyForSyncExecution(_m_) is *false*, throw a *TypeError* exception.
             1. Perform ? EvaluateModuleSync(_m_).
+          1. Assert: _O_.[[Exports]] is not ~empty~.
           1. Return _O_.[[Exports]].
         </emu-alg>
-
-        <emu-note>
-          <p><del>GetModuleNamespace never throws.</del><ins>Steps <emu-xref href="#step-get-unambiguous-names-start"></emu-xref> to <emu-xref href="#step-get-unambiguous-names-end"></emu-xref> never throw.</ins>. Instead, unresolvable names are simply excluded from the namespace at this point. They will lead to a real linking error later unless they are all ambiguous star exports that are not explicitly requested anywhere.</p>
-        </emu-note>
 
         <emu-clause id="sec-ReadyForSyncExecution" type="abstract operation">
           <h1>
@@ -2004,6 +2024,7 @@ contributors: Nicolò Ribaudo
               1. <ins>Set _module_.[[DeferredNamespace]] to _namespace_.</ins>
             1. <ins>Else,</ins>
               1. <ins>Set _module_.[[Namespace]] to _namespace_.</ins>
+              1. <ins>Perform PopulateModuleNamespaceExportsList(_namespace_).</ins>
           1. Return _namespace_.
         </emu-alg>
 
