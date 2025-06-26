@@ -235,9 +235,6 @@ contributors: Nicolò Ribaudo
         </dl>
         <emu-alg>
           1. Let _exports_ be <del>_O_.[[Exports]]</del><ins>? GetModuleExportsList(_O_)</ins>.
-          1. <ins>If _O_.[[Deferred]] is *true*, and _exports_ contains *"then"*, then</ins>
-            1. <ins>Set _exports_ to a copy of _exports_.</ins>
-            1. <ins>Remove *"then"* from _exports_.</ins>
           1. Let _symbolKeys_ be OrdinaryOwnPropertyKeys(_O_).
           1. Return the list-concatenation of _exports_ and _symbolKeys_.
         </emu-alg>
@@ -1981,8 +1978,9 @@ contributors: Nicolò Ribaudo
             1. Let _exportedNames_ be _module_.GetExportedNames().
             1. Let _unambiguousNames_ be a new empty List.
             1. For each element _name_ of _exportedNames_, do
-              1. Let _resolution_ be _module_.ResolveExport(_name_).
-              1. If _resolution_ is a ResolvedBinding Record, append _name_ to _unambiguousNames_.
+              1. <ins>If _phase_ is not ~defer~ or _name_ is not *"then"*, then</ins>
+                1. Let _resolution_ be _module_.ResolveExport(_name_).
+                1. If _resolution_ is a ResolvedBinding Record, append _name_ to _unambiguousNames_.
             1. Set _namespace_ to ModuleNamespaceCreate(_module_, _unambiguousNames_, <ins>_phase_</ins>).
           1. Return _namespace_.
         </emu-alg>
