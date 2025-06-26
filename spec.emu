@@ -1990,6 +1990,9 @@ contributors: Nicolò Ribaudo
         <emu-note>
           <p>GetModuleNamespace never throws. Instead, unresolvable names are simply excluded from the namespace at this point. They will lead to a real linking error later unless they are all ambiguous star exports that are not explicitly requested anywhere.</p>
         </emu-note>
+        <emu-note>
+          <p><ins>Collecting the list of unambiguous export names is unobservable and done lazily. Its result is only read when calling GetModuleExportList.</ins></p>
+        </emu-note>
       </emu-clause>
     </emu-clause>
 
