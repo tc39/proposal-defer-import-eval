@@ -247,7 +247,8 @@ contributors: Nicolò Ribaudo
         <h1>
           ModuleNamespaceCreate (
             _module_: a Module Record,
-            _exports_: a List of Strings,
+            <del>_exports_: a List of Strings,</del>
+            <ins>_sortedExports_: a List of Strings sorted according to lexicographic code unit order,</ins>
             <ins>_phase_: ~defer~ or ~evaluation~,</ins>
           ): a module namespace exotic object
         </h1>
@@ -261,17 +262,14 @@ contributors: Nicolò Ribaudo
           1. Let _M_ be MakeBasicObject(_internalSlotsList_).
           1. Set _M_'s essential internal methods to the definitions specified in <emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>.
           1. Set _M_.[[Module]] to _module_.
-          1. [declared="comparefn"] Let _sortedExports_ be a List whose elements are the elements of _exports_ ordered as if an Array of the same values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_.
+          1. <del>Let _sortedExports_ be a List whose elements are the elements of _exports_, sorted according to lexicographic code unit order.</del>
           1. Set _M_.[[Exports]] to _sortedExports_.
           1. <del>Create own properties of _M_ corresponding to the definitions in <emu-xref href="#sec-module-namespace-objects"></emu-xref>.</del>
+          1. <del>Set _module_.[[Namespace]] to _M_.</del>
           1. <ins>If _phase_ is ~defer~, then</ins>
-            1. <ins>Assert: _module_.[[DeferredNamespace]] is ~empty~.</ins>
-            1. <ins>Set _module_.[[DeferredNamespace]] to _M_.</ins>
             1. <ins>Set _M_.[[Deferred]] to *true*.</ins>
             1. <ins>Let _toStringTag_ be *"Deferred Module"*.</ins>
           1. <ins>Else,</ins>
-            1. <ins>Assert: _module_.[[Namespace]] is ~empty~.</ins>
-            1. Set _module_.[[Namespace]] to _M_.
             1. <ins>Set _M_.[[Deferred]] to *false*.</ins>
             1. <ins>Let _toStringTag_ be *"Module"*.</ins>
           1. <ins>Create an own data property of _M_ named %Symbol.toStringTag% whose [[Value]] is _toStringTag_ and whose [[Writable]], [[Enumerable]], and [[Configurable]] attributes are *false*.</ins>
@@ -1983,7 +1981,10 @@ contributors: Nicolò Ribaudo
             1. For each element _name_ of _exportedNames_, do
               1. Let _resolution_ be _module_.ResolveExport(_name_).
               1. If _resolution_ is a ResolvedBinding Record, append _name_ to _unambiguousNames_.
-            1. Set _namespace_ to ModuleNamespaceCreate(_module_, _unambiguousNames_, <ins>_phase_</ins>).
+            1. <ins>Let _sortedUnambiguousNames_ be a List whose elements are the elements of _unambiguousNames_, sorted according to lexicographic code unit order.</ins>
+            1. Set _namespace_ to ModuleNamespaceCreate(_module_, <del>_unambiguousNames_,</del> <ins>_sortedUnambiguousNames_,</ins> <ins>_phase_</ins>).
+            1. <ins>If _phase_ is ~defer~, set _module_.[[DeferredNamespace]] to _namespace_.</ins>
+            1. <ins>Else, set _module_.[[Namespace]] to _namespace_.</ins>
           1. Return _namespace_.
         </emu-alg>
         <emu-note>
