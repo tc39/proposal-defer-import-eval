@@ -245,6 +245,7 @@ function Foo() {
 
 - engine262: https://github.com/nicolo-ribaudo/engine262/tree/defer-eval
 - webpack: https://github.com/webpack/webpack/pull/16567
+- Babel: https://babeljs.io/docs/babel-plugin-proposal-import-defer
 
 ## Q&A
 
