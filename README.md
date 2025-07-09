@@ -8,7 +8,7 @@ Champion(s): *Nicolò Ribaudo*
 
 Author(s): *Yulia Startsev, Nicolò Ribaudo and Guy Bedford*
 
-Stage: 2.7
+Stage: 3
 
 Slides:
 - 2021-01 - [Stage 1](https://docs.google.com/presentation/d/17NsxHzAC2RlP5rB3wrns9O2Z-NduSpcm2_GOVo2TnKE) ([notes](https://github.com/tc39/notes/blob/main/meetings/2021-01/jan-28.md#defer-module-import-eval))
