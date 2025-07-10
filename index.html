@@ -1,10 +1,10 @@
 <!doctype html>
-<head><meta charset="utf-8"><meta property="og:image" content="https://tc39.es/ecmarkup/ecma-logo.png"><meta property="og:title" content="Deferred Imports Evaluation"><meta property="og:description" content="Ordinary and Exotic Objects Behaviours
+<head><meta name="viewport" content="width=device-width, initial-scale=1"><meta charset="utf-8"><meta property="og:image" content="https://tc39.es/ecmarkup/ecma-logo.png"><meta property="og:title" content="Deferred Imports Evaluation"><meta property="og:description" content="Ordinary and Exotic Objects Behaviours
 
   
     Built-in Exotic Object Internal Methods and Slots
     This specification defines several kinds of built-in exotic objects. These objects generally behave similar to ordinary objects except for a few specific situations. The following exotic objects u">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/styles/base16/solarized-light.min.css"><link rel="stylesheet" href="./spec.css">
+<link rel="stylesheet" href="./spec.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
 <script src="./spec.js"></script>
 <title>Deferred Imports Evaluation</title><script>'use strict';
@@ -413,10 +413,15 @@ function Menu() {
 
 Menu.prototype.documentKeydown = function (e) {
   e.stopPropagation();
-  if (e.keyCode === 80) {
+  if (e.key === 'p') {
     this.togglePinEntry();
-  } else if (e.keyCode >= 48 && e.keyCode < 58) {
+  } else if ([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].includes(parseInt(e.key))) {
     this.selectPin((e.keyCode - 9) % 10);
+  } else if (e.key === '`') {
+    const hash = document.location.hash;
+    const id = decodeURIComponent(hash.slice(1));
+    const target = document.getElementById(id);
+    target?.scrollIntoView(true);
   }
 };
 
@@ -865,7 +870,7 @@ let referencePane = {
     this.$pane.appendChild(this.$tableContainer);
 
     if (menu != null) {
-      menu.$specContainer.appendChild(this.$container);
+      menu.$specContainer.after(this.$container);
     }
   },
 
@@ -1197,6 +1202,9 @@ function doShortcut(e) {
     document.documentElement.classList.toggle('show-ao-annotations');
   } else if (e.key === '?') {
     document.getElementById('shortcuts-help').classList.toggle('active');
+  } else if (e.key === ';') {
+    let el = document.getElementById('bd75b99add5f');
+    if (el != null) el.remove();
   }
 }
 
@@ -1615,7 +1623,171 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let sdoMap = JSON.parse(`{"prod-k77_OH1u":{"Evaluation":{"clause":"13.3.10.1","ids":["prod-DuEmEibb"]}},"prod-nQPLRauX":{"Evaluation":{"clause":"13.3.10.1","ids":["prod-OGjeE4Nc"]}},"prod-hOsZF7nV":{"Evaluation":{"clause":"13.3.10.1","ids":["prod-N5Sx-mlB"]}},"prod-jVKCmJ2B":{"Evaluation":{"clause":"13.3.10.1","ids":["prod-tzbta_wA"]}},"prod-lTlWWBxm":{"EvaluateImportCallSpecifier":{"clause":"13.3.10.2","ids":["prod-Wl-kMU8S"]},"EvaluateImportCallOptions":{"clause":"13.3.10.3","ids":["prod-QZlSDQOI"]}},"prod-0gc3dMoA":{"EvaluateImportCallSpecifier":{"clause":"13.3.10.2","ids":["prod-lKdBg93_"]},"EvaluateImportCallOptions":{"clause":"13.3.10.3","ids":["prod-x5pFZCZn"]}},"prod-7jzzWh1g":{"ModuleRequests":{"clause":"16.2.1.3","ids":["prod-KwkKYyRj"]},"ImportEntries":{"clause":"16.2.2.2","ids":["prod-65kV3a3C"]}},"prod-AoB9QhTO":{"ModuleRequests":{"clause":"16.2.1.3","ids":["prod-K1adkbP6"]}},"prod-GXF21Ewo":{"ModuleRequests":{"clause":"16.2.1.3","ids":["prod-9OD1gHQa"]},"ImportEntries":{"clause":"16.2.2.2","ids":["prod-8cqfbQ1C"]}},"prod-hV3VZEve":{"ModuleRequests":{"clause":"16.2.1.3","ids":["prod-pGkooQP4"]},"ImportEntries":{"clause":"16.2.2.2","ids":["prod-myYDa7qJ"]}},"prod-z-GN-HIp":{"ModuleRequests":{"clause":"16.2.1.3","ids":["prod-Fii3Jv-w","prod-QB5EyLim"]},"ImportEntries":{"clause":"16.2.2.2","ids":["prod-38hkzOjh"]}},"prod-3S1_xlww":{"ModuleRequests":{"clause":"16.2.1.3","ids":["prod-DPdimQjq","prod-Fcplrdv-"]},"ImportEntries":{"clause":"16.2.2.2","ids":["prod-_vt8Qfl3"]}},"prod-hjv695N2":{"ModuleRequests":{"clause":"16.2.1.3","ids":["prod-geKEXfWi"]}},"prod-IobLK26D":{"ImportEntries":{"clause":"16.2.2.2","ids":["prod-qEXtoziY"]}},"prod-OCPQ4qHa":{"ImportEntries":{"clause":"16.2.2.2","ids":["prod-C5SFxtu0"]}}}`);
 let biblio = JSON.parse(`{"refsByClause":{"sec-module-namespace-exotic-objects":["_ref_0","_ref_23","_ref_24","_ref_25","_ref_26","_ref_27","_ref_28","_ref_29","_ref_30","_ref_183","_ref_184"],"sec-modulenamespacecreate":["_ref_1","_ref_2","_ref_3","_ref_50","_ref_51","_ref_52"],"sec-ContinueDynamicImport":["_ref_4","_ref_67","_ref_68","_ref_69","_ref_70"],"sec-abstract-module-records":["_ref_5","_ref_6","_ref_7","_ref_88","_ref_89"],"sec-example-cyclic-module-record-graphs":["_ref_8","_ref_9","_ref_10","_ref_11","_ref_12","_ref_13","_ref_14","_ref_15","_ref_16","_ref_129","_ref_130","_ref_131","_ref_132","_ref_133","_ref_134","_ref_135","_ref_136","_ref_137","_ref_138","_ref_139","_ref_140","_ref_141","_ref_142","_ref_143","_ref_144","_ref_145","_ref_146","_ref_147","_ref_148","_ref_149","_ref_150","_ref_151"],"sec-example-cyclic-module-record-graphs-deferred-imports":["_ref_17","_ref_18","_ref_19","_ref_20","_ref_21","_ref_152","_ref_153","_ref_154","_ref_155","_ref_156","_ref_157","_ref_158","_ref_159","_ref_160","_ref_161","_ref_162","_ref_163","_ref_164","_ref_165","_ref_166","_ref_167"],"sec-module-namespace-objects":["_ref_22","_ref_182","_ref_273","_ref_274"],"sec-module-namespace-exotic-objects-getownproperty-p":["_ref_31","_ref_32","_ref_33"],"sec-module-namespace-exotic-objects-defineownproperty-p-desc":["_ref_34","_ref_35"],"sec-module-namespace-exotic-objects-hasproperty-p":["_ref_36","_ref_37","_ref_38"],"sec-module-namespace-exotic-objects-get-p-receiver":["_ref_39","_ref_40","_ref_41","_ref_42","_ref_43"],"sec-module-namespace-exotic-objects-set-p-v-receiver":["_ref_44"],"sec-module-namespace-exotic-objects-delete-p":["_ref_45","_ref_46","_ref_47"],"sec-module-namespace-exotic-objects-ownpropertykeys":["_ref_48","_ref_49"],"sec-IsSymbolLikeNamespaceKey":["_ref_53"],"sec-GetModuleExportsList":["_ref_54","_ref_55","_ref_56"],"sec-ReadyForSyncExecution":["_ref_57","_ref_58","_ref_59","_ref_60","_ref_61"],"sec-import-call-runtime-semantics-evaluation":["_ref_62","_ref_63","_ref_64","_ref_65","_ref_187","_ref_188","_ref_189","_ref_190"],"sec-evaluate-import-call":["_ref_66"],"sec-modulerequest-record":["_ref_71"],"sec-ModuleRequestsEqual":["_ref_72","_ref_73","_ref_74"],"sec-static-semantics-modulerequests":["_ref_75","_ref_76","_ref_77","_ref_78","_ref_79","_ref_80","_ref_81","_ref_82","_ref_83","_ref_84","_ref_85","_ref_86","_ref_87","_ref_197","_ref_198","_ref_199","_ref_200","_ref_201","_ref_202","_ref_203","_ref_204","_ref_205","_ref_206","_ref_207","_ref_208","_ref_209","_ref_210","_ref_211","_ref_212","_ref_213","_ref_214","_ref_215","_ref_216","_ref_217","_ref_218","_ref_219","_ref_220","_ref_221","_ref_222","_ref_223","_ref_224"],"sec-EvaluateModuleSync":["_ref_90","_ref_91","_ref_92","_ref_93"],"sec-cyclic-module-records":["_ref_94","_ref_95","_ref_96"],"sec-LoadRequestedModules":["_ref_97"],"sec-InnerModuleLoading":["_ref_98","_ref_99"],"sec-moduledeclarationlinking":["_ref_100"],"sec-InnerModuleLinking":["_ref_101","_ref_102","_ref_103"],"sec-moduleevaluation":["_ref_104","_ref_105","_ref_106","_ref_107"],"sec-innermoduleevaluation":["_ref_108","_ref_109","_ref_110","_ref_111","_ref_112","_ref_113","_ref_114","_ref_115","_ref_116","_ref_117","_ref_118","_ref_119","_ref_120","_ref_121"],"sec-GatherAsynchronousTransitiveDependencies":["_ref_122","_ref_123","_ref_124","_ref_125","_ref_126","_ref_127","_ref_128"],"sec-source-text-module-record-initialize-environment":["_ref_168","_ref_169"],"sec-FinishLoadingImportedModule":["_ref_170","_ref_171","_ref_172","_ref_173","_ref_174","_ref_175"],"sec-getmodulenamespace":["_ref_176","_ref_177","_ref_178"],"sec-static-semantics-importentries":["_ref_179","_ref_180","_ref_181","_ref_257","_ref_258","_ref_259","_ref_260","_ref_261","_ref_262","_ref_263","_ref_264","_ref_265","_ref_266","_ref_267","_ref_268","_ref_269","_ref_270","_ref_271","_ref_272"],"sec-left-hand-side-expressions":["_ref_185","_ref_186"],"sec-modules":["_ref_191","_ref_192","_ref_193","_ref_194","_ref_195","_ref_196"],"sec-imports":["_ref_225","_ref_226","_ref_227","_ref_228","_ref_229","_ref_230","_ref_231","_ref_232","_ref_233","_ref_234","_ref_235","_ref_236","_ref_237","_ref_238","_ref_239","_ref_240","_ref_241","_ref_242","_ref_243","_ref_244","_ref_245","_ref_246","_ref_247","_ref_248","_ref_249","_ref_250","_ref_251","_ref_252","_ref_253","_ref_254"],"sec-imports-static-semantics-early-errors":["_ref_255","_ref_256"]},"entries":[{"type":"term","term":"module namespace exotic object","id":"module-namespace-exotic-object","referencingIds":["_ref_23","_ref_24","_ref_25","_ref_26","_ref_28","_ref_31","_ref_34","_ref_36","_ref_39","_ref_43","_ref_44","_ref_45","_ref_48","_ref_51","_ref_52","_ref_53","_ref_54","_ref_182"]},{"type":"table","id":"table-internal-slots-of-module-namespace-exotic-objects","number":1,"caption":"Table 1: Internal Slots of Module Namespace Exotic Objects","referencingIds":["_ref_0","_ref_1"]},{"type":"clause","id":"sec-module-namespace-exotic-objects-getownproperty-p","title":"[[GetOwnProperty]] ( P )","titleHTML":"<var class=\\"field\\">[[GetOwnProperty]]</var> ( <var>P</var> )","number":"10.4.6.5"},{"type":"clause","id":"sec-module-namespace-exotic-objects-defineownproperty-p-desc","title":"[[DefineOwnProperty]] ( P, Desc )","titleHTML":"<var class=\\"field\\">[[DefineOwnProperty]]</var> ( <var>P</var>, <var>Desc</var> )","number":"10.4.6.6"},{"type":"clause","id":"sec-module-namespace-exotic-objects-hasproperty-p","title":"[[HasProperty]] ( P )","titleHTML":"<var class=\\"field\\">[[HasProperty]]</var> ( <var>P</var> )","number":"10.4.6.7"},{"type":"clause","id":"sec-module-namespace-exotic-objects-get-p-receiver","title":"[[Get]] ( P, Receiver )","titleHTML":"<var class=\\"field\\">[[Get]]</var> ( <var>P</var>, <var>Receiver</var> )","number":"10.4.6.8"},{"type":"clause","id":"sec-module-namespace-exotic-objects-set-p-v-receiver","title":"[[Set]] ( P, V, Receiver )","titleHTML":"<var class=\\"field\\">[[Set]]</var> ( <var>P</var>, <var>V</var>, <var>Receiver</var> )","number":"10.4.6.9"},{"type":"clause","id":"sec-module-namespace-exotic-objects-delete-p","title":"[[Delete]] ( P )","titleHTML":"<var class=\\"field\\">[[Delete]]</var> ( <var>P</var> )","number":"10.4.6.10"},{"type":"clause","id":"sec-module-namespace-exotic-objects-ownpropertykeys","title":"[[OwnPropertyKeys]] ( )","titleHTML":"<var class=\\"field\\">[[OwnPropertyKeys]]</var> ( )","number":"10.4.6.11"},{"type":"op","aoid":"ModuleNamespaceCreate","refId":"sec-modulenamespacecreate"},{"type":"clause","id":"sec-modulenamespacecreate","title":"ModuleNamespaceCreate ( module, exports, phase )","titleHTML":"ModuleNamespaceCreate ( <var>module</var>, <var>exports</var>, <ins><var>phase</var></ins> )","number":"10.4.6.12","referencingIds":["_ref_27","_ref_178"]},{"type":"op","aoid":"IsSymbolLikeNamespaceKey","refId":"sec-IsSymbolLikeNamespaceKey"},{"type":"clause","id":"sec-IsSymbolLikeNamespaceKey","title":"IsSymbolLikeNamespaceKey ( P, ns )","titleHTML":"<ins>IsSymbolLikeNamespaceKey ( <var>P</var>, <var>ns</var> )</ins>","number":"10.4.6.13","referencingIds":["_ref_32","_ref_35","_ref_37","_ref_40","_ref_46"]},{"type":"op","aoid":"ReadyForSyncExecution","refId":"sec-ReadyForSyncExecution"},{"type":"clause","id":"sec-ReadyForSyncExecution","title":"ReadyForSyncExecution ( module [ , seen ] )","titleHTML":"<ins>ReadyForSyncExecution ( <var>module</var> [ , <var>seen</var> ] )</ins>","number":"10.4.6.14.1","referencingIds":["_ref_55","_ref_61","_ref_93"]},{"type":"op","aoid":"GetModuleExportsList","refId":"sec-GetModuleExportsList"},{"type":"clause","id":"sec-GetModuleExportsList","title":"GetModuleExportsList ( O )","titleHTML":"<ins>GetModuleExportsList ( <var>O</var> )</ins>","number":"10.4.6.14","referencingIds":["_ref_33","_ref_38","_ref_41","_ref_47","_ref_49"]},{"type":"clause","id":"sec-module-namespace-exotic-objects","titleHTML":"Module Namespace Exotic Objects","number":"10.4.6","referencingIds":["_ref_2","_ref_6","_ref_7","_ref_22"]},{"type":"clause","id":"sec-built-in-exotic-object-internal-methods-and-slots","titleHTML":"Built-in Exotic Object Internal Methods and Slots","number":"10.4"},{"type":"clause","id":"sec-ordinary-and-exotic-objects-behaviours","titleHTML":"Ordinary and Exotic Objects Behaviours","number":"10"},{"type":"production","id":"prod-ImportCall","name":"ImportCall"},{"type":"production","id":"prod-ImportCallArguments","name":"ImportCallArguments","referencingIds":["_ref_185","_ref_186","_ref_187","_ref_188","_ref_189","_ref_190"]},{"type":"clause","id":"sec-import-call-runtime-semantics-evaluation","titleHTML":"Runtime Semantics: Evaluation","number":"13.3.10.1"},{"type":"clause","id":"sec-import-call-runtime-semantics-EvaluateImportCallSpecifier","title":"Runtime Semantics: EvaluateImportCallSpecifier","titleHTML":"<ins>Runtime Semantics: EvaluateImportCallSpecifier</ins>","number":"13.3.10.2"},{"type":"clause","id":"sec-import-call-runtime-semantics-EvaluateImportCallOptions","title":"Runtime Semantics: EvaluateImportCallOptions","titleHTML":"<ins>Runtime Semantics: EvaluateImportCallOptions</ins>","number":"13.3.10.3"},{"type":"op","aoid":"ContinueDynamicImport","refId":"sec-ContinueDynamicImport"},{"type":"clause","id":"sec-ContinueDynamicImport","title":"ContinueDynamicImport ( promiseCapability, moduleCompletion, phase )","titleHTML":"ContinueDynamicImport ( <var>promiseCapability</var>, <var>moduleCompletion</var>, <ins><var>phase</var></ins> )","number":"13.3.10.4.1","referencingIds":["_ref_175"]},{"type":"op","aoid":"EvaluateImportCall","refId":"sec-evaluate-import-call"},{"type":"clause","id":"sec-evaluate-import-call","title":"EvaluateImportCall ( arguments, phase, specifierExpression [ , optionsExpression ] )","titleHTML":"EvaluateImportCall ( <ins><var>arguments</var></ins>, <ins><var>phase</var></ins>, <del><var>specifierExpression</var></del> [ , <del><var>optionsExpression</var></del> ] )","number":"13.3.10.4","referencingIds":["_ref_62","_ref_63","_ref_64","_ref_65"]},{"type":"clause","id":"sec-import-calls","titleHTML":"Import Calls","number":"13.3.10","referencingIds":["_ref_4"]},{"type":"clause","id":"sec-left-hand-side-expressions","titleHTML":"Left-Hand-Side Expressions","number":"13.3"},{"type":"clause","id":"sec-ecmascript-language-expressions","titleHTML":"ECMAScript Language: Expressions","number":"13"},{"type":"production","id":"prod-Module","name":"Module","referencingIds":["_ref_183","_ref_184"]},{"type":"production","id":"prod-ModuleBody","name":"ModuleBody","referencingIds":["_ref_191"]},{"type":"production","id":"prod-ModuleItemList","name":"ModuleItemList","referencingIds":["_ref_192","_ref_194","_ref_199","_ref_201","_ref_257","_ref_259"]},{"type":"production","id":"prod-ModuleItem","name":"ModuleItem","referencingIds":["_ref_193","_ref_195","_ref_197","_ref_198","_ref_200","_ref_202","_ref_258","_ref_260"]},{"type":"production","id":"prod-ModuleExportName","name":"ModuleExportName","referencingIds":["_ref_249"]},{"type":"term","term":"ModuleRequest Record","id":"modulerequest-record","referencingIds":["_ref_60","_ref_66","_ref_71","_ref_72","_ref_73","_ref_74","_ref_75","_ref_79","_ref_80","_ref_82","_ref_83","_ref_84","_ref_85","_ref_86","_ref_87","_ref_113","_ref_116","_ref_126","_ref_171"]},{"type":"table","id":"table-modulerequest-fields","number":2,"caption":"Table 2: ModuleRequest Record Fields"},{"type":"op","aoid":"ModuleRequestsEqual","refId":"sec-ModuleRequestsEqual"},{"type":"clause","id":"sec-ModuleRequestsEqual","title":"ModuleRequestsEqual ( left, right )","titleHTML":"ModuleRequestsEqual ( <var>left</var>, <var>right</var> )","number":"16.2.1.1.1","referencingIds":["_ref_81","_ref_173"]},{"type":"clause","id":"sec-modulerequest-record","title":"ModuleRequest Records","titleHTML":"<ins>ModuleRequest Records</ins>","number":"16.2.1.1"},{"type":"op","aoid":"ModuleRequests","refId":"sec-static-semantics-modulerequests"},{"type":"clause","id":"sec-static-semantics-modulerequests","titleHTML":"Static Semantics: ModuleRequests","number":"16.2.1.3","referencingIds":["_ref_76","_ref_77","_ref_78","_ref_99","_ref_103","_ref_181"]},{"type":"term","term":"Module Record","refId":"sec-abstract-module-records"},{"type":"table","id":"table-module-record-fields","number":3,"caption":"Table 3: Module Record Fields","referencingIds":["_ref_5"]},{"type":"op","aoid":"EvaluateModuleSync","refId":"sec-EvaluateModuleSync"},{"type":"clause","id":"sec-EvaluateModuleSync","title":"EvaluateModuleSync ( module )","titleHTML":"EvaluateModuleSync ( <var>module</var> )","number":"16.2.1.4.1","referencingIds":["_ref_56","_ref_112"]},{"type":"clause","id":"sec-abstract-module-records","titleHTML":"Abstract Module Records","number":"16.2.1.4","referencingIds":["_ref_29","_ref_30","_ref_50","_ref_57","_ref_58","_ref_67","_ref_70","_ref_89","_ref_90","_ref_95","_ref_98","_ref_101","_ref_108","_ref_115","_ref_117","_ref_121","_ref_122","_ref_123","_ref_124","_ref_128","_ref_132","_ref_172","_ref_174","_ref_176"]},{"type":"term","term":"Cyclic Module Record","id":"cyclic-module-record","referencingIds":["_ref_59","_ref_88","_ref_91","_ref_92","_ref_94","_ref_96","_ref_97","_ref_100","_ref_102","_ref_104","_ref_107","_ref_109","_ref_111","_ref_119","_ref_120","_ref_125","_ref_131","_ref_170","_ref_177"]},{"type":"op","aoid":"InnerModuleLoading","refId":"sec-InnerModuleLoading"},{"type":"clause","id":"sec-InnerModuleLoading","title":"InnerModuleLoading ( state, module )","titleHTML":"InnerModuleLoading ( <var>state</var>, <var>module</var> )","number":"16.2.1.5.1.1","referencingIds":["_ref_135","_ref_136","_ref_137"]},{"type":"clause","id":"sec-LoadRequestedModules","title":"LoadRequestedModules ( [ hostDefined ] )","titleHTML":"LoadRequestedModules ( [ <var>hostDefined</var> ] )","number":"16.2.1.5.1"},{"type":"op","aoid":"InnerModuleLinking","refId":"sec-InnerModuleLinking"},{"type":"clause","id":"sec-InnerModuleLinking","title":"InnerModuleLinking ( module, stack, index )","titleHTML":"InnerModuleLinking ( <var>module</var>, <var>stack</var>, <var>index</var> )","number":"16.2.1.5.2.1","referencingIds":["_ref_110","_ref_129","_ref_138","_ref_139","_ref_140","_ref_141","_ref_142","_ref_143"]},{"type":"clause","id":"sec-moduledeclarationlinking","titleHTML":"Link ( )","number":"16.2.1.5.2"},{"type":"op","aoid":"InnerModuleEvaluation","refId":"sec-innermoduleevaluation"},{"type":"clause","id":"sec-innermoduleevaluation","title":"InnerModuleEvaluation ( module, stack, index )","titleHTML":"InnerModuleEvaluation ( <var>module</var>, <var>stack</var>, <var>index</var> )","number":"16.2.1.5.3.1","referencingIds":["_ref_105","_ref_106","_ref_118","_ref_130","_ref_144","_ref_145","_ref_146","_ref_147","_ref_148","_ref_149","_ref_150","_ref_151","_ref_152","_ref_154","_ref_155","_ref_156","_ref_157","_ref_159","_ref_160","_ref_161","_ref_162","_ref_163","_ref_165","_ref_166","_ref_167"]},{"type":"op","aoid":"GatherAsynchronousTransitiveDependencies","refId":"sec-GatherAsynchronousTransitiveDependencies"},{"type":"clause","id":"sec-GatherAsynchronousTransitiveDependencies","title":"GatherAsynchronousTransitiveDependencies ( module [ , seen ] )","titleHTML":"<ins>GatherAsynchronousTransitiveDependencies ( <var>module</var> [ , <var>seen</var> ] )</ins>","number":"16.2.1.5.3.2","referencingIds":["_ref_69","_ref_114","_ref_127","_ref_153","_ref_158","_ref_164"]},{"type":"clause","id":"sec-moduleevaluation","titleHTML":"Evaluate ( )","number":"16.2.1.5.3"},{"type":"figure","id":"figure-module-graph-simple","number":1,"caption":"Figure 1: A simple module graph"},{"type":"figure","id":"figure-module-graph-missing","number":2,"caption":"Figure 2: A module graph with an unresolvable module"},{"type":"figure","id":"figure-module-graph-cycle","number":3,"caption":"Figure 3: A cyclic module graph"},{"type":"figure","id":"figure-module-graph-cycle-async","number":4,"caption":"Figure 4: An asynchronous cyclic module graph"},{"type":"table","id":"table-module-graph-cycle-async-fields-1","number":4,"caption":"Table 4: Module fields after the initial Evaluate() call","referencingIds":["_ref_8"]},{"type":"table","id":"table-module-graph-cycle-async-fields-2","number":5,"caption":"Table 5: Module fields after module _E_ finishes executing","referencingIds":["_ref_9"]},{"type":"table","id":"table-module-graph-cycle-async-fields-3","number":6,"caption":"Table 6: Module fields after module _D_ finishes executing","referencingIds":["_ref_10"]},{"type":"table","id":"table-module-graph-cycle-async-fields-4","number":7,"caption":"Table 7: Module fields after module _C_ finishes executing","referencingIds":["_ref_11"]},{"type":"table","id":"table-module-graph-cycle-async-fields-5","number":8,"caption":"Table 8: Module fields after module _B_ finishes executing","referencingIds":["_ref_12"]},{"type":"table","id":"table-module-graph-cycle-async-fields-6","number":9,"caption":"Table 9: Module fields after module _A_ finishes executing","referencingIds":["_ref_13"]},{"type":"table","id":"table-module-graph-cycle-async-fields-7","number":10,"caption":"Table 10: Module fields after module _C_ finishes with an error","referencingIds":["_ref_14"]},{"type":"table","id":"table-module-graph-cycle-async-fields-8","number":11,"caption":"Table 11: Module fields after module _A_ is rejected","referencingIds":["_ref_15"]},{"type":"table","id":"table-module-graph-cycle-async-fields-9","number":12,"caption":"Table 12: Module fields after module _B_ finishes executing in an erroring graph","referencingIds":["_ref_16"]},{"type":"figure","id":"figure-module-graph-deferred-simple","number":5,"caption":"Figure 5: A simple module graph with a deferred import"},{"type":"figure","id":"figure-module-graph-deferred-async","number":6,"caption":"Figure 6: A simple module graph with a deferred import and a transitive asynchronous dependency"},{"type":"table","id":"table-module-graph-deferred-async-fields-1","number":13,"caption":"Table 13: Module fields after the initial Evaluate() call","referencingIds":["_ref_17"]},{"type":"table","id":"table-module-graph-deferred-async-fields-2","number":14,"caption":"Table 14: Module fields after _C_ finishes executing","referencingIds":["_ref_18"]},{"type":"table","id":"table-module-graph-deferred-async-fields-3","number":15,"caption":"Table 15: Module fields after _C_ finishes executing with an exception","referencingIds":["_ref_19"]},{"type":"figure","id":"figure-module-graph-deferred-async-cycle-root","number":7,"caption":"Figure 7: A module graph with a deferred import and a cycle back to the root"},{"type":"table","id":"table-module-graph-deferred-async-cycle-root-fields-1","number":16,"caption":"Table 16: Module fields after the initial Evaluate() call","referencingIds":["_ref_20"]},{"type":"table","id":"table-module-graph-deferred-async-cycle-root-fields-2","number":17,"caption":"Table 17: Module fields after the _B_.ExecuteModule() call","referencingIds":["_ref_21"]},{"type":"clause","id":"sec-example-cyclic-module-record-graphs-deferred-imports","title":"Example Cyclic Module Record Graphs with Deferred Imports","titleHTML":"<ins>Example Cyclic Module Record Graphs with Deferred Imports</ins>","number":"16.2.1.5.4.1"},{"type":"clause","id":"sec-example-cyclic-module-record-graphs","titleHTML":"Example Cyclic Module Record Graphs","number":"16.2.1.5.4"},{"type":"clause","id":"sec-cyclic-module-records","titleHTML":"Cyclic Module Records","number":"16.2.1.5"},{"type":"clause","id":"sec-source-text-module-record-initialize-environment","titleHTML":"InitializeEnvironment ( )","number":"16.2.1.6.4"},{"type":"clause","id":"sec-source-text-module-records","titleHTML":"Source Text Module Records","number":"16.2.1.6"},{"type":"op","aoid":"FinishLoadingImportedModule","refId":"sec-FinishLoadingImportedModule"},{"type":"clause","id":"sec-FinishLoadingImportedModule","title":"FinishLoadingImportedModule ( referrer, moduleRequest, payload, result )","titleHTML":"FinishLoadingImportedModule ( <var>referrer</var>, <var>moduleRequest</var>, <var>payload</var>, <var>result</var> )","number":"16.2.1.11","referencingIds":["_ref_133","_ref_134"]},{"type":"op","aoid":"GetModuleNamespace","refId":"sec-getmodulenamespace"},{"type":"clause","id":"sec-getmodulenamespace","title":"GetModuleNamespace ( module, phase )","titleHTML":"GetModuleNamespace ( <var>module</var>, <ins><var>phase</var></ins> )","number":"16.2.1.13","referencingIds":["_ref_42","_ref_68","_ref_168","_ref_169"]},{"type":"clause","id":"sec-module-semantics","titleHTML":"Module Semantics","number":"16.2.1"},{"type":"production","id":"prod-ImportDeclaration","name":"ImportDeclaration","referencingIds":["_ref_196","_ref_255","_ref_256","_ref_273"]},{"type":"production","id":"prod-ImportClause","name":"ImportClause","referencingIds":["_ref_203","_ref_206","_ref_225","_ref_261","_ref_265"]},{"type":"production","id":"prod-ImportedDefaultBinding","name":"ImportedDefaultBinding","referencingIds":["_ref_233","_ref_236","_ref_238"]},{"type":"production","id":"prod-NameSpaceImport","name":"NameSpaceImport","referencingIds":["_ref_211","_ref_214","_ref_228","_ref_234","_ref_237","_ref_266","_ref_270","_ref_274"]},{"type":"production","id":"prod-NamedImports","name":"NamedImports","referencingIds":["_ref_235","_ref_239"]},{"type":"production","id":"prod-FromClause","name":"FromClause","referencingIds":["_ref_204","_ref_205","_ref_207","_ref_209","_ref_212","_ref_213","_ref_215","_ref_217","_ref_219","_ref_220","_ref_221","_ref_223","_ref_226","_ref_229","_ref_262","_ref_264","_ref_267","_ref_269"]},{"type":"production","id":"prod-ImportsList","name":"ImportsList","referencingIds":["_ref_242","_ref_243","_ref_246"]},{"type":"production","id":"prod-ImportSpecifier","name":"ImportSpecifier","referencingIds":["_ref_245","_ref_247"]},{"type":"production","id":"prod-ModuleSpecifier","name":"ModuleSpecifier","referencingIds":["_ref_231","_ref_244","_ref_271"]},{"type":"production","id":"prod-ImportedBinding","name":"ImportedBinding","referencingIds":["_ref_240","_ref_241","_ref_248","_ref_250"]},{"type":"production","id":"prod-WithClause","name":"WithClause","referencingIds":["_ref_208","_ref_210","_ref_216","_ref_218","_ref_222","_ref_224","_ref_227","_ref_230","_ref_232","_ref_263","_ref_268","_ref_272"]},{"type":"production","id":"prod-WithEntries","name":"WithEntries","referencingIds":["_ref_251","_ref_254"]},{"type":"production","id":"prod-AttributeKey","name":"AttributeKey","referencingIds":["_ref_252","_ref_253"]},{"type":"clause","id":"sec-imports-static-semantics-early-errors","titleHTML":"Static Semantics: Early Errors","number":"16.2.2.1"},{"type":"op","aoid":"ImportEntries","refId":"sec-static-semantics-importentries"},{"type":"clause","id":"sec-static-semantics-importentries","titleHTML":"Static Semantics: ImportEntries","number":"16.2.2.2","referencingIds":["_ref_179","_ref_180"]},{"type":"clause","id":"sec-imports","titleHTML":"Imports","number":"16.2.2"},{"type":"clause","id":"sec-modules","titleHTML":"Modules","number":"16.2"},{"type":"clause","id":"sec-ecmascript-language-scripts-and-modules","titleHTML":"ECMAScript Language: Scripts and Modules","number":"16"},{"type":"clause","id":"sec-%symbol.tostringtag%","title":"%Symbol.toStringTag%","titleHTML":"<del>%Symbol.toStringTag%</del>","number":"28.3.1"},{"type":"clause","id":"sec-module-namespace-objects","title":"Module Namespace Objects","titleHTML":"<del>Module Namespace Objects</del>","number":"28.3","referencingIds":["_ref_3"]},{"type":"clause","id":"sec-reflection","titleHTML":"Reflection","number":"28"},{"type":"clause","id":"sec-copyright-and-software-license","title":"Copyright & Software License","titleHTML":"Copyright &amp; Software License","number":"A"}]}`);
-;let usesMultipage = false</script><style>/* IBM Plex fonts (Latin subset) have been downloaded from Google Fonts and modified to add support back in for the `zero` substitution (slashed zeroes) */
+;let usesMultipage = false</script><style>:root {
+  --foreground-color: #111;
+  --background-color: #fff;
+
+  --link-foreground-color: #206ca7;
+  --link-hover-foreground-color: #239dee;
+
+  --user-code-foreground-color: brown;
+
+  --var-foreground-color: #218379;
+
+  --referenced0-background-color: #ffff6c;
+  --referenced1-background-color: #ffa4a8;
+  --referenced2-background-color: #96e885;
+  --referenced3-background-color: #3eeed2;
+  --referenced4-background-color: #eacfb6;
+  --referenced5-background-color: #82ddff;
+  --referenced6-background-color: #ffbcf2;
+
+  --note-background-color: #e9fbe9;
+  --note-border-color: #52e052;
+  --note-editor-border-color: #faa;
+
+  --nt-link-foreground-color: #333;
+
+  --production-rhs-background-color: #f0f0f0;
+  --production-rhs-border-color: #888;
+
+  --params-foreground-color: #2aa198;
+  --opt-foreground-color: #b58900;
+
+  --title-foreground-color: #f60;
+
+  --caption-foreground-color: #555555;
+
+  --table-header-background-color: #eeeeee;
+
+  --highlight-background-color-start: rgba(249, 241, 172, 1);
+  --highlight-background-color-end: rgba(249, 241, 172, 0);
+
+  --highlight-background-color: rgba(249, 241, 172, 1);
+
+  --ins-background-color: #e0f8e0;
+  --ins-border-color: #396;
+
+  --del-background-color: #fee;
+
+  --control-foreground-color: #eee;
+  --control-dimmed-foreground-color: #666;
+  --control-background-color: #ddd;
+  --control-dark-background-color: #ccc;
+  --control-border-color: #aaa;
+  --control-light-border-color: #bbb;
+  --control-shortcut-background-color: #eee;
+  --control-shortcut-shadow-color: #ccc;
+  --control-dialog-fade-color: rgba(255, 255, 255, 0.6);
+
+  --control-link-foreground-color: #1567a2;
+
+  --control-input-background-color: #bbb;
+  --control-input-border-color: #999;
+
+  --menu-header-background-color: #bbb;
+  --menu-revealed-link-foreground-color: #206ca7;
+  --menu-unpin-hover-foreground-color: #bb1212;
+
+  --menu-trace-list-foreground-color: #999;
+  --menu-trace-list-background-color: #222;
+
+  --toolbox-tail-background-outside-color: rgba(0, 0, 0, 0);
+  --toolbox-tail-border-outside-color: rgba(204, 204, 204, 0);
+
+  --normative-optional-background-color: #ffeedd;
+  --normative-optional-border-color: #ff6600;
+
+  --attributes-tag-foreground-color: #884400;
+
+  --figure-background: #fff;
+}
+
+@supports (color-scheme: dark) {
+  @media only screen and (prefers-color-scheme: dark) {
+    :root {
+      --foreground-color: #fcfcfc;
+      --background-color: #171717;
+
+      --link-foreground-color: #439de2;
+      --link-hover-foreground-color: #80cafb;
+
+      --user-code-foreground-color: brown;
+
+      --var-foreground-color: #4fb6ab;
+
+      --referenced0-background-color: #6d6d1e;
+      --referenced1-background-color: #7e171c;
+      --referenced2-background-color: #1f6211;
+      --referenced3-background-color: #1a7a6b;
+      --referenced4-background-color: #7b4719;
+      --referenced5-background-color: #185870;
+      --referenced6-background-color: #731761;
+
+      --note-background-color: #1b2f1b;
+      --note-border-color: #31a331;
+      --note-editor-border-color: #801e1e;
+
+      --nt-link-foreground-color: #d0d0d0;
+
+      --production-rhs-background-color: #4d4d4d;
+      --production-rhs-border-color: #888;
+
+      --params-foreground-color: #57d0c7;
+      --opt-foreground-color: #d8b750;
+
+      --title-foreground-color: #f60;
+
+      --caption-foreground-color: #b0b0b0;
+
+      --table-header-background-color: #303030;
+
+      --highlight-background-color-start: rgba(114, 105, 24, 1);
+      --highlight-background-color-end: rgba(114, 105, 24, 0);
+
+      --highlight-background-color: rgba(114, 105, 24, 1);
+
+      --ins-background-color: #1e4a1e;
+      --ins-border-color: #61d89b;
+
+      --del-background-color: #4a1f1f;
+
+      --control-foreground-color: #101010;
+      --control-dimmed-foreground-color: #d0d0d0;
+      --control-background-color: #202020;
+      --control-dark-background-color: #303030;
+      --control-border-color: #505050;
+      --control-light-border-color: #606060;
+      --control-shortcut-background-color: #505050;
+      --control-shortcut-shadow-color: #000000;
+      --control-dialog-fade-color: rgba(0, 0, 0, 0.6);
+
+      --control-link-foreground-color: #7ebce9;
+
+      --control-input-background-color: #606060;
+      --control-input-border-color: #a0a0a0;
+
+      --menu-header-background-color: #404040;
+      --menu-revealed-link-foreground-color: #9bd0f7;
+      --menu-unpin-hover-foreground-color: #f29c9c;
+
+      --menu-trace-list-foreground-color: #222;
+      --menu-trace-list-background-color: #999;
+
+      --toolbox-tail-background-outside-color: rgba(0, 0, 0, 0);
+      --toolbox-tail-border-outside-color: rgba(204, 204, 204, 0);
+
+      --normative-optional-background-color: #352c24;
+      --normative-optional-border-color: #ff6600;
+
+      --attributes-tag-foreground-color: #e6a96d;
+
+      --figure-background: #fff;
+    }
+  }
+}
+
+/* IBM Plex fonts (Latin subset) have been downloaded from Google Fonts and modified to add support back in for the `zero` substitution (slashed zeroes) */
 
 /* https://fonts.googleapis.com/css2?family=IBM%20Plex%20Serif:ital,wght@0,400;0,700;1,400;1,700&display=swap */
 @font-face {
@@ -1708,7 +1880,7 @@ let biblio = JSON.parse(`{"refsByClause":{"sec-module-namespace-exotic-objects":
 }
 
 html {
-  background-color: #fff;
+  background-color: var(--background-color);
 }
 
 body {
@@ -1722,7 +1894,7 @@ body {
   font-variant-numeric: slashed-zero;
   padding: 0;
   margin: 0;
-  color: #111;
+  color: var(--foreground-color);
 }
 
 #spec-container {
@@ -1749,16 +1921,16 @@ span[aria-hidden='true'] {
 
 a {
   text-decoration: none;
-  color: #206ca7;
+  color: var(--link-foreground-color);
 }
 
 a:visited {
-  color: #206ca7;
+  color: var(--link-foreground-color);
 }
 
 a:hover {
   text-decoration: underline;
-  color: #239dee;
+  color: var(--link-hover-foreground-color);
 }
 
 a.e-user-code,
@@ -1769,9 +1941,9 @@ span.e-user-code {
 a.e-user-code::before,
 span.e-user-code::before {
   display: none;
-  color: brown;
-  background-color: white;
-  border: 2pt solid brown;
+  color: var(--user-code-foreground-color);
+  background-color: var(--background-color);
+  border: 2pt solid var(--user-code-foreground-color);
   padding: 0.3ex;
   margin: 0 0.25em 0 0;
   line-height: normal;
@@ -1786,8 +1958,8 @@ span.e-user-code::before {
 
 a.e-user-code:hover::before,
 span.e-user-code:hover::before {
-  background-color: brown;
-  color: white;
+  background-color: var(--user-code-foreground-color);
+  color: var(--background-color);
 }
 
 html.show-ao-annotations a.e-user-code::before,
@@ -1814,7 +1986,7 @@ pre code {
 }
 
 pre code.hljs {
-  background-color: #fff;
+  background-color: var(--background-color);
   margin: 0;
   padding: 0;
 }
@@ -1831,20 +2003,29 @@ ol.toc ol.toc {
 
 var {
   border-radius: 5px;
-  color: #218379;
+  color: var(--var-foreground-color);
   transition: all 0.25s ease-out;
   cursor: pointer;
   padding: 0 4px;
   margin: 0 -4px;
   mix-blend-mode: multiply;
 }
+
+@supports (color-scheme: dark) {
+  @media only screen and (prefers-color-scheme: dark) {
+    var {
+      mix-blend-mode: normal;
+    }
+  }
+}
+
 var.field {
   font: inherit;
   color: inherit;
 }
 /* suppress line break opportunities between `.` and `[[FieldName]]` */
 var.field::before {
-  content: '\2060'
+  content: '\2060';
 }
 
 var.referenced {
@@ -1852,25 +2033,25 @@ var.referenced {
 }
 
 var.referenced0 {
-  background-color: #ffff6c;
+  background-color: var(--referenced0-background-color);
 }
 var.referenced1 {
-  background-color: #ffa4a8;
+  background-color: var(--referenced1-background-color);
 }
 var.referenced2 {
-  background-color: #96e885;
+  background-color: var(--referenced2-background-color);
 }
 var.referenced3 {
-  background-color: #3eeed2;
+  background-color: var(--referenced3-background-color);
 }
 var.referenced4 {
-  background-color: #eacfb6;
+  background-color: var(--referenced4-background-color);
 }
 var.referenced5 {
-  background-color: #82ddff;
+  background-color: var(--referenced5-background-color);
 }
 var.referenced6 {
-  background-color: #ffbcf2;
+  background-color: var(--referenced6-background-color);
 }
 
 emu-const {
@@ -1943,8 +2124,8 @@ emu-note {
   gap: 1em;
   flex-direction: row;
   color: inherit;
-  border-left: 5px solid #52e052;
-  background: #e9fbe9;
+  border-left: 5px solid var(--note-border-color);
+  background: var(--note-background-color);
   padding: 10px 10px 10px 0;
   overflow-x: auto;
 }
@@ -1958,7 +2139,7 @@ emu-note > span.note {
 }
 
 emu-note[type='editor'] {
-  border-left-color: #faa;
+  border-left-color: var(--note-editor-border-color);
 }
 
 emu-note > div.note-contents {
@@ -2016,12 +2197,7 @@ emu-grammar.inline,
 emu-production.inline,
 emu-grammar.inline emu-production emu-rhs,
 emu-production.inline emu-rhs,
-emu-grammar[collapsed] emu-production emu-rhs {
-  display: inline;
-  padding-left: 1ex;
-  margin-left: 0;
-}
-
+emu-grammar[collapsed] emu-production emu-rhs,
 emu-production[collapsed] emu-rhs {
   display: inline;
   padding-left: 0.5ex;
@@ -2067,7 +2243,7 @@ emu-nt {
 
 emu-nt a,
 emu-nt a:visited {
-  color: #333;
+  color: var(--nt-link-foreground-color);
 }
 
 emu-rhs emu-nt {
@@ -2099,8 +2275,8 @@ emu-production:not([collapsed]) emu-rhs {
 }
 
 emu-production:not([collapsed]) emu-rhs:hover {
-  border-color: #888;
-  background-color: #f0f0f0;
+  border-color: var(--production-rhs-border-color);
+  background-color: var(--production-rhs-background-color);
 }
 
 emu-mods {
@@ -2120,11 +2296,11 @@ emu-opt {
 
 emu-params,
 emu-constraints {
-  color: #2aa198;
+  color: var(--params-foreground-color);
 }
 
 emu-opt {
-  color: #b58900;
+  color: var(--opt-foreground-color);
 }
 
 emu-gprose {
@@ -2139,18 +2315,18 @@ emu-production emu-gprose {
 }
 
 h1.shortname {
-  color: #f60;
+  color: var(--title-foreground-color);
   font-size: 1.5em;
   margin: 0;
 }
 
 h1.version {
-  color: #f60;
+  color: var(--title-foreground-color);
   font-size: 1.5em;
 }
 
 h1.title {
-  color: #f60;
+  color: var(--title-foreground-color);
 }
 
 h1,
@@ -2367,9 +2543,12 @@ figure table.real-table {
 }
 figure figcaption {
   display: block;
-  color: #555555;
+  color: var(--caption-foreground-color);
   font-weight: bold;
   text-align: center;
+}
+figure img {
+  background: var(--figure-background);
 }
 
 emu-table table {
@@ -2385,18 +2564,18 @@ emu-table td,
 emu-table th,
 table.real-table td,
 table.real-table th {
-  border: 1px solid black;
+  border: 1px solid var(--foreground-color);
   padding: 0.4em;
   vertical-align: baseline;
 }
 emu-table th,
 emu-table thead td,
 table.real-table th {
-  background-color: #eeeeee;
+  background-color: var(--table-header-background-color);
 }
 
 emu-table td {
-  background: #fff;
+  background: transparent;
 }
 
 td[colspan]:not([colspan="1"]), th[colspan]:not([colspan="1"]) {
@@ -2420,10 +2599,10 @@ table.lightweight-table th {
    and a persistent focus-associated highlight */
 @keyframes highlight-target-bg {
   0% {
-    background-color: rgba(249, 241, 172, 1);
+    background-color: var(--highlight-background-color-start);
   }
   100% {
-    background-color: rgba(249, 241, 172, 0);
+    background-color: var(--highlight-background-color-end);
   }
 }
 #spec-container :target:not(emu-annex, emu-clause, emu-intro, emu-note, body) {
@@ -2431,18 +2610,18 @@ table.lightweight-table th {
 }
 #spec-container :target:focus-within:not(:has(:not(a))) {
   animation: none;
-  background-color: rgba(249, 241, 172, 1);
+  background-color: var(--highlight-background-color);
 }
 
 /* diff styles */
 ins {
-  background-color: #e0f8e0;
+  background-color: var(--ins-background-color);
   text-decoration: none;
-  border-bottom: 1px solid #396;
+  border-bottom: 1px solid var(--ins-border-color);
 }
 
 del {
-  background-color: #fee;
+  background-color: var(--del-background-color);
 }
 
 ins.block,
@@ -2463,11 +2642,11 @@ tr.ins > td > ins {
 }
 
 tr.ins > td {
-  background-color: #e0f8e0;
+  background-color: var(--ins-background-color);
 }
 
 tr.del > td {
-  background-color: #fee;
+  background-color: var(--del-background-color);
 }
 
 /* Menu Styles */
@@ -2481,8 +2660,8 @@ tr.del > td {
   height: 1.5em;
   z-index: 3;
   visibility: hidden;
-  color: #1567a2;
-  background-color: #fff;
+  color: var(--control-link-foreground-color);
+  background-color: var(--background-color);
 
   line-height: 1.5em;
   text-align: center;
@@ -2503,14 +2682,14 @@ tr.del > td {
   height: 100vh;
   max-width: 500px;
   box-sizing: border-box;
-  background-color: #ddd;
+  background: var(--control-background-color);
   overflow: hidden;
   transition: opacity 0.1s linear;
   padding: 0 5px;
   position: fixed;
   left: 0;
   top: 0;
-  border-right: 2px solid #bbb;
+  border-right: 2px solid var(--control-light-border-color);
 
   z-index: 2;
 }
@@ -2523,7 +2702,7 @@ tr.del > td {
 }
 
 #menu a {
-  color: #1567a2;
+  color: var(--control-link-foreground-color);
 }
 
 #menu.active {
@@ -2543,7 +2722,7 @@ tr.del > td {
 
 #menu-pins .unpin-all {
   border: none;
-  background: #ccc;
+  background: var(--control-dark-background-color);
   border-radius: 4px;
   height: 18px;
   font-size: 12px;
@@ -2551,7 +2730,7 @@ tr.del > td {
   font-family: 'IBM Plex Sans', sans-serif;
 }
 #menu-pins .unpin-all:hover {
-  background: #ddd;
+  background: var(--control-background-color);
 }
 
 #menu-pins-list {
@@ -2585,16 +2764,17 @@ tr.del > td {
 }
 #menu-pins-list > li::before,
 #menu-pins-list > li > .unpin:hover {
-  background: #ccc;
+  background: var(--control-dark-background-color);
 }
 
 #menu-pins-list > li > .unpin,
 #menu-pins .unpin-all {
   cursor: pointer;
+  color: var(--foreground-color);
 }
 #menu-pins-list > li > .unpin:hover,
 #menu-pins .unpin-all:hover {
-  color: #bb1212;
+  color: var(--menu-unpin-hover-foreground-color);
 }
 
 #menu-pins-list > li::before {
@@ -2671,12 +2851,12 @@ tr.del > td {
 }
 
 #menu-toc li.revealed > a {
-  background-color: #ccc;
+  background-color: var(--control-dark-background-color);
   font-weight: bold;
 }
 
 #menu-toc li.revealed-leaf > a {
-  color: #206ca7;
+  color: var(--menu-revealed-link-foreground-color);
 }
 
 #menu-toc li.revealed > ol {
@@ -2693,7 +2873,7 @@ tr.del > td {
 
 .menu-pane-header {
   padding: 2px 8px;
-  background-color: #bbb;
+  background-color: var(--menu-header-background-color);
   font-weight: bold;
   letter-spacing: 1px;
   flex-grow: 0;
@@ -2718,6 +2898,10 @@ tr.del > td {
 
 .menu-pane-header emu-geq {
   margin-left: 0px;
+}
+
+.menu-pane-header a {
+  color: var(--control-link-foreground-color);
 }
 
 a.menu-pane-header-production {
@@ -2766,8 +2950,9 @@ a.menu-pane-header-production {
   margin: 5px 0 0 0;
   font-size: 1em;
   padding: 2px;
-  background-color: #bbb;
-  border: 1px solid #999;
+  color: var(--foreground-color);
+  background-color: var(--control-input-background-color);
+  border: 1px solid var(--control-input-border-color);
 }
 
 #menu-search-results {
@@ -2781,7 +2966,7 @@ li.menu-search-result-clause::before {
   display: inline-block;
   text-align: right;
   padding-right: 1ex;
-  color: #666;
+  color: var(--control-dimmed-foreground-color);
   font-size: 75%;
 }
 li.menu-search-result-op::before {
@@ -2790,7 +2975,7 @@ li.menu-search-result-op::before {
   display: inline-block;
   text-align: right;
   padding-right: 1ex;
-  color: #666;
+  color: var(--control-dimmed-foreground-color);
   font-size: 75%;
 }
 
@@ -2800,7 +2985,7 @@ li.menu-search-result-prod::before {
   display: inline-block;
   text-align: right;
   padding-right: 1ex;
-  color: #666;
+  color: var(--control-dimmed-foreground-color);
   font-size: 75%;
 }
 
@@ -2810,7 +2995,7 @@ li.menu-search-result-term::before {
   display: inline-block;
   text-align: right;
   padding-right: 1ex;
-  color: #666;
+  color: var(--control-dimmed-foreground-color);
   font-size: 75%;
 }
 
@@ -2839,9 +3024,9 @@ li.menu-search-result-term::before {
 }
 #menu-trace-list li::before {
   content: counter(item) ' ';
-  background-color: #222;
+  background-color: var(--menu-trace-list-background-color);
   counter-increment: item;
-  color: #999;
+  color: var(--menu-trace-list-foreground-color);
   width: 20px;
   height: 20px;
   line-height: 20px;
@@ -2907,9 +3092,9 @@ li.menu-search-result-term::before {
 
 .toolbox {
   position: relative;
-  background: #ddd;
-  border: 1px solid #aaa;
-  color: #eee;
+  background: var(--control-background-color);
+  border: 1px solid var(--control-border-color);
+  color: var(--control-foreground-color);
   padding: 5px 7px;
   border-radius: 3px;
 }
@@ -2937,14 +3122,14 @@ li.menu-search-result-term::before {
 }
 
 .toolbox::after {
-  border-color: rgba(0, 0, 0, 0);
-  border-top-color: #ddd;
+  border-color: var(--toolbox-tail-background-outside-color);
+  border-top-color: var(--control-border-color);
   border-width: 10px;
   margin-left: -10px;
 }
 .toolbox::before {
-  border-color: rgba(204, 204, 204, 0);
-  border-top-color: #aaa;
+  border-color: var(--toolbox-tail-border-outside-color);
+  border-top-color: var(--control-border-color);
   border-width: 12px;
   margin-left: -12px;
 }
@@ -2955,7 +3140,7 @@ li.menu-search-result-term::before {
   left: 0;
   right: 0;
   display: none;
-  background-color: #ddd;
+  background: var(--control-background-color);
   z-index: 1;
 }
 
@@ -2996,9 +3181,13 @@ li.menu-search-result-term::before {
   padding-right: 5px;
 }
 
+emu-normative-optional {
+  display: block;
+}
+
 emu-normative-optional::before {
   display: block;
-  color: #884400;
+  color: var(--attributes-tag-foreground-color);
   content: "NORMATIVE OPTIONAL";
 }
 
@@ -3006,19 +3195,18 @@ emu-normative-optional,
 [normative-optional],
 [deprecated],
 [legacy] {
-  border-left: 5px solid #ff6600;
-  display: block;
+  border-left: 5px solid var(--normative-optional-border-color);
   padding: 0.5em;
-  background: #ffeedd;
+  background: var(--normative-optional-background-color);
 }
 
 .attributes-tag {
   text-transform: uppercase;
-  color: #884400;
+  color: var(--attributes-tag-foreground-color);
 }
 
 .attributes-tag a {
-  color: #884400;
+  color: var(--attributes-tag-foreground-color);
 }
 
 /* Shortcuts help dialog */
@@ -3033,10 +3221,10 @@ emu-normative-optional,
   top: calc(5vw + 5vh);
   padding: 30px 90px;
   max-width: 500px;
-  outline: solid 10000px rgba(255, 255, 255, 0.6);
+  outline: solid 10000px var(--control-dialog-fade-color);
   border-radius: 5px;
   border-width: 1px 1px 0 1px;
-  background-color: #ddd;
+  background: var(--control-background-color);
   display: none;
 }
 
@@ -3057,9 +3245,13 @@ emu-normative-optional,
   padding: 3px 10px;
   border-radius: 3px;
   border-width: 1px 1px 0 1px;
-  border-color: #bbb;
-  background-color: #eee;
-  box-shadow: inset 0 -1px 0 #ccc;
+  border-color: var(--control-light-border-color);
+  background-color: var(--control-shortcut-background-color);
+  box-shadow: inset 0 -1px 0 var(--control-shortcut-shadow-color);
+}
+
+#ecma-logo {
+  background: var(--figure-background);
 }
 </style><style>@media print {
 @font-face {
@@ -3560,7 +3752,7 @@ emu-figure img {
 }
 
 #toc a[href]::after {
-  content: leader(dotted)  target-counter(attr(href), page);
+  content: leader(dotted) target-counter(attr(href), page);
 }
 
 #toc > ol.toc {
@@ -3612,8 +3804,16 @@ a[data-print-href]::after {
   width: auto;
 }
 
-.annex-title {
+emu-annex > h1 {
   text-align: center;
+}
+
+emu-annex > h1 span {
+  display: block;
+}
+
+emu-annex > h1 .secnum {
+  margin: 0 0 1lh;
 }
 
 .copyright-notice { /* ecma mandated */
@@ -3623,10 +3823,6 @@ a[data-print-href]::after {
   page: copyright;
   page-break-before: always;
   page-break-after: always;
-}
-
-.full-page-svg {
-  color: rgba(255, 255, 255, 0);
 }
 
 .secnum {
@@ -3677,6 +3873,7 @@ h1.version {
 }
 
 #front-cover h1.title {
+  display: block;
   font-weight: bold;
   font-size: 20pt;
   line-height: 1.2;
@@ -3688,15 +3885,6 @@ h1.version {
 
 #inside-cover {
   page: inside-cover;
-}
-
-#inside-cover address {
-  color: black;
-  font-size: 12pt;
-  font-style: normal;
-  position: relative;
-  left: 72mm;
-  top: 82mm;
 }
 
 #toc {
@@ -3713,14 +3901,52 @@ h1.version {
   font-weight: normal;
 }
 
-}</style></head><body><div id="shortcuts-help">
+p.ECMAaddress {
+  margin: 0;
+}
+
+}</style><style>
+    @media print {
+      @page :left {
+        @bottom-right {
+          content: '© Ecma International 2025';
+        }
+      }
+      @page :right {
+        @bottom-left {
+          content: '© Ecma International 2025';
+        }
+      }
+      @page :first {
+        @bottom-left {
+          content: '';
+        }
+        @bottom-right {
+          content: '';
+        }
+      }
+      @page :blank {
+        @bottom-left {
+          content: '';
+        }
+        @bottom-right {
+          content: '';
+        }
+      }
+    }
+    </style><style>
+      @import url("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/styles/base16/solarized-light.min.css");
+      @import url("https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.0.1/styles/a11y-dark.min.css") (prefers-color-scheme: dark);
+    </style></head><body><div id="shortcuts-help">
 <ul>
   <li><span>Toggle shortcuts help</span><code>?</code></li>
   <li><span>Toggle "can call user code" annotations</span><code>u</code></li>
 
   <li><span>Jump to search box</span><code>/</code></li>
   <li><span>Toggle pinning of the current clause</span><code>p</code></li>
-  <li><span>Jump to <i>n</i>th pin</span><code>1-9</code></li>
+  <li><span>Jump to the <i>n</i><sup>th</sup> pin</span><code>1-9</code></li>
+  <li><span>Jump to the 10<sup>th</sup> pin</span><code>0</code></li>
+  <li><span>Jump to the most recent link target</span><code>`</code></li>
 </ul></div><div id="menu-toggle"><svg xmlns="http://www.w3.org/2000/svg" style="width:100%; height:100%; stroke:currentColor" viewBox="0 0 120 120" width="54" height="54">
       <title>Menu</title>
       <path stroke-width="10" stroke-linecap="round" d="M30,60 h60  M30,30 m0,5 h60  M30,90 m0,-5 h60"></path>
@@ -4438,9 +4664,9 @@ h1.version {
 
           <emu-clause id="sec-innermoduleevaluation" type="abstract operation" aoid="InnerModuleEvaluation">
             <h1><span class="secnum">16.2.1.5.3.1</span> InnerModuleEvaluation ( <var>module</var>, <var>stack</var>, <var>index</var> )</h1>
-            <p>The abstract operation InnerModuleEvaluation takes arguments <var>module</var> (a <emu-xref href="#sec-abstract-module-records" id="_ref_108"><a href="#sec-abstract-module-records">Module Record</a></emu-xref>), <var>stack</var> (a <emu-xref href="#sec-list-and-record-specification-type"><a href="https://tc39.es/ecma262/#sec-list-and-record-specification-type">List</a></emu-xref> of <emu-xref href="#cyclic-module-record" id="_ref_109"><a href="#cyclic-module-record">Cyclic Module Records</a></emu-xref>), and <var>index</var> (a non-negative <emu-xref href="#integer"><a href="https://tc39.es/ecma262/#integer">integer</a></emu-xref>) and returns either a <emu-xref href="#sec-completion-record-specification-type"><a href="https://tc39.es/ecma262/#sec-completion-record-specification-type">normal completion containing</a></emu-xref> a non-negative <emu-xref href="#integer"><a href="https://tc39.es/ecma262/#integer">integer</a></emu-xref> or a <emu-xref href="#sec-completion-record-specification-type"><a href="https://tc39.es/ecma262/#sec-completion-record-specification-type">throw completion</a></emu-xref>. It is used by Evaluate to perform the actual evaluation process for <var>module</var>, as well as recursively on all other modules in the dependency graph. The <var>stack</var> and <var>index</var> parameters, as well as <var>module</var>'s <var class="field">[[DFSIndex]]</var> and <var class="field">[[DFSAncestorIndex]]</var> fields, are used the same way as in <emu-xref aoid="InnerModuleLinking" id="_ref_110"><a href="#sec-InnerModuleLinking">InnerModuleLinking</a></emu-xref>. It performs the following steps when called:</p>
+            <p>The abstract operation InnerModuleEvaluation takes arguments <var>module</var> (a <emu-xref href="#sec-abstract-module-records" id="_ref_108"><a href="#sec-abstract-module-records">Module Record</a></emu-xref>), <var>stack</var> (a <emu-xref href="#sec-list-and-record-specification-type"><a href="https://tc39.es/ecma262/#sec-list-and-record-specification-type">List</a></emu-xref> of <emu-xref href="#cyclic-module-record" id="_ref_109"><a href="#cyclic-module-record">Cyclic Module Records</a></emu-xref>), and <var>index</var> (a non-negative <emu-xref href="#integer"><a href="https://tc39.es/ecma262/#integer">integer</a></emu-xref>) and returns either a <emu-xref href="#sec-completion-record-specification-type"><a href="https://tc39.es/ecma262/#sec-completion-record-specification-type">normal completion containing</a></emu-xref> a non-negative <emu-xref href="#integer"><a href="https://tc39.es/ecma262/#integer">integer</a></emu-xref> or a <emu-xref href="#sec-completion-record-specification-type"><a href="https://tc39.es/ecma262/#sec-completion-record-specification-type">throw completion</a></emu-xref>. It is used by Evaluate to perform the actual evaluation process for <var>module</var>, as well as recursively on all other modules in the dependency graph. The <var>stack</var> and <var>index</var> parameters, as well as <var>module</var>'s <var class="field">[[DFSAncestorIndex]]</var> field, are used the same way as in <emu-xref aoid="InnerModuleLinking" id="_ref_110"><a href="#sec-InnerModuleLinking">InnerModuleLinking</a></emu-xref>. It performs the following steps when called:</p>
 
-            <emu-alg><ol><li>If <var>module</var> is not a <emu-xref href="#cyclic-module-record" id="_ref_111"><a href="#cyclic-module-record">Cyclic Module Record</a></emu-xref>, then<ol><li>Perform ?&nbsp;<emu-xref aoid="EvaluateModuleSync" id="_ref_112"><a href="#sec-EvaluateModuleSync">EvaluateModuleSync</a></emu-xref>(<var>module</var>).</li><li>Return <var>index</var>.</li></ol></li><li>If <var>module</var>.<var class="field">[[Status]]</var> is either <emu-const>evaluating-async</emu-const> or <emu-const>evaluated</emu-const>, then<ol><li>If <var>module</var>.<var class="field">[[EvaluationError]]</var> is <emu-const>empty</emu-const>, return <var>index</var>.</li><li>Otherwise, return ?&nbsp;<var>module</var>.<var class="field">[[EvaluationError]]</var>.</li></ol></li><li>If <var>module</var>.<var class="field">[[Status]]</var> is <emu-const>evaluating</emu-const>, return <var>index</var>.</li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>module</var>.<var class="field">[[Status]]</var> is <emu-const>linked</emu-const>.</li><li>Set <var>module</var>.<var class="field">[[Status]]</var> to <emu-const>evaluating</emu-const>.</li><li>Set <var>module</var>.<var class="field">[[DFSIndex]]</var> to <var>index</var>.</li><li>Set <var>module</var>.<var class="field">[[DFSAncestorIndex]]</var> to <var>index</var>.</li><li>Set <var>module</var>.<var class="field">[[PendingAsyncDependencies]]</var> to 0.</li><li>Set <var>index</var> to <var>index</var> + 1.</li><li><ins>Let <var>evaluationList</var> be a new empty <emu-xref href="#sec-list-and-record-specification-type"><a href="https://tc39.es/ecma262/#sec-list-and-record-specification-type">List</a></emu-xref>.</ins></li><li><ins>For each <emu-xref href="#modulerequest-record" id="_ref_113"><a href="#modulerequest-record">ModuleRequest Record</a></emu-xref> <var>request</var> of <var>module</var>.<var class="field">[[RequestedModules]]</var>, do</ins><ol><li><ins>Let <var>requiredModule</var> be <emu-xref aoid="GetImportedModule"><a href="https://tc39.es/ecma262/#sec-GetImportedModule">GetImportedModule</a></emu-xref>(<var>module</var>, <var>request</var>).</ins></li><li><ins>If <var>request</var>.<var class="field">[[Phase]]</var> is <emu-const>defer</emu-const>, then</ins><ol><li><ins>Let <var>additionalModules</var> be <emu-xref aoid="GatherAsynchronousTransitiveDependencies" id="_ref_114"><a href="#sec-GatherAsynchronousTransitiveDependencies">GatherAsynchronousTransitiveDependencies</a></emu-xref>(<var>requiredModule</var>).</ins></li><li><ins>For each <emu-xref href="#sec-abstract-module-records" id="_ref_115"><a href="#sec-abstract-module-records">Module Record</a></emu-xref> <var>additionalModule</var> of <var>additionalModules</var>, do</ins><ol><li><ins>If <var>evaluationList</var> does not contain <var>additionalModule</var>, then</ins><ol><li><ins>Append <var>additionalModule</var> to <var>evaluationList</var>.</ins></li></ol></li></ol></li></ol></li><li><ins>Else if <var>evaluationList</var> does not contain <var>requiredModule</var>, then</ins><ol><li><ins>Append <var>requiredModule</var> to <var>evaluationList</var>.</ins></li></ol></li></ol></li><li>Append <var>module</var> to <var>stack</var>.</li><li><del>For each <emu-xref href="#modulerequest-record" id="_ref_116"><a href="#modulerequest-record">ModuleRequest Record</a></emu-xref> <var>request</var> of <var>module</var>.<var class="field">[[RequestedModules]]</var>, do</del><ol><li><del>Let <var>requiredModule</var> be <emu-xref aoid="GetImportedModule"><a href="https://tc39.es/ecma262/#sec-GetImportedModule">GetImportedModule</a></emu-xref>(<var>module</var>, <var>request</var>).</del></li></ol></li><li><ins>For each <emu-xref href="#sec-abstract-module-records" id="_ref_117"><a href="#sec-abstract-module-records">Module Record</a></emu-xref> <var>requiredModule</var> of <var>evaluationList</var>, do</ins><ol><li>Set <var>index</var> to ?&nbsp;<emu-xref aoid="InnerModuleEvaluation" id="_ref_118"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref>(<var>requiredModule</var>, <var>stack</var>, <var>index</var>).</li><li>If <var>requiredModule</var> is a <emu-xref href="#cyclic-module-record" id="_ref_119"><a href="#cyclic-module-record">Cyclic Module Record</a></emu-xref>, then<ol><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>requiredModule</var>.<var class="field">[[Status]]</var> is one of <emu-const>evaluating</emu-const>, <emu-const>evaluating-async</emu-const>, or <emu-const>evaluated</emu-const>.</li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>requiredModule</var>.<var class="field">[[Status]]</var> is <emu-const>evaluating</emu-const> if and only if <var>stack</var> contains <var>requiredModule</var>.</li><li>If <var>requiredModule</var>.<var class="field">[[Status]]</var> is <emu-const>evaluating</emu-const>, then<ol><li>Set <var>module</var>.<var class="field">[[DFSAncestorIndex]]</var> to <emu-xref aoid="min"><a href="https://tc39.es/ecma262/#eqn-min">min</a></emu-xref>(<var>module</var>.<var class="field">[[DFSAncestorIndex]]</var>, <var>requiredModule</var>.<var class="field">[[DFSAncestorIndex]]</var>).</li></ol></li><li>Else,<ol><li>Set <var>requiredModule</var> to <var>requiredModule</var>.<var class="field">[[CycleRoot]]</var>.</li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>requiredModule</var>.<var class="field">[[Status]]</var> is either <emu-const>evaluating-async</emu-const> or <emu-const>evaluated</emu-const>.</li><li>If <var>requiredModule</var>.<var class="field">[[EvaluationError]]</var> is not <emu-const>empty</emu-const>, return ?&nbsp;<var>requiredModule</var>.<var class="field">[[EvaluationError]]</var>.</li></ol></li><li>If <var>requiredModule</var>.<var class="field">[[AsyncEvaluationOrder]]</var> is an <emu-xref href="#integer"><a href="https://tc39.es/ecma262/#integer">integer</a></emu-xref>, then<ol><li>Set <var>module</var>.<var class="field">[[PendingAsyncDependencies]]</var> to <var>module</var>.<var class="field">[[PendingAsyncDependencies]]</var> + 1.</li><li>Append <var>module</var> to <var>requiredModule</var>.<var class="field">[[AsyncParentModules]]</var>.</li></ol></li></ol></li></ol></li><li>If <var>module</var>.<var class="field">[[PendingAsyncDependencies]]</var> &gt; 0 or <var>module</var>.<var class="field">[[HasTLA]]</var> is <emu-val>true</emu-val>, then<ol><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>module</var>.<var class="field">[[AsyncEvaluationOrder]]</var> is <emu-const>unset</emu-const>.</li><li>Set <var>module</var>.<var class="field">[[AsyncEvaluationOrder]]</var> to <emu-xref aoid="IncrementModuleAsyncEvaluationCount"><a href="https://tc39.es/ecma262/#sec-IncrementModuleAsyncEvaluationCount">IncrementModuleAsyncEvaluationCount</a></emu-xref>().</li><li>If <var>module</var>.<var class="field">[[PendingAsyncDependencies]]</var> = 0, perform <emu-xref aoid="ExecuteAsyncModule"><a href="https://tc39.es/ecma262/#sec-execute-async-module">ExecuteAsyncModule</a></emu-xref>(<var>module</var>).</li></ol></li><li>Else,<ol><li>Perform ?&nbsp;<var>module</var>.ExecuteModule().</li></ol></li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>module</var> occurs exactly once in <var>stack</var>.</li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>module</var>.<var class="field">[[DFSAncestorIndex]]</var> ≤ <var>module</var>.<var class="field">[[DFSIndex]]</var>.</li><li>If <var>module</var>.<var class="field">[[DFSAncestorIndex]]</var> = <var>module</var>.<var class="field">[[DFSIndex]]</var>, then<ol><li>Let <var>done</var> be <emu-val>false</emu-val>.</li><li>Repeat, while <var>done</var> is <emu-val>false</emu-val>,<ol><li>Let <var>requiredModule</var> be the last element of <var>stack</var>.</li><li>Remove the last element of <var>stack</var>.</li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>requiredModule</var> is a <emu-xref href="#cyclic-module-record" id="_ref_120"><a href="#cyclic-module-record">Cyclic Module Record</a></emu-xref>.</li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>requiredModule</var>.<var class="field">[[AsyncEvaluationOrder]]</var> is either an <emu-xref href="#integer"><a href="https://tc39.es/ecma262/#integer">integer</a></emu-xref> or <emu-const>unset</emu-const>.</li><li>If <var>requiredModule</var>.<var class="field">[[AsyncEvaluationOrder]]</var> is <emu-const>unset</emu-const>, set <var>requiredModule</var>.<var class="field">[[Status]]</var> to <emu-const>evaluated</emu-const>.</li><li>Otherwise, set <var>requiredModule</var>.<var class="field">[[Status]]</var> to <emu-const>evaluating-async</emu-const>.</li><li>If <var>requiredModule</var> and <var>module</var> are the same <emu-xref href="#sec-abstract-module-records" id="_ref_121"><a href="#sec-abstract-module-records">Module Record</a></emu-xref>, set <var>done</var> to <emu-val>true</emu-val>.</li><li>Set <var>requiredModule</var>.<var class="field">[[CycleRoot]]</var> to <var>module</var>.</li></ol></li></ol></li><li>Return <var>index</var>.</li></ol></emu-alg>
+            <emu-alg><ol><li>If <var>module</var> is not a <emu-xref href="#cyclic-module-record" id="_ref_111"><a href="#cyclic-module-record">Cyclic Module Record</a></emu-xref>, then<ol><li>Perform ?&nbsp;<emu-xref aoid="EvaluateModuleSync" id="_ref_112"><a href="#sec-EvaluateModuleSync">EvaluateModuleSync</a></emu-xref>(<var>module</var>).</li><li>Return <var>index</var>.</li></ol></li><li>If <var>module</var>.<var class="field">[[Status]]</var> is either <emu-const>evaluating-async</emu-const> or <emu-const>evaluated</emu-const>, then<ol><li>If <var>module</var>.<var class="field">[[EvaluationError]]</var> is <emu-const>empty</emu-const>, return <var>index</var>.</li><li>Otherwise, return ?&nbsp;<var>module</var>.<var class="field">[[EvaluationError]]</var>.</li></ol></li><li>If <var>module</var>.<var class="field">[[Status]]</var> is <emu-const>evaluating</emu-const>, return <var>index</var>.</li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>module</var>.<var class="field">[[Status]]</var> is <emu-const>linked</emu-const>.</li><li>Set <var>module</var>.<var class="field">[[Status]]</var> to <emu-const>evaluating</emu-const>.</li><li>Let <var>moduleIndex</var> be <var>index</var>.</li><li>Set <var>module</var>.<var class="field">[[DFSAncestorIndex]]</var> to <var>index</var>.</li><li>Set <var>module</var>.<var class="field">[[PendingAsyncDependencies]]</var> to 0.</li><li>Set <var>index</var> to <var>index</var> + 1.</li><li><ins>Let <var>evaluationList</var> be a new empty <emu-xref href="#sec-list-and-record-specification-type"><a href="https://tc39.es/ecma262/#sec-list-and-record-specification-type">List</a></emu-xref>.</ins></li><li><ins>For each <emu-xref href="#modulerequest-record" id="_ref_113"><a href="#modulerequest-record">ModuleRequest Record</a></emu-xref> <var>request</var> of <var>module</var>.<var class="field">[[RequestedModules]]</var>, do</ins><ol><li><ins>Let <var>requiredModule</var> be <emu-xref aoid="GetImportedModule"><a href="https://tc39.es/ecma262/#sec-GetImportedModule">GetImportedModule</a></emu-xref>(<var>module</var>, <var>request</var>).</ins></li><li><ins>If <var>request</var>.<var class="field">[[Phase]]</var> is <emu-const>defer</emu-const>, then</ins><ol><li><ins>Let <var>additionalModules</var> be <emu-xref aoid="GatherAsynchronousTransitiveDependencies" id="_ref_114"><a href="#sec-GatherAsynchronousTransitiveDependencies">GatherAsynchronousTransitiveDependencies</a></emu-xref>(<var>requiredModule</var>).</ins></li><li><ins>For each <emu-xref href="#sec-abstract-module-records" id="_ref_115"><a href="#sec-abstract-module-records">Module Record</a></emu-xref> <var>additionalModule</var> of <var>additionalModules</var>, do</ins><ol><li><ins>If <var>evaluationList</var> does not contain <var>additionalModule</var>, then</ins><ol><li><ins>Append <var>additionalModule</var> to <var>evaluationList</var>.</ins></li></ol></li></ol></li></ol></li><li><ins>Else if <var>evaluationList</var> does not contain <var>requiredModule</var>, then</ins><ol><li><ins>Append <var>requiredModule</var> to <var>evaluationList</var>.</ins></li></ol></li></ol></li><li>Append <var>module</var> to <var>stack</var>.</li><li><del>For each <emu-xref href="#modulerequest-record" id="_ref_116"><a href="#modulerequest-record">ModuleRequest Record</a></emu-xref> <var>request</var> of <var>module</var>.<var class="field">[[RequestedModules]]</var>, do</del><ol><li><del>Let <var>requiredModule</var> be <emu-xref aoid="GetImportedModule"><a href="https://tc39.es/ecma262/#sec-GetImportedModule">GetImportedModule</a></emu-xref>(<var>module</var>, <var>request</var>).</del></li></ol></li><li><ins>For each <emu-xref href="#sec-abstract-module-records" id="_ref_117"><a href="#sec-abstract-module-records">Module Record</a></emu-xref> <var>requiredModule</var> of <var>evaluationList</var>, do</ins><ol><li>Set <var>index</var> to ?&nbsp;<emu-xref aoid="InnerModuleEvaluation" id="_ref_118"><a href="#sec-innermoduleevaluation">InnerModuleEvaluation</a></emu-xref>(<var>requiredModule</var>, <var>stack</var>, <var>index</var>).</li><li>If <var>requiredModule</var> is a <emu-xref href="#cyclic-module-record" id="_ref_119"><a href="#cyclic-module-record">Cyclic Module Record</a></emu-xref>, then<ol><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>requiredModule</var>.<var class="field">[[Status]]</var> is one of <emu-const>evaluating</emu-const>, <emu-const>evaluating-async</emu-const>, or <emu-const>evaluated</emu-const>.</li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>requiredModule</var>.<var class="field">[[Status]]</var> is <emu-const>evaluating</emu-const> if and only if <var>stack</var> contains <var>requiredModule</var>.</li><li>If <var>requiredModule</var>.<var class="field">[[Status]]</var> is <emu-const>evaluating</emu-const>, then<ol><li>Set <var>module</var>.<var class="field">[[DFSAncestorIndex]]</var> to <emu-xref aoid="min"><a href="https://tc39.es/ecma262/#eqn-min">min</a></emu-xref>(<var>module</var>.<var class="field">[[DFSAncestorIndex]]</var>, <var>requiredModule</var>.<var class="field">[[DFSAncestorIndex]]</var>).</li></ol></li><li>Else,<ol><li>Set <var>requiredModule</var> to <var>requiredModule</var>.<var class="field">[[CycleRoot]]</var>.</li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>requiredModule</var>.<var class="field">[[Status]]</var> is either <emu-const>evaluating-async</emu-const> or <emu-const>evaluated</emu-const>.</li><li>If <var>requiredModule</var>.<var class="field">[[EvaluationError]]</var> is not <emu-const>empty</emu-const>, return ?&nbsp;<var>requiredModule</var>.<var class="field">[[EvaluationError]]</var>.</li></ol></li><li>If <var>requiredModule</var>.<var class="field">[[AsyncEvaluationOrder]]</var> is an <emu-xref href="#integer"><a href="https://tc39.es/ecma262/#integer">integer</a></emu-xref>, then<ol><li>Set <var>module</var>.<var class="field">[[PendingAsyncDependencies]]</var> to <var>module</var>.<var class="field">[[PendingAsyncDependencies]]</var> + 1.</li><li>Append <var>module</var> to <var>requiredModule</var>.<var class="field">[[AsyncParentModules]]</var>.</li></ol></li></ol></li></ol></li><li>If <var>module</var>.<var class="field">[[PendingAsyncDependencies]]</var> &gt; 0 or <var>module</var>.<var class="field">[[HasTLA]]</var> is <emu-val>true</emu-val>, then<ol><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>module</var>.<var class="field">[[AsyncEvaluationOrder]]</var> is <emu-const>unset</emu-const>.</li><li>Set <var>module</var>.<var class="field">[[AsyncEvaluationOrder]]</var> to <emu-xref aoid="IncrementModuleAsyncEvaluationCount"><a href="https://tc39.es/ecma262/#sec-IncrementModuleAsyncEvaluationCount">IncrementModuleAsyncEvaluationCount</a></emu-xref>().</li><li>If <var>module</var>.<var class="field">[[PendingAsyncDependencies]]</var> = 0, perform <emu-xref aoid="ExecuteAsyncModule"><a href="https://tc39.es/ecma262/#sec-execute-async-module">ExecuteAsyncModule</a></emu-xref>(<var>module</var>).</li></ol></li><li>Else,<ol><li>Perform ?&nbsp;<var>module</var>.ExecuteModule().</li></ol></li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>module</var> occurs exactly once in <var>stack</var>.</li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>module</var>.<var class="field">[[DFSAncestorIndex]]</var> ≤ <var>moduleIndex</var>.</li><li>If <var>module</var>.<var class="field">[[DFSAncestorIndex]]</var> = <var>moduleIndex</var>, then<ol><li>Let <var>done</var> be <emu-val>false</emu-val>.</li><li>Repeat, while <var>done</var> is <emu-val>false</emu-val>,<ol><li>Let <var>requiredModule</var> be the last element of <var>stack</var>.</li><li>Remove the last element of <var>stack</var>.</li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>requiredModule</var> is a <emu-xref href="#cyclic-module-record" id="_ref_120"><a href="#cyclic-module-record">Cyclic Module Record</a></emu-xref>.</li><li><emu-xref href="#assert"><a href="https://tc39.es/ecma262/#assert">Assert</a></emu-xref>: <var>requiredModule</var>.<var class="field">[[AsyncEvaluationOrder]]</var> is either an <emu-xref href="#integer"><a href="https://tc39.es/ecma262/#integer">integer</a></emu-xref> or <emu-const>unset</emu-const>.</li><li>If <var>requiredModule</var>.<var class="field">[[AsyncEvaluationOrder]]</var> is <emu-const>unset</emu-const>, set <var>requiredModule</var>.<var class="field">[[Status]]</var> to <emu-const>evaluated</emu-const>.</li><li>Otherwise, set <var>requiredModule</var>.<var class="field">[[Status]]</var> to <emu-const>evaluating-async</emu-const>.</li><li>If <var>requiredModule</var> and <var>module</var> are the same <emu-xref href="#sec-abstract-module-records" id="_ref_121"><a href="#sec-abstract-module-records">Module Record</a></emu-xref>, set <var>done</var> to <emu-val>true</emu-val>.</li><li>Set <var>requiredModule</var>.<var class="field">[[CycleRoot]]</var> to <var>module</var>.</li></ol></li></ol></li><li>Return <var>index</var>.</li></ol></emu-alg>
             <emu-note><span class="note">Note 1</span><div class="note-contents">
               <p>A module is <emu-const>evaluating</emu-const> while it is being traversed by InnerModuleEvaluation. A module is <emu-const>evaluated</emu-const> on execution completion or <emu-const>evaluating-async</emu-const> during execution if its <var class="field">[[HasTLA]]</var> field is <emu-val>true</emu-val> or if it has asynchronous dependencies.</p>
             </div></emu-note>
@@ -4531,14 +4757,6 @@ h1.version {
                 </tr>
               </thead>
               <tbody><tr>
-                <th><var class="field">[[DFSIndex]]</var></th>
-                <td>0</td>
-                <td>1</td>
-                <td>3</td>
-                <td>2</td>
-                <td>4</td>
-              </tr>
-              <tr>
                 <th><var class="field">[[DFSAncestorIndex]]</var></th>
                 <td>0</td>
                 <td>0</td>
@@ -4598,11 +4816,6 @@ h1.version {
                 </tr>
               </thead>
               <tbody><tr>
-                <th><var class="field">[[DFSIndex]]</var></th>
-                <td>3</td>
-                <td>4</td>
-              </tr>
-              <tr>
                 <th><var class="field">[[DFSAncestorIndex]]</var></th>
                 <td>0</td>
                 <td>4</td>
@@ -4615,7 +4828,7 @@ h1.version {
               <tr>
                 <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
                 <td>3</td>
-                <td>2</td>
+                <td><emu-const>done</emu-const></td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -4648,12 +4861,6 @@ h1.version {
                 </tr>
               </thead>
               <tbody><tr>
-                <th><var class="field">[[DFSIndex]]</var></th>
-                <td>1</td>
-                <td>3</td>
-                <td>2</td>
-              </tr>
-              <tr>
                 <th><var class="field">[[DFSAncestorIndex]]</var></th>
                 <td>0</td>
                 <td>0</td>
@@ -4669,7 +4876,7 @@ h1.version {
                 <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
                 <td>1</td>
                 <td>3</td>
-                <td>0</td>
+                <td><emu-const>done</emu-const></td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -4703,11 +4910,6 @@ h1.version {
                 </tr>
               </thead>
               <tbody><tr>
-                <th><var class="field">[[DFSIndex]]</var></th>
-                <td>0</td>
-                <td>3</td>
-              </tr>
-              <tr>
                 <th><var class="field">[[DFSAncestorIndex]]</var></th>
                 <td>0</td>
                 <td>0</td>
@@ -4720,7 +4922,7 @@ h1.version {
               <tr>
                 <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
                 <td>4</td>
-                <td>3</td>
+                <td><emu-const>done</emu-const></td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -4752,11 +4954,6 @@ h1.version {
                 </tr>
               </thead>
               <tbody><tr>
-                <th><var class="field">[[DFSIndex]]</var></th>
-                <td>0</td>
-                <td>1</td>
-              </tr>
-              <tr>
                 <th><var class="field">[[DFSAncestorIndex]]</var></th>
                 <td>0</td>
                 <td>0</td>
@@ -4769,7 +4966,7 @@ h1.version {
               <tr>
                 <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
                 <td>4</td>
-                <td>1</td>
+                <td><emu-const>done</emu-const></td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -4800,10 +4997,6 @@ h1.version {
                 </tr>
               </thead>
               <tbody><tr>
-                <th><var class="field">[[DFSIndex]]</var></th>
-                <td>0</td>
-              </tr>
-              <tr>
                 <th><var class="field">[[DFSAncestorIndex]]</var></th>
                 <td>0</td>
               </tr>
@@ -4813,7 +5006,7 @@ h1.version {
               </tr>
               <tr>
                 <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
-                <td>4</td>
+                <td><emu-const>done</emu-const></td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -4843,11 +5036,6 @@ h1.version {
                 </tr>
               </thead>
               <tbody><tr>
-                <th><var class="field">[[DFSIndex]]</var></th>
-                <td>0</td>
-                <td>3</td>
-              </tr>
-              <tr>
                 <th><var class="field">[[DFSAncestorIndex]]</var></th>
                 <td>0</td>
                 <td>0</td>
@@ -4859,8 +5047,8 @@ h1.version {
               </tr>
               <tr>
                 <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
-                <td>4</td>
-                <td>3</td>
+                <td><emu-const>done</emu-const></td>
+                <td><emu-const>done</emu-const></td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -4896,10 +5084,6 @@ h1.version {
                 </tr>
               </thead>
               <tbody><tr>
-                <th><var class="field">[[DFSIndex]]</var></th>
-                <td>0</td>
-              </tr>
-              <tr>
                 <th><var class="field">[[DFSAncestorIndex]]</var></th>
                 <td>0</td>
               </tr>
@@ -4909,7 +5093,7 @@ h1.version {
               </tr>
               <tr>
                 <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
-                <td>4</td>
+                <td><emu-const>done</emu-const></td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -4944,11 +5128,6 @@ h1.version {
                 </tr>
               </thead>
               <tbody><tr>
-                <th><var class="field">[[DFSIndex]]</var></th>
-                <td>0</td>
-                <td>1</td>
-              </tr>
-              <tr>
                 <th><var class="field">[[DFSAncestorIndex]]</var></th>
                 <td>0</td>
                 <td>0</td>
@@ -4960,8 +5139,8 @@ h1.version {
               </tr>
               <tr>
                 <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
-                <td>4</td>
-                <td>1</td>
+                <td><emu-const>done</emu-const></td>
+                <td><emu-const>done</emu-const></td>
               </tr>
               <tr>
                 <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -5076,9 +5255,9 @@ h1.version {
                 </tr>
                 <tr>
                   <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
-                  <td>1</td>
+                  <td><emu-const>done</emu-const></td>
                   <td><emu-const>unset</emu-const></td>
-                  <td>0</td>
+                  <td><emu-const>done</emu-const></td>
                   <td><emu-const>unset</emu-const></td>
                 </tr>
                 <tr>
@@ -5127,9 +5306,9 @@ h1.version {
                 </tr>
                 <tr>
                   <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
-                  <td>1</td>
+                  <td><emu-const>done</emu-const></td>
                   <td><emu-const>unset</emu-const></td>
-                  <td>0</td>
+                  <td><emu-const>done</emu-const></td>
                   <td><emu-const>unset</emu-const></td>
                 </tr>
                 <tr>
@@ -5190,7 +5369,7 @@ h1.version {
                 <tr>
                   <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
                   <td>1</td>
-                  <td><emu-const>UNSET</emu-const></td>
+                  <td><emu-const>unset</emu-const></td>
                   <td>0</td>
                 </tr>
                 <tr>
@@ -5240,8 +5419,8 @@ h1.version {
                 <tr>
                   <th><var class="field">[[AsyncEvaluationOrder]]</var></th>
                   <td>1</td>
-                  <td><emu-const>UNSET</emu-const></td>
-                  <td>0</td>
+                  <td><emu-const>unset</emu-const></td>
+                  <td><emu-const>done</emu-const></td>
                 </tr>
                 <tr>
                   <th><var class="field">[[AsyncParentModules]]</var></th>
@@ -5538,14 +5717,14 @@ h1.version {
       <p><del>This property has the attributes { <var class="field">[[Writable]]</var>: <emu-val>false</emu-val>, <var class="field">[[Enumerable]]</var>: <emu-val>false</emu-val>, <var class="field">[[Configurable]]</var>: <emu-val>false</emu-val> }.</del></p>
     </emu-clause>
   </emu-clause>
-</emu-clause><emu-annex id="sec-copyright-and-software-license" class="copyright-notice" back-matter="">
-      <h1>Copyright &amp; Software License</h1>
-      
-      <h2>Copyright Notice</h2>
-      <p>© 2025 Nicolò Ribaudo</p>
-
-      <h2>Software License</h2>
-      <p>All Software contained in this document ("Software") is protected by copyright and is being made available under the "BSD License", included below. This Software may be subject to third party rights (rights from parties other than Ecma International), including patent rights, and no licenses under such third party rights are granted under this license even if the third party concerned is a member of Ecma International. SEE THE ECMA CODE OF CONDUCT IN PATENT MATTERS AVAILABLE AT <a href="https://ecma-international.org/memento/codeofconduct.htm">https://ecma-international.org/memento/codeofconduct.htm</a> FOR INFORMATION REGARDING THE LICENSING OF PATENT CLAIMS THAT ARE REQUIRED TO IMPLEMENT ECMA INTERNATIONAL STANDARDS.</p>
+</emu-clause><emu-annex id="sec-copyright-and-software-license" back-matter="">
+        <h1>Copyright &amp; Software License</h1>
+        
+        <div class="copyright-notice" id="copyright-notice"><h2>Copyright Notice</h2>
+<p>© 2025 Nicolò Ribaudo</p>
+</div>
+        <h2>Software License</h2>
+        <p>All Software contained in this document ("Software") is protected by copyright and is being made available under the "BSD License", included below. This Software may be subject to third party rights (rights from parties other than Ecma International), including patent rights, and no licenses under such third party rights are granted under this license even if the third party concerned is a member of Ecma International. SEE THE ECMA CODE OF CONDUCT IN PATENT MATTERS AVAILABLE AT <a href="https://ecma-international.org/memento/codeofconduct.htm">https://ecma-international.org/memento/codeofconduct.htm</a> FOR INFORMATION REGARDING THE LICENSING OF PATENT CLAIMS THAT ARE REQUIRED TO IMPLEMENT ECMA INTERNATIONAL STANDARDS.</p>
 
 <p>Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:</p>
 
@@ -5557,5 +5736,5 @@ h1.version {
 
 <p>THIS SOFTWARE IS PROVIDED BY THE ECMA INTERNATIONAL "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL ECMA INTERNATIONAL BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.</p>
 
-    </emu-annex>
+      </emu-annex>
 </div></body>
