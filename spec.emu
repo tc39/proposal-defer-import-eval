@@ -943,7 +943,7 @@ contributors: Nicolò Ribaudo
             </h1>
             <dl class="header">
               <dt>description</dt>
-              <dd>It is used by Evaluate to perform the actual evaluation process for _module_, as well as recursively on all other modules in the dependency graph. The _stack_ and _index_ parameters, as well as _module_'s [[DFSIndex]] and [[DFSAncestorIndex]] fields, are used the same way as in InnerModuleLinking.</dd>
+              <dd>It is used by Evaluate to perform the actual evaluation process for _module_, as well as recursively on all other modules in the dependency graph. The _stack_ and _index_ parameters, as well as _module_'s [[DFSAncestorIndex]] field, are used the same way as in InnerModuleLinking.</dd>
             </dl>
 
             <emu-alg>
@@ -956,7 +956,7 @@ contributors: Nicolò Ribaudo
               1. If _module_.[[Status]] is ~evaluating~, return _index_.
               1. Assert: _module_.[[Status]] is ~linked~.
               1. Set _module_.[[Status]] to ~evaluating~.
-              1. Set _module_.[[DFSIndex]] to _index_.
+              1. Let _moduleIndex_ be _index_.
               1. Set _module_.[[DFSAncestorIndex]] to _index_.
               1. Set _module_.[[PendingAsyncDependencies]] to 0.
               1. Set _index_ to _index_ + 1.
@@ -994,8 +994,8 @@ contributors: Nicolò Ribaudo
               1. Else,
                 1. Perform ? <emu-meta effects="user-code">_module_.ExecuteModule()</emu-meta>.
               1. Assert: _module_ occurs exactly once in _stack_.
-              1. Assert: _module_.[[DFSAncestorIndex]] ≤ _module_.[[DFSIndex]].
-              1. If _module_.[[DFSAncestorIndex]] = _module_.[[DFSIndex]], then
+              1. Assert: _module_.[[DFSAncestorIndex]] ≤ _moduleIndex_.
+              1. If _module_.[[DFSAncestorIndex]] = _moduleIndex_, then
                 1. Let _done_ be *false*.
                 1. Repeat, while _done_ is *false*,
                   1. Let _requiredModule_ be the last element of _stack_.
@@ -1122,14 +1122,6 @@ contributors: Nicolò Ribaudo
                 </tr>
               </thead>
               <tr>
-                <th>[[DFSIndex]]</th>
-                <td>0</td>
-                <td>1</td>
-                <td>3</td>
-                <td>2</td>
-                <td>4</td>
-              </tr>
-              <tr>
                 <th>[[DFSAncestorIndex]]</th>
                 <td>0</td>
                 <td>0</td>
@@ -1189,11 +1181,6 @@ contributors: Nicolò Ribaudo
                 </tr>
               </thead>
               <tr>
-                <th>[[DFSIndex]]</th>
-                <td>3</td>
-                <td>4</td>
-              </tr>
-              <tr>
                 <th>[[DFSAncestorIndex]]</th>
                 <td>0</td>
                 <td>4</td>
@@ -1206,7 +1193,7 @@ contributors: Nicolò Ribaudo
               <tr>
                 <th>[[AsyncEvaluationOrder]]</th>
                 <td>3</td>
-                <td>2</td>
+                <td>~done~</td>
               </tr>
               <tr>
                 <th>[[AsyncParentModules]]</th>
@@ -1239,12 +1226,6 @@ contributors: Nicolò Ribaudo
                 </tr>
               </thead>
               <tr>
-                <th>[[DFSIndex]]</th>
-                <td>1</td>
-                <td>3</td>
-                <td>2</td>
-              </tr>
-              <tr>
                 <th>[[DFSAncestorIndex]]</th>
                 <td>0</td>
                 <td>0</td>
@@ -1260,7 +1241,7 @@ contributors: Nicolò Ribaudo
                 <th>[[AsyncEvaluationOrder]]</th>
                 <td>1</td>
                 <td>3</td>
-                <td>0</td>
+                <td>~done~</td>
               </tr>
               <tr>
                 <th>[[AsyncParentModules]]</th>
@@ -1294,11 +1275,6 @@ contributors: Nicolò Ribaudo
                 </tr>
               </thead>
               <tr>
-                <th>[[DFSIndex]]</th>
-                <td>0</td>
-                <td>3</td>
-              </tr>
-              <tr>
                 <th>[[DFSAncestorIndex]]</th>
                 <td>0</td>
                 <td>0</td>
@@ -1311,7 +1287,7 @@ contributors: Nicolò Ribaudo
               <tr>
                 <th>[[AsyncEvaluationOrder]]</th>
                 <td>4</td>
-                <td>3</td>
+                <td>~done~</td>
               </tr>
               <tr>
                 <th>[[AsyncParentModules]]</th>
@@ -1343,11 +1319,6 @@ contributors: Nicolò Ribaudo
                 </tr>
               </thead>
               <tr>
-                <th>[[DFSIndex]]</th>
-                <td>0</td>
-                <td>1</td>
-              </tr>
-              <tr>
                 <th>[[DFSAncestorIndex]]</th>
                 <td>0</td>
                 <td>0</td>
@@ -1360,7 +1331,7 @@ contributors: Nicolò Ribaudo
               <tr>
                 <th>[[AsyncEvaluationOrder]]</th>
                 <td>4</td>
-                <td>1</td>
+                <td>~done~</td>
               </tr>
               <tr>
                 <th>[[AsyncParentModules]]</th>
@@ -1391,10 +1362,6 @@ contributors: Nicolò Ribaudo
                 </tr>
               </thead>
               <tr>
-                <th>[[DFSIndex]]</th>
-                <td>0</td>
-              </tr>
-              <tr>
                 <th>[[DFSAncestorIndex]]</th>
                 <td>0</td>
               </tr>
@@ -1404,7 +1371,7 @@ contributors: Nicolò Ribaudo
               </tr>
               <tr>
                 <th>[[AsyncEvaluationOrder]]</th>
-                <td>4</td>
+                <td>~done~</td>
               </tr>
               <tr>
                 <th>[[AsyncParentModules]]</th>
@@ -1434,11 +1401,6 @@ contributors: Nicolò Ribaudo
                 </tr>
               </thead>
               <tr>
-                <th>[[DFSIndex]]</th>
-                <td>0</td>
-                <td>3</td>
-              </tr>
-              <tr>
                 <th>[[DFSAncestorIndex]]</th>
                 <td>0</td>
                 <td>0</td>
@@ -1450,8 +1412,8 @@ contributors: Nicolò Ribaudo
               </tr>
               <tr>
                 <th>[[AsyncEvaluationOrder]]</th>
-                <td>4</td>
-                <td>3</td>
+                <td>~done~</td>
+                <td>~done~</td>
               </tr>
               <tr>
                 <th>[[AsyncParentModules]]</th>
@@ -1487,10 +1449,6 @@ contributors: Nicolò Ribaudo
                 </tr>
               </thead>
               <tr>
-                <th>[[DFSIndex]]</th>
-                <td>0</td>
-              </tr>
-              <tr>
                 <th>[[DFSAncestorIndex]]</th>
                 <td>0</td>
               </tr>
@@ -1500,7 +1458,7 @@ contributors: Nicolò Ribaudo
               </tr>
               <tr>
                 <th>[[AsyncEvaluationOrder]]</th>
-                <td>4</td>
+                <td>~done~</td>
               </tr>
               <tr>
                 <th>[[AsyncParentModules]]</th>
@@ -1535,11 +1493,6 @@ contributors: Nicolò Ribaudo
                 </tr>
               </thead>
               <tr>
-                <th>[[DFSIndex]]</th>
-                <td>0</td>
-                <td>1</td>
-              </tr>
-              <tr>
                 <th>[[DFSAncestorIndex]]</th>
                 <td>0</td>
                 <td>0</td>
@@ -1551,8 +1504,8 @@ contributors: Nicolò Ribaudo
               </tr>
               <tr>
                 <th>[[AsyncEvaluationOrder]]</th>
-                <td>4</td>
-                <td>1</td>
+                <td>~done~</td>
+                <td>~done~</td>
               </tr>
               <tr>
                 <th>[[AsyncParentModules]]</th>
@@ -1667,9 +1620,9 @@ contributors: Nicolò Ribaudo
                 </tr>
                 <tr>
                   <th>[[AsyncEvaluationOrder]]</th>
-                  <td>1</td>
+                  <td>~done~</td>
                   <td>~unset~</td>
-                  <td>0</td>
+                  <td>~done~</td>
                   <td>~unset~</td>
                 </tr>
                 <tr>
@@ -1718,9 +1671,9 @@ contributors: Nicolò Ribaudo
                 </tr>
                 <tr>
                   <th>[[AsyncEvaluationOrder]]</th>
-                  <td>1</td>
+                  <td>~done~</td>
                   <td>~unset~</td>
-                  <td>0</td>
+                  <td>~done~</td>
                   <td>~unset~</td>
                 </tr>
                 <tr>
@@ -1781,7 +1734,7 @@ contributors: Nicolò Ribaudo
                 <tr>
                   <th>[[AsyncEvaluationOrder]]</th>
                   <td>1</td>
-                  <td>~UNSET~</td>
+                  <td>~unset~</td>
                   <td>0</td>
                 </tr>
                 <tr>
@@ -1831,8 +1784,8 @@ contributors: Nicolò Ribaudo
                 <tr>
                   <th>[[AsyncEvaluationOrder]]</th>
                   <td>1</td>
-                  <td>~UNSET~</td>
-                  <td>0</td>
+                  <td>~unset~</td>
+                  <td>~done~</td>
                 </tr>
                 <tr>
                   <th>[[AsyncParentModules]]</th>
