@@ -595,12 +595,16 @@ contributors: Nicolò Ribaudo
           </table>
         </emu-table>
 
-        <emu-clause id="sec-ModuleRequestsEqual" type="abstract operation">
+        <emu-clause id="del-sec-ModuleRequestsEqual">
+          <h1><del>ModuleRequestsEqual ( _left_, _right_ )</del></h1>
+        </emu-clause>
+
+        <emu-clause id="sec-ModuleRequestsKeyEqual" oldids="sec-ModuleRequestsEqual" type="abstract operation">
           <h1>
-            ModuleRequestsEqual (
+            <ins>ModuleRequestsKeyEqual (
               _left_: a ModuleRequest Record or a LoadedModuleRequest Record,
               _right_: a ModuleRequest Record or a LoadedModuleRequest Record,
-            ): a Boolean
+            ): a Boolean</ins>
           </h1>
           <dl class="header">
             <dt>description</dt>
@@ -638,7 +642,7 @@ contributors: Nicolò Ribaudo
           1. Let _requests_ be the ModuleRequests of |ModuleItemList|.
           1. Let _additionalRequests_ be the ModuleRequests of |ModuleItem|.
           1. For each ModuleRequest Record _mr_ of _additionalRequests_, do
-            1. If _requests_ does not contain a ModuleRequest Record _mr2_ such that ModuleRequestsEqual(_mr_, _mr2_) is *true* <ins>and _mr_.[[Phase]] is _mr2_.[[Phase]]</ins>, then
+            1. If _requests_ does not contain a ModuleRequest Record _mr2_ such that <del>ModuleRequestsEqual</del><ins>ModuleRequestsKeyEqual</ins>(_mr_, _mr2_) is *true* <ins>and _mr_.[[Phase]] is _mr2_.[[Phase]]</ins>, then
               1. Append _mr_ to _requests_.
           1. Return _requests_.
         </emu-alg>
@@ -1899,7 +1903,7 @@ contributors: Nicolò Ribaudo
         </dl>
         <emu-alg>
           1. If _result_ is a normal completion, then
-            1. If _referrer_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that ModuleRequestsEqual(_record_, _moduleRequest_) is *true*, then
+            1. If _referrer_.[[LoadedModules]] contains a LoadedModuleRequest Record _record_ such that <del>ModuleRequestsEqual</del><ins>ModuleRequestsKeyEqual</ins>(_record_, _moduleRequest_) is *true*, then
               1. Assert: _record_.[[Module]] and _result_.[[Value]] are the same Module Record.
             1. Else,
               1. Append the LoadedModuleRequest Record { [[Specifier]]: _moduleRequest_.[[Specifier]], [[Attributes]]: _moduleRequest_.[[Attributes]], [[Module]]: _result_.[[Value]] } to _referrer_.[[LoadedModules]].
