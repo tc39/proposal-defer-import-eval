@@ -493,8 +493,7 @@ contributors: Nicolò Ribaudo
                   1. <ins>Return ~unused~.</ins>
                 1. <ins>Let _asyncDepsEvaluationPromises_ be a new empty List.</ins>
                 1. <ins>For each Module Record _dep_ of _evaluationList_, append _dep_.Evaluate() to _asyncDepsEvaluationPromises_.</ins>
-                1. <ins>Let _pc_ be ! NewPromiseCapability(%Promise%).</ins>
-                1. <ins>Let _evaluatePromise_ be SafePerformPromiseAll(_asyncDepsEvaluationPromises_, _pc_).</ins>
+                1. <ins>Let _evaluatePromise_ be SafePerformPromiseAll(_asyncDepsEvaluationPromises_).</ins>
               1. <ins>Else,</ins>
                 1. <ins>Assert: _phase_ is ~evaluation~.</ins>
                 1. <ins>Let _evaluatePromise_ be _module_.Evaluate().</ins>
@@ -2065,18 +2064,97 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-promise.all">
         <h1>Promise.all ( _iterable_ )</h1>
 
+        <emu-clause id="sec-create-promise-all-resolve-element" type="abstract operation">
+          <h1>
+            <ins>CreatePromiseAllResolveElement (
+              _index_: a non-negative integer,
+              _values_: a List,
+              _resultCapability_: a PromiseCapability Record,
+              _remainingElementsCount_: a Record { [[Value]]: a non-negative integer },
+            ): a function object</ins>
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It creates a resolve element function for use with PerformPromiseAll and SafePerformPromiseAll.</dd>
+          </dl>
+          <emu-alg>
+            1. Let _fulfilledSteps_ be a new Abstract Closure with parameters (_value_) that captures _values_, _resultCapability_, and _remainingElementsCount_ and performs the following steps when called:
+              1. Let _F_ be the active function object.
+              1. If _F_.[[AlreadyCalled]] is *true*, return *undefined*.
+              1. Set _F_.[[AlreadyCalled]] to *true*.
+              1. Let _thisIndex_ be _F_.[[Index]].
+              1. Set _values_[_thisIndex_] to _value_.
+              1. Set _remainingElementsCount_.[[Value]] to _remainingElementsCount_.[[Value]] - 1.
+              1. If _remainingElementsCount_.[[Value]] = 0, then
+                1. Let _valuesArray_ be CreateArrayFromList(_values_).
+                1. Return ? Call(_resultCapability_.[[Resolve]], *undefined*, « _valuesArray_ »).
+              1. Return *undefined*.
+            1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledSteps_, 1, *""*, « [[AlreadyCalled]], [[Index]] »).
+            1. Set _onFulfilled_.[[AlreadyCalled]] to *false*.
+            1. Set _onFulfilled_.[[Index]] to _index_.
+            1. Return _onFulfilled_.
+          </emu-alg>
+        </emu-clause>
+
+        <emu-clause id="sec-performpromiseall" oldids="sec-promise.all-resolve-element-functions" type="abstract operation">
+          <h1>
+            PerformPromiseAll (
+              _iteratorRecord_: an Iterator Record,
+              _constructor_: a constructor,
+              _resultCapability_: a PromiseCapability Record,
+              _promiseResolve_: a function object,
+            ): either a normal completion containing an ECMAScript language value or a throw completion
+          </h1>
+          <dl class="header">
+          </dl>
+          <emu-alg>
+            1. Let _values_ be a new empty List.
+            1. [declared="remainingElementsCount"] NOTE: _remainingElementsCount_ starts at 1 instead of 0 to ensure _resultCapability_.[[Resolve]] is only called once, even in the presence of a misbehaving *"then"* which calls the passed callback before the input iterator is exhausted.
+            1. Let _remainingElementsCount_ be the Record { [[Value]]: 1 }.
+            1. Let _index_ be 0.
+            1. Repeat,
+              1. Let _next_ be ? IteratorStepValue(_iteratorRecord_).
+              1. If _next_ is ~done~, then
+                1. Set _remainingElementsCount_.[[Value]] to _remainingElementsCount_.[[Value]] - 1.
+                1. If _remainingElementsCount_.[[Value]] = 0, then
+                  1. Let _valuesArray_ be CreateArrayFromList(_values_).
+                  1. Perform ? Call(_resultCapability_.[[Resolve]], *undefined*, « _valuesArray_ »).
+                1. Return _resultCapability_.[[Promise]].
+              1. Append *undefined* to _values_.
+              1. Let _nextPromise_ be ? Call(_promiseResolve_, _constructor_, « _next_ »).
+              1. <del>Let _fulfilledSteps_ be a new Abstract Closure with parameters (_value_) that captures _values_, _resultCapability_, and _remainingElementsCount_ and performs the following steps when called:</del>
+                1. <del>Let _F_ be the active function object.</del>
+                1. <del>If _F_.[[AlreadyCalled]] is *true*, return *undefined*.</del>
+                1. <del>Set _F_.[[AlreadyCalled]] to *true*.</del>
+                1. <del>Let _thisIndex_ be _F_.[[Index]].</del>
+                1. <del>Set _values_[_thisIndex_] to _value_.</del>
+                1. <del>Set _remainingElementsCount_.[[Value]] to _remainingElementsCount_.[[Value]] - 1.</del>
+                1. <del>If _remainingElementsCount_.[[Value]] = 0, then</del>
+                  1. <del>Let _valuesArray_ be CreateArrayFromList(_values_).</del>
+                  1. <del>Return ? Call(_resultCapability_.[[Resolve]], *undefined*, « _valuesArray_ »).</del>
+                1. <del>Return *undefined*.</del>
+              1. <del>Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledSteps_, 1, *""*, « [[AlreadyCalled]], [[Index]] »).</del>
+              1. <del>Set _onFulfilled_.[[AlreadyCalled]] to *false*.</del>
+              1. <del>Set _onFulfilled_.[[Index]] to _index_.</del>
+              1. <ins>Let _onFulfilled_ be CreatePromiseAllResolveElement(_index_, _values_, _resultCapability_, _remainingElementsCount_).</ins>
+              1. Set _index_ to _index_ + 1.
+              1. Set _remainingElementsCount_.[[Value]] to _remainingElementsCount_.[[Value]] + 1.
+              1. Perform ? Invoke(_nextPromise_, *"then"*, « _onFulfilled_, _resultCapability_.[[Reject]] »).
+          </emu-alg>
+        </emu-clause>
+
         <emu-clause id="sec-safe-perform-promise-all" type="abstract operation">
           <h1>
             <ins>SafePerformPromiseAll (
               _promises_: a List of Promises,
-              _resultCapability_: a PromiseCapability Record,
-            ): an ECMAScript language value</ins>
+            ): a Promise</ins>
           </h1>
           <dl class="header">
             <dt>description</dt>
             <dd>It performs a Promise.all operation on a list of native promises, calling PerformPromiseThen directly instead of looking up *"then"* on each promise.</dd>
           </dl>
           <emu-alg>
+            1. Let _resultCapability_ be ! NewPromiseCapability(%Promise%).
             1. If _promises_ is empty, then
               1. Perform ! Call(_resultCapability_.[[Resolve]], *undefined*, « CreateArrayFromList(« ») »).
               1. Return _resultCapability_.[[Promise]].
@@ -2085,20 +2163,7 @@ contributors: Nicolò Ribaudo
             1. Let _index_ be 0.
             1. For each element _promise_ of _promises_, do
               1. Append *undefined* to _values_.
-              1. Let _fulfilledSteps_ be a new Abstract Closure with parameters (_value_) that captures _values_, _resultCapability_, and _remainingElementsCount_ and performs the following steps when called:
-                1. Let _F_ be the active function object.
-                1. If _F_.[[AlreadyCalled]] is *true*, return *undefined*.
-                1. Set _F_.[[AlreadyCalled]] to *true*.
-                1. Let _thisIndex_ be _F_.[[Index]].
-                1. Set _values_[_thisIndex_] to _value_.
-                1. Set _remainingElementsCount_.[[Value]] to _remainingElementsCount_.[[Value]] - 1.
-                1. If _remainingElementsCount_.[[Value]] = 0, then
-                  1. Let _valuesArray_ be CreateArrayFromList(_values_).
-                  1. Return ! Call(_resultCapability_.[[Resolve]], *undefined*, « _valuesArray_ »).
-                1. Return *undefined*.
-              1. Let _onFulfilled_ be CreateBuiltinFunction(_fulfilledSteps_, 1, *""*, « [[AlreadyCalled]], [[Index]] »).
-              1. Set _onFulfilled_.[[AlreadyCalled]] to *false*.
-              1. Set _onFulfilled_.[[Index]] to _index_.
+              1. Let _onFulfilled_ be CreatePromiseAllResolveElement(_index_, _values_, _resultCapability_, _remainingElementsCount_).
               1. Set _index_ to _index_ + 1.
               1. Perform PerformPromiseThen(_promise_, _onFulfilled_, _resultCapability_.[[Reject]]).
             1. Return _resultCapability_.[[Promise]].
