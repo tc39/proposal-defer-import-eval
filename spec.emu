@@ -182,7 +182,8 @@ contributors: Nicolò Ribaudo
           1. Assert: _targetModule_ is not *undefined*.
           1. If _binding_.[[BindingName]] is ~namespace~, then
             1. Return GetModuleNamespace(_targetModule_, <ins>~evaluation~</ins>).
-            1. <ins>NOTE: The phase here is always ~evaluation~ because in `import defer * as x from "..."; export { x }`, _binding_.[[BindingName]] is *"x"* and not ~namespace~.</ins>
+          1. <ins>If _binding_.[[BindingName]] is ~deferred-namespace~, then</ins>
+            1. <ins>Return GetModuleNamespace(_targetModule_, ~defer~).</ins>
           1. Let _targetEnv_ be _targetModule_.[[Environment]].
           1. If _targetEnv_ is ~empty~, throw a *ReferenceError* exception.
           1. Return ? _targetEnv_.GetBindingValue(_binding_.[[BindingName]], *true*).
@@ -838,7 +839,7 @@ contributors: Nicolò Ribaudo
                 ): a ResolvedBinding Record, *null*, or ~ambiguous~
               </td>
               <td>
-                <p>It returns the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~ }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. It returns *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
+                <p>It returns the binding of a name exported by this module. Bindings are represented by a <dfn id="resolvedbinding-record" variants="ResolvedBinding Records">ResolvedBinding Record</dfn>, of the form { [[Module]]: Module Record, [[BindingName]]: String | ~namespace~ | ~deferred-namespace~ }. If the export is a Module Namespace Object without a direct binding in any module, [[BindingName]] will be set to ~namespace~. It returns *null* if the name cannot be resolved, or ~ambiguous~ if multiple bindings were found.</p>
                 <p>Each time this operation is called with a specific _exportName_, _resolveSet_ pair as arguments it must return the same result.</p>
                 <p>LoadRequestedModules must have completed successfully prior to invoking this method.</p>
               </td>
@@ -1945,7 +1946,7 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-source-text-module-records">
         <h1>Source Text Module Records</h1>
 
-        <emu-clause id="sec-source-text-module-record-initialize-environment" type="concrete method" number="4">
+        <emu-clause id="sec-source-text-module-record-initialize-environment" type="concrete method">
           <h1>InitializeEnvironment ( ): either a normal completion containing ~unused~ or a throw completion</h1>
           <dl class="header">
             <dt>for</dt>
@@ -1971,9 +1972,9 @@ contributors: Nicolò Ribaudo
               1. Else,
                 1. Let _resolution_ be _importedModule_.ResolveExport(_in_.[[ImportName]]).
                 1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.
-                1. If _resolution_.[[BindingName]] is ~namespace~, then
-                  1. <ins>NOTE: In this case we have an `export * as ns from "";` declaration. `import * as ns from ""; export { ns }` indirect re-exports have _resolution_.[[BindingName]] set to *"ns"*.</ins>
-                  1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]], <ins>~evaluation~</ins>).
+                1. If _resolution_.[[BindingName]] is ~namespace~ <ins>or ~deferred-namespace~</ins>, then
+                  1. <ins>If _resolution_.[[BindingName]] is ~namespace~ let _phase_ be ~evaluation~, else let _phase_ be ~defer~.</ins>
+                  1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]], <ins>_phase_</ins>).
                   1. Perform ! _env_.CreateImmutableBinding(_in_.[[LocalName]], *true*).
                   1. Perform ! _env_.InitializeBinding(_in_.[[LocalName]], _namespace_).
                 1. Else,
@@ -2010,6 +2011,73 @@ contributors: Nicolò Ribaudo
                   1. Perform ! _env_.InitializeBinding(_dn_, _fo_).
             1. Remove _moduleContext_ from the execution context stack.
             1. Return ~unused~.
+          </emu-alg>
+        </emu-clause>
+
+        <emu-clause id="sec-resolveexport" type="concrete method">
+          <h1>
+            ResolveExport (
+              _exportName_: a String,
+              optional _resolveSet_: a List of Records with fields [[Module]] (a Module Record) and [[ExportName]] (a String),
+            ): a ResolvedBinding Record, *null*, or ~ambiguous~
+          </h1>
+          <dl class="header">
+            <dt>for</dt>
+            <dd>a Source Text Module Record _module_</dd>
+
+            <dt>description</dt>
+            <dd>
+              <p>ResolveExport attempts to resolve an imported binding to the actual defining module and local binding name. The defining module may be the module represented by the Module Record this method was invoked on or some other module that is imported by that module. The parameter _resolveSet_ is used to detect unresolved circular import/export paths. If a pair consisting of specific Module Record and _exportName_ is reached that is already in _resolveSet_, an import circularity has been encountered. Before recursively calling ResolveExport, a pair consisting of _module_ and _exportName_ is added to _resolveSet_.</p>
+              <p>If a defining module is found, a ResolvedBinding Record { [[Module]], [[BindingName]] } is returned. This record identifies the resolved binding of the originally requested export, unless this is the export of a namespace with no local binding. In this case, [[BindingName]] will be set to ~namespace~ or ~deferred-namespace~. If no definition was found or the request is found to be circular, *null* is returned. If the request is found to be ambiguous, ~ambiguous~ is returned.</p>
+            </dd>
+          </dl>
+
+          <emu-alg>
+            1. Assert: _module_.[[Status]] is not ~new~.
+            1. If _resolveSet_ is not present, set _resolveSet_ to a new empty List.
+            1. For each Record { [[Module]], [[ExportName]] } _r_ of _resolveSet_, do
+              1. If _module_ and _r_.[[Module]] are the same Module Record and _exportName_ is _r_.[[ExportName]], then
+                1. Assert: This is a circular import request.
+                1. Return *null*.
+            1. Append the Record { [[Module]]: _module_, [[ExportName]]: _exportName_ } to _resolveSet_.
+            1. For each ExportEntry Record _e_ of _module_.[[LocalExportEntries]], do
+              1. If _e_.[[ExportName]] is _exportName_, then
+                1. Assert: _module_ provides the direct binding for this export.
+                1. Return ResolvedBinding Record { [[Module]]: _module_, [[BindingName]]: _e_.[[LocalName]] }.
+            1. For each ExportEntry Record _e_ of _module_.[[IndirectExportEntries]], do
+              1. If _e_.[[ExportName]] is _exportName_, then
+                1. Assert: _e_.[[ModuleRequest]] is not *null*.
+                1. Let _importedModule_ be GetImportedModule(_module_, _e_.[[ModuleRequest]]).
+                1. If _e_.[[ImportName]] is ~all~, then
+                  1. Assert: _module_ does not provide the direct binding for this export.
+                  1. <ins>If _e_.[[ModuleRequest]].[[Phase]] is ~defer~, then</ins>
+                    1. <ins>Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~deferred-namespace~ }.</ins>
+                  1. <ins>Else,</ins>
+                    1. <ins>Assert: _e_.[[Phase]] is ~evaluation~.</ins>
+                    1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~ }.
+                1. Else,
+                  1. Assert: _module_ imports a specific binding for this export.
+                  1. Assert: _e_.[[ImportName]] is a String.
+                  1. Return _importedModule_.ResolveExport(_e_.[[ImportName]], _resolveSet_).
+            1. If _exportName_ is *"default"*, then
+              1. Assert: A `default` export was not explicitly defined by this module.
+              1. Return *null*.
+              1. NOTE: A `default` export cannot be provided by an `export * from "mod"` declaration.
+            1. Let _starResolution_ be *null*.
+            1. For each ExportEntry Record _e_ of _module_.[[StarExportEntries]], do
+              1. Assert: _e_.[[ModuleRequest]] is not *null*.
+              1. Let _importedModule_ be GetImportedModule(_module_, _e_.[[ModuleRequest]]).
+              1. Let _resolution_ be _importedModule_.ResolveExport(_exportName_, _resolveSet_).
+              1. If _resolution_ is ~ambiguous~, return ~ambiguous~.
+              1. If _resolution_ is not *null*, then
+                1. Assert: _resolution_ is a ResolvedBinding Record.
+                1. If _starResolution_ is *null*, then
+                  1. Set _starResolution_ to _resolution_.
+                1. Else,
+                  1. Assert: There is more than one `*` export that includes the requested name.
+                  1. If _resolution_.[[Module]] and _starResolution_.[[Module]] are not the same Module Record, return ~ambiguous~.
+                  1. If _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]], return ~ambiguous~.
+            1. Return _starResolution_.
           </emu-alg>
         </emu-clause>
       </emu-clause>
