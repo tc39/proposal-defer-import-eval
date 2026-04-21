@@ -1965,7 +1965,7 @@ contributors: Nicolò Ribaudo
             1. Set _module_.[[Environment]] to _env_.
             1. For each ImportEntry Record _in_ of _module_.[[ImportEntries]], do
               1. Let _importedModule_ be GetImportedModule(_module_, _in_.[[ModuleRequest]]).
-              1. If _in_.[[ImportName]] is ~namespace-object~, then
+              1. If _in_.[[ImportName]] is ~namespace~, then
                 1. Let _namespace_ be GetModuleNamespace(_importedModule_, <ins>_in_.[[ModuleRequest]].[[Phase]]</ins>).
                 1. Perform ! _env_.CreateImmutableBinding(_in_.[[LocalName]], *true*).
                 1. Perform ! _env_.InitializeBinding(_in_.[[LocalName]], _namespace_).
@@ -2048,7 +2048,7 @@ contributors: Nicolò Ribaudo
               1. If _e_.[[ExportName]] is _exportName_, then
                 1. Assert: _e_.[[ModuleRequest]] is not *null*.
                 1. Let _importedModule_ be GetImportedModule(_module_, _e_.[[ModuleRequest]]).
-                1. If _e_.[[ImportName]] is ~all~, then
+                1. If _e_.[[ImportName]] is ~namespace~, then
                   1. Assert: _module_ does not provide the direct binding for this export.
                   1. <ins>If _e_.[[ModuleRequest]].[[Phase]] is ~defer~, then</ins>
                     1. <ins>Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~deferred-namespace~ }.</ins>
