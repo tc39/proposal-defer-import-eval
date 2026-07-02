@@ -905,7 +905,7 @@ contributors: Nicolò Ribaudo
             <dl class="header"></dl>
             <emu-alg>
               1. If _module_.[[CycleRoot]] is not ~empty~, then
-                1. If _module_.[[CycleRoot]].[[Status]] is ~evaluated~ and _module_.[[Status]] is ~evaluated~, return *true*.
+                1. If _module_.[[CycleRoot]].[[Status]] is ~evaluated~, return *true*.
                 1. Return *false*.
               1. If _module_.[[Status]] is ~evaluated~, return *true*.
               1. Return *false*.
