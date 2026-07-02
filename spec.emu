@@ -898,7 +898,7 @@ contributors: Nicolò Ribaudo
 
           <emu-clause id="sec-IsModuleAndItsSCCEvaluated" type="abstract operation">
             <h1>
-              <ins>IsModuleAndItsSCCEvaluated (
+              <ins>IsModuleSCCEvaluated (
                 _module_: a Cyclic Module Record
               ): a Boolean</ins>
             </h1>
