@@ -927,7 +927,7 @@ contributors: Nicolò Ribaudo
               1. Append _module_ to _seen_.
               1. If IsModuleSCCEvaluated(_module_), return *true*.
               1. If _module_.[[Status]] is ~evaluating~ or ~evaluating-async~, return *false*.
-              1. Assert: _module_.[[Status]] is ~linked~.
+              1. Assert: _module_.[[Status]] is ~linked~ or ~evaluated~.
               1. If _module_.[[HasTLA]] is *true*, return *false*.
               1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
                 1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
