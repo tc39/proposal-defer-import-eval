@@ -81,7 +81,7 @@ contributors: Nicolò Ribaudo
               a List of Strings
             </td>
             <td>
-              A List whose elements are the String values of the exported names exposed as own properties of this object. The list is ordered as if an Array of those String values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_.
+              A List whose elements are the String values of the exported names exposed as own properties of this object. The list is sorted according to lexicographic code unit order.
             </td>
           </tr>
           <tr>
@@ -101,18 +101,18 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-module-namespace-exotic-objects-getownproperty-p" type="internal method" number="5">
         <h1>
           [[GetOwnProperty]] (
-            _P_: a property key,
+            _propertyKey_: a property key,
           ): either a normal completion containing either a Property Descriptor or *undefined*, or a throw completion
         </h1>
         <dl class="header">
           <dt>for</dt>
-          <dd>a module namespace exotic object _O_</dd>
+          <dd>a module namespace exotic object _obj_</dd>
         </dl>
         <emu-alg>
-          1. If <del>_P_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_P_, _O_)</ins> is *true*, return OrdinaryGetOwnProperty(_O_, _P_).
-          1. Let _exports_ be <del>_O_.[[Exports]]</del><ins>? GetModuleExportsList(_O_)</ins>.
-          1. If _exports_ does not contain _P_, return *undefined*.
-          1. Let _value_ be ? _O_.[[Get]](_P_, _O_).
+          1. If <del>_propertyKey_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_propertyKey_, _obj_)</ins> is *true*, return OrdinaryGetOwnProperty(_obj_, _propertyKey_).
+          1. Let _exports_ be <del>_obj_.[[Exports]]</del><ins>? GetModuleExportsList(_obj_)</ins>.
+          1. If _exports_ does not contain _propertyKey_, return *undefined*.
+          1. Let _value_ be ? _obj_.[[Get]](_propertyKey_, _obj_).
           1. Return PropertyDescriptor { [[Value]]: _value_, [[Writable]]: *true*, [[Enumerable]]: *true*, [[Configurable]]: *false* }.
         </emu-alg>
       </emu-clause>
@@ -120,24 +120,24 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-module-namespace-exotic-objects-defineownproperty-p-desc" type="internal method">
         <h1>
           [[DefineOwnProperty]] (
-            _P_: a property key,
-            _Desc_: a Property Descriptor,
+            _propertyKey_: a property key,
+            _propertyDesc_: a Property Descriptor,
           ): either a normal completion containing a Boolean or a throw completion
         </h1>
         <dl class="header">
           <dt>for</dt>
-          <dd>a module namespace exotic object _O_</dd>
+          <dd>a module namespace exotic object _obj_</dd>
         </dl>
         <emu-alg>
-          1. If <del>_P_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_P_, _O_)</ins>, return ! OrdinaryDefineOwnProperty(_O_, _P_, _Desc_).
-          1. Let _current_ be ? _O_.[[GetOwnProperty]](_P_).
-          1. <ins>NOTE: If _O_.[[Deferred]] is *true*, the step above will ensure that the module is evaluated.</ins>
+          1. If <del>_propertyKey_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_propertyKey_, _obj_)</ins>, return ! OrdinaryDefineOwnProperty(_obj_, _propertyKey_, _propertyDesc_).
+          1. Let _current_ be ? _obj_.[[GetOwnProperty]](_propertyKey_).
+          1. <ins>NOTE: If _obj_.[[Deferred]] is *true*, the step above will ensure that the module is evaluated.</ins>
           1. If _current_ is *undefined*, return *false*.
-          1. If _Desc_ has a [[Configurable]] field and _Desc_.[[Configurable]] is *true*, return *false*.
-          1. If _Desc_ has an [[Enumerable]] field and _Desc_.[[Enumerable]] is *false*, return *false*.
-          1. If IsAccessorDescriptor(_Desc_) is *true*, return *false*.
-          1. If _Desc_ has a [[Writable]] field and _Desc_.[[Writable]] is *false*, return *false*.
-          1. If _Desc_ has a [[Value]] field, return SameValue(_Desc_.[[Value]], _current_.[[Value]]).
+          1. If _propertyDesc_ has a [[Configurable]] field and _propertyDesc_.[[Configurable]] is *true*, return *false*.
+          1. If _propertyDesc_ has an [[Enumerable]] field and _propertyDesc_.[[Enumerable]] is *false*, return *false*.
+          1. If IsAccessorDescriptor(_propertyDesc_) is *true*, return *false*.
+          1. If _propertyDesc_ has a [[Writable]] field and _propertyDesc_.[[Writable]] is *false*, return *false*.
+          1. If _propertyDesc_ has a [[Value]] field, return SameValue(_propertyDesc_.[[Value]], _current_.[[Value]]).
           1. Return *true*.
         </emu-alg>
       </emu-clause>
@@ -145,17 +145,17 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-module-namespace-exotic-objects-hasproperty-p" type="internal method">
         <h1>
           [[HasProperty]] (
-            _P_: a property key,
+            _propertyKey_: a property key,
           ): a normal completion containing a Boolean
         </h1>
         <dl class="header">
           <dt>for</dt>
-          <dd>a module namespace exotic object _O_</dd>
+          <dd>a module namespace exotic object _obj_</dd>
         </dl>
         <emu-alg>
-          1. If <del>_P_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_P_, _O_)</ins>, return ! OrdinaryHasProperty(_O_, _P_).
-          1. Let _exports_ be <del>_O_.[[Exports]]</del><ins>? GetModuleExportsList(_O_)</ins>.
-          1. If _exports_ contains _P_, return *true*.
+          1. If <del>_propertyKey_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_propertyKey_, _obj_)</ins>, return ! OrdinaryHasProperty(_obj_, _propertyKey_).
+          1. Let _exports_ be <del>_obj_.[[Exports]]</del><ins>? GetModuleExportsList(_obj_)</ins>.
+          1. If _exports_ contains _propertyKey_, return *true*.
           1. Return *false*.
         </emu-alg>
       </emu-clause>
@@ -163,20 +163,20 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-module-namespace-exotic-objects-get-p-receiver" type="internal method">
         <h1>
           [[Get]] (
-            _P_: a property key,
-            _Receiver_: an ECMAScript language value,
+            _propertyKey_: a property key,
+            _receiver_: an ECMAScript language value,
           ): either a normal completion containing an ECMAScript language value or a throw completion
         </h1>
         <dl class="header">
           <dt>for</dt>
-          <dd>a module namespace exotic object _O_</dd>
+          <dd>a module namespace exotic object _obj_</dd>
         </dl>
         <emu-alg>
-          1. If <del>_P_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_P_, _O_)</ins>, return ! OrdinaryGet(_O_, _P_, _Receiver_).
-          1. Let _exports_ be <del>_O_.[[Exports]]</del><ins>? GetModuleExportsList(_O_)</ins>.
-          1. If _exports_ does not contain _P_, return *undefined*.
-          1. Let _m_ be _O_.[[Module]].
-          1. Let _binding_ be _m_.ResolveExport(_P_).
+          1. If <del>_propertyKey_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_propertyKey_, _obj_)</ins>, return ! OrdinaryGet(_obj_, _propertyKey_, _receiver_).
+          1. Let _exports_ be <del>_obj_.[[Exports]]</del><ins>? GetModuleExportsList(_obj_)</ins>.
+          1. If _exports_ does not contain _propertyKey_, return *undefined*.
+          1. Let _module_ be _obj_.[[Module]].
+          1. Let _binding_ be _module_.ResolveExport(_propertyKey_).
           1. Assert: _binding_ is a ResolvedBinding Record.
           1. Let _targetModule_ be _binding_.[[Module]].
           1. Assert: _targetModule_ is not *undefined*.
@@ -196,9 +196,9 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-module-namespace-exotic-objects-set-p-v-receiver" type="internal method">
         <h1>
           [[Set]] (
-            _P_: a property key,
-            _V_: an ECMAScript language value,
-            _Receiver_: an ECMAScript language value,
+            _propertyKey_: a property key,
+            _value_: an ECMAScript language value,
+            _receiver_: an ECMAScript language value,
           ): a normal completion containing *false*
         </h1>
         <dl class="header">
@@ -213,17 +213,17 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-module-namespace-exotic-objects-delete-p" type="internal method">
         <h1>
           [[Delete]] (
-            _P_: a property key,
+            _propertyKey_: a property key,
           ): a normal completion containing a Boolean
         </h1>
         <dl class="header">
           <dt>for</dt>
-          <dd>a module namespace exotic object _O_</dd>
+          <dd>a module namespace exotic object _obj_</dd>
         </dl>
         <emu-alg>
-          1. If <del>_P_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_P_, _O_)</ins>, return ! OrdinaryDelete(_O_, _P_).
-          1. Let _exports_ be <del>_O_.[[Exports]]</del><ins>? GetModuleExportsList(_O_)</ins>.
-          1. If _exports_ contains _P_, return *false*.
+          1. If <del>_propertyKey_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_propertyKey_, _obj_)</ins>, return ! OrdinaryDelete(_obj_, _propertyKey_).
+          1. Let _exports_ be <del>_obj_.[[Exports]]</del><ins>? GetModuleExportsList(_obj_)</ins>.
+          1. If _exports_ contains _propertyKey_, return *false*.
           1. Return *true*.
         </emu-alg>
       </emu-clause>
@@ -232,11 +232,11 @@ contributors: Nicolò Ribaudo
         <h1>[[OwnPropertyKeys]] ( ): a normal completion containing a List of property keys</h1>
         <dl class="header">
           <dt>for</dt>
-          <dd>a module namespace exotic object _O_</dd>
+          <dd>a module namespace exotic object _obj_</dd>
         </dl>
         <emu-alg>
-          1. Let _exports_ be <del>_O_.[[Exports]]</del><ins>? GetModuleExportsList(_O_)</ins>.
-          1. Let _symbolKeys_ be OrdinaryOwnPropertyKeys(_O_).
+          1. Let _exports_ be <del>_obj_.[[Exports]]</del><ins>? GetModuleExportsList(_obj_)</ins>.
+          1. Let _symbolKeys_ be OrdinaryOwnPropertyKeys(_obj_).
           1. Return the list-concatenation of _exports_ and _symbolKeys_.
         </emu-alg>
       </emu-clause>
@@ -259,7 +259,7 @@ contributors: Nicolò Ribaudo
           1. Let _M_ be MakeBasicObject(_internalSlotsList_).
           1. Set _M_'s essential internal methods to the definitions specified in <emu-xref href="#sec-module-namespace-exotic-objects"></emu-xref>.
           1. Set _M_.[[Module]] to _module_.
-          1. [declared="comparefn"] Let _sortedExports_ be a List whose elements are the elements of _exports_ ordered as if an Array of the same values had been sorted using %Array.prototype.sort% using *undefined* as _comparefn_.
+          1. Let _sortedExports_ be a List whose elements are the elements of _exports_, sorted according to lexicographic code unit order.
           1. Set _M_.[[Exports]] to _sortedExports_.
           1. <del>Create own properties of _M_ corresponding to the definitions in <emu-xref href="#sec-module-namespace-objects"></emu-xref>.</del>
           1. <ins>If _phase_ is ~defer~, then</ins>
@@ -280,18 +280,18 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-IsSymbolLikeNamespaceKey" type="abstract operation">
         <h1>
           <ins>IsSymbolLikeNamespaceKey (
-            _P_: a property key,
+            _propertyKey_: a property key,
             _ns_: a module namespace exotic object,
           ): a Boolean</ins>
         </h1>
         <dl class="header">
           <dt>description</dt>
-          <dd>It determines if a property of _ns_ with key _P_ would be an ordinary property, rather than being mapped to one of the module exports.</dd>
+          <dd>It determines if a property of _ns_ with key _propertyKey_ would be an ordinary property, rather than being mapped to one of the module exports.</dd>
         </dl>
 
         <emu-alg>
-          1. If _P_ is a Symbol, return *true*.
-          1. If _ns_.[[Deferred]] is *true* and _P_ is *"then"*, return *true*.
+          1. If _propertyKey_ is a Symbol, return *true*.
+          1. If _ns_.[[Deferred]] is *true* and _propertyKey_ is *"then"*, return *true*.
           1. Return *false*.
         </emu-alg>
       </emu-clause>
@@ -299,7 +299,7 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-GetModuleExportsList" type="abstract operation">
         <h1>
           <ins>GetModuleExportsList (
-            _O_: a module namespace exotic object,
+            _obj_: a module namespace exotic object,
           ): either a normal completion containing a List of Strings, or a throw completion</ins>
         </h1>
         <dl class="header">
@@ -307,10 +307,10 @@ contributors: Nicolò Ribaudo
           <dd>It returns a List whose elements are the names of the module's exports, triggering module evaluation if needed.</dd>
         </dl>
         <emu-alg>
-          1. If _O_.[[Deferred]] is *true*, then
-            1. Let _m_ be _O_.[[Module]].
-            1. Perform ? EvaluateModuleSync(_m_).
-          1. Return _O_.[[Exports]].
+          1. If _obj_.[[Deferred]] is *true*, then
+            1. Let _module_ be _obj_.[[Module]].
+            1. Perform ? EvaluateModuleSync(_module_).
+          1. Return _obj_.[[Exports]].
         </emu-alg>
       </emu-clause>
     </emu-clause>
@@ -892,7 +892,7 @@ contributors: Nicolò Ribaudo
             1. If _promise_.[[PromiseState]] is ~rejected~, then
               1. If _promise_.[[PromiseIsHandled]] is *false*, perform HostPromiseRejectionTracker(_promise_, *"handle"*).
               1. Set _promise_.[[PromiseIsHandled]] to *true*.
-              1. Return ThrowCompletion(_promise_.[[PromiseResult]]).
+              1. Throw _promise_.[[PromiseResult]].
             1. Return ~unused~.
           </emu-alg>
 
@@ -1072,8 +1072,8 @@ contributors: Nicolò Ribaudo
               1. Assert: _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~.
               1. Assert: _module_.[[EvaluationError]] is ~empty~.
               1. If _module_.[[Status]] is ~evaluated~, then
-                1. NOTE: This implies that evaluation of _module_ completed synchronously.
-                1. Assert: _module_.[[AsyncEvaluationOrder]] is ~unset~.
+                1. Assert: _module_.[[AsyncEvaluationOrder]] is either ~unset~ or ~done~.
+                1. NOTE: _module_.[[AsyncEvaluationOrder]] is ~done~ if and only if _module_ had already been evaluated and that evaluation was asynchronous.
                 1. Perform ! Call(_capability_.[[Resolve]], *undefined*, « *undefined* »).
               1. Assert: _stack_ is empty.
             1. Return _capability_.[[Promise]].
@@ -2247,12 +2247,12 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ImportClause FromClause WithClause? `;`</emu-grammar>
         <emu-alg>
-          1. Let _module_ be <del>the sole element of ModuleRequests</del><ins>SV</ins> of |FromClause|.
+          1. Let _module_ be the sole element of the ModuleRequests of |ImportDeclaration|.
           1. Return ImportEntriesForModule of |ImportClause| with arguments _module_.
         </emu-alg>
         <emu-grammar><ins>ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`</ins></emu-grammar>
         <emu-alg>
-          1. <ins>Let _module_ be SV of |FromClause|.</ins>
+          1. <ins>Let _module_ be the sole element of the ModuleRequests of |ImportDeclaration|.</ins>
           1. <ins>Return ImportEntriesForModule of |NameSpaceImport| with arguments _module_.</ins>
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ModuleSpecifier WithClause? `;`</emu-grammar>
