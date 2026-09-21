@@ -2072,7 +2072,7 @@ contributors: Nicolò Ribaudo
                   1. <ins>If _exportEntry_.[[ModuleRequest]].[[Phase]] is ~defer~, then</ins>
                     1. <ins>Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~deferred-namespace~ }.</ins>
                   1. <ins>Else,</ins>
-                    1. <ins>Assert: _exportEntry_.[[Phase]] is ~evaluation~.</ins>
+                    1. <ins>Assert: _exportEntry_.[[ModuleRequest]].[[Phase]] is ~evaluation~.</ins>
                     1. Return ResolvedBinding Record { [[Module]]: _importedModule_, [[BindingName]]: ~namespace~ }.
                 1. Else,
                   1. Assert: _module_ imports a specific binding for this export.
