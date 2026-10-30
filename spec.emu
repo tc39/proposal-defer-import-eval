@@ -926,8 +926,7 @@ contributors: Nicolò Ribaudo
               1. If _seen_ contains _module_, return *true*.
               1. Append _module_ to _seen_.
               1. If IsModuleSCCEvaluated(_module_), return *true*.
-              1. If _module_.[[Status]] is ~evaluating~ or ~evaluating-async~, return *false*.
-              1. Assert: _module_.[[Status]] is ~linked~ or ~evaluated~.
+              1. If _module_.[[Status]] is not ~linked~, return *false*.
               1. If _module_.[[HasTLA]] is *true*, return *false*.
               1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
                 1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
@@ -1050,7 +1049,7 @@ contributors: Nicolò Ribaudo
 
           <emu-alg>
             1. <del>Assert: This call to Evaluate is not happening at the same time as another call to Evaluate within the surrounding agent.</del>
-            1. <ins>Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~evaluating~, ~linking~, ~unlinked~, or ~new~.</ins>
+            1. <ins>Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~linking~, ~unlinked~, or ~new~.</ins>
             1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
             1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
               1. If _module_.[[CycleRoot]] is not ~empty~, then
@@ -1174,7 +1173,7 @@ contributors: Nicolò Ribaudo
             </h1>
             <dl class="header">
               <dt>description</dt>
-              <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency is found.</dd>
+              <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency or a module that is being evaluated is found.</dd>
             </dl>
 
             <emu-alg>
@@ -1183,8 +1182,8 @@ contributors: Nicolò Ribaudo
               1. If _seen_ contains _module_, return _result_.
               1. Append _module_ to _seen_.
               1. If _module_ is not a Cyclic Module Record, return _result_.
-              1. If _module_.[[Status]] is either ~evaluating~ or IsModuleSCCEvaluated(_module_), return _result_.
-              1. If _module_.[[HasTLA]] is *true*, then
+              1. If IsModuleSCCEvaluated(_module_) is *true*, return _result_.
+              1. If _module_.[[Status]] is ~evaluating~ or _module_.[[HasTLA]] is *true*, then
                 1. Append _module_ to _result_.
                 1. Return _result_.
               1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
@@ -1194,6 +1193,9 @@ contributors: Nicolò Ribaudo
                   1. If _result_ does not contain _m_, append _m_ to _result_.
               1. Return _result_.
             </emu-alg>
+            <emu-note>
+              <p>A module whose [[Status]] is ~evaluating~ is on the stack of the ongoing InnerModuleEvaluation, so a deferred import reaching it forms a cycle. Collecting it makes InnerModuleEvaluation add the importer to that cycle's strongly connected component, waiting on it only if it has already started asynchronous evaluation, exactly as for a non-deferred import.</p>
+            </emu-note>
           </emu-clause>
         </emu-clause>
 
