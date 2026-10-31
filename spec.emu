@@ -1173,7 +1173,7 @@ contributors: Nicolò Ribaudo
             </h1>
             <dl class="header">
               <dt>description</dt>
-              <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency or a module that is being evaluated is found.</dd>
+              <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency or a module already visited by InnerModuleEvaluation is found.</dd>
             </dl>
 
             <emu-alg>
@@ -1183,7 +1183,7 @@ contributors: Nicolò Ribaudo
               1. Append _module_ to _seen_.
               1. If _module_ is not a Cyclic Module Record, return _result_.
               1. If IsModuleSCCEvaluated(_module_) is *true*, return _result_.
-              1. If _module_.[[Status]] is ~evaluating~ or _module_.[[HasTLA]] is *true*, then
+              1. If _module_.[[Status]] is not ~linked~ or _module_.[[HasTLA]] is *true*, then
                 1. Append _module_ to _result_.
                 1. Return _result_.
               1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
@@ -1194,7 +1194,7 @@ contributors: Nicolò Ribaudo
               1. Return _result_.
             </emu-alg>
             <emu-note>
-              <p>A module whose [[Status]] is ~evaluating~ is on the stack of the ongoing InnerModuleEvaluation, so a deferred import reaching it forms a cycle. Collecting it makes InnerModuleEvaluation add the importer to that cycle's strongly connected component, waiting on it only if it has already started asynchronous evaluation, exactly as for a non-deferred import.</p>
+              <p>The search only continues through modules whose [[Status]] is ~linked~. Any other module has already been visited by InnerModuleEvaluation, and collecting it makes InnerModuleEvaluation handle it exactly as a non-deferred import: if it is ~evaluating~ it is on the stack, so the importer joins its strongly connected component, and otherwise the importer depends on its [[CycleRoot]].</p>
             </emu-note>
           </emu-clause>
         </emu-clause>
