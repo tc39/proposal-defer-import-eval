@@ -1049,7 +1049,8 @@ contributors: Nicolò Ribaudo
 
           <emu-alg>
             1. <del>Assert: This call to Evaluate is not happening at the same time as another call to Evaluate within the surrounding agent.</del>
-            1. <ins>Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~evaluating~, ~linking~, ~unlinked~, or ~new~.</ins>
+            1. <ins>Assert: None of _module_ or any of its recursive dependencies have [[Status]] set to ~linking~, ~unlinked~, or ~new~.</ins>
+            1. <ins>Assert: If this call to Evaluate is happening at the same time as another call to Evaluate within the surrounding agent, ReadyForSyncExecution(_module_) is *true*.</ins>
             1. Assert: _module_.[[Status]] is one of ~linked~, ~evaluating-async~, or ~evaluated~.
             1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
               1. If _module_.[[CycleRoot]] is not ~empty~, then
@@ -1182,7 +1183,7 @@ contributors: Nicolò Ribaudo
               1. If _seen_ contains _module_, return _result_.
               1. Append _module_ to _seen_.
               1. If _module_ is not a Cyclic Module Record, return _result_.
-              1. If IsModuleSCCEvaluated(_module_) is *true*, return _result_.
+              1. If IsModuleSCCEvaluated(_module_) is *true* and either _module_.[[HasTLA]] is *false* or _module_.[[EvaluationError]] is ~empty~, return _result_.
               1. If _module_.[[Status]] is not ~linked~ or _module_.[[HasTLA]] is *true*, then
                 1. Append _module_ to _result_.
                 1. Return _result_.
@@ -1194,7 +1195,7 @@ contributors: Nicolò Ribaudo
               1. Return _result_.
             </emu-alg>
             <emu-note>
-              <p>The search only continues through modules whose [[Status]] is ~linked~. Any other module has already been visited by InnerModuleEvaluation, and collecting it makes InnerModuleEvaluation handle it exactly as a non-deferred import: if it is ~evaluating~ it is on the stack, so the importer joins its strongly connected component, and otherwise the importer depends on its [[CycleRoot]].</p>
+              <p>The search only continues through modules whose [[Status]] is ~linked~. Any other module has already been visited by InnerModuleEvaluation, and collecting it makes InnerModuleEvaluation handle it exactly as a non-deferred import: if it is ~evaluating~ it is on the stack, so the importer joins its strongly connected component, and otherwise the importer depends on its [[CycleRoot]]. A module whose [[HasTLA]] is *true* and whose evaluation already failed is also collected, so that the error is reported to the importer as if it happened during this evaluation.</p>
             </emu-note>
           </emu-clause>
         </emu-clause>
@@ -1853,7 +1854,7 @@ contributors: Nicolò Ribaudo
 
             <p>If at any later point in time _B_.Evaluate() is called, it will perform InnerModuleEvaluation on _C_ which immediately returns with ThrowCompletion(_error_), transitioning _B_.[[Status]] to ~evalauted~ and setting _B_.[[EvaluationError]] to _error_.</p>
 
-            <p>Consider now a graph with a deferred import taking part in a dependencies cycle, and assume that the evaluation of _A_ calls _B_.Evaluate():</p>
+            <p>Consider now a graph with a deferred import taking part in a dependencies cycle, and assume that the evaluation of _A_ accesses _B_'s deferred namespace object:</p>
 
             <emu-figure id="figure-module-graph-deferred-async-cycle-root" caption="A module graph with a deferred import and a cycle back to the root">
               <img alt="A module graph in which module A depends on module B with a deferred import, module B depends on module C, which uses top-level await and depends on A" width="181" height="121" src="img/module-graph-deferred-async-cycle-root.svg">
@@ -1909,9 +1910,9 @@ contributors: Nicolò Ribaudo
               </table>
             </emu-table>
 
-            <p>Assume now that _C_ succesfully finishes evaluating. When that happens AsyncModuleExecutionFulfilled(_C_) is called, it sets _C_.[[Status]] to ~evaluated~, and it performs _A_.ExecuteModule(). As stated, _A_'s execution causes a call to _B_.Evaluate(), which calls InnerModuleEvaluation on _B_ and on _C_. Since _C_.[[Status]] is ~evaluated~, _B_.ExecuteModule() is called synchronously and, assuming it completes succesfully, transitions _B_.[[Status]] to ~evaluated~. At this point, the fields of the modules are given in <emu-xref href="#table-module-graph-deferred-async-cycle-root-fields-2"></emu-xref>:</p>
+            <p>Assume now that _C_ successfully finishes evaluating. When that happens AsyncModuleExecutionFulfilled(_C_) is called, it sets _C_.[[Status]] to ~evaluated~, and it performs _A_.ExecuteModule(). As stated, _A_'s execution accesses _B_'s deferred namespace object, which performs EvaluateModuleSync(_B_). _C_ is part of the strongly connected component of _A_, which has not finished evaluating yet, so evaluating _B_ would have to wait for _A_: ReadyForSyncExecution(_B_) returns *false*, a *TypeError* is thrown before evaluating _B_, and _B_.[[Status]] remains ~linked~. Assuming that _A_ handles the error and completes successfully, _A_.[[Status]] transitions to ~evaluated~, and the fields of the modules are given in <emu-xref href="#table-module-graph-deferred-async-cycle-root-fields-2"></emu-xref>:</p>
 
-            <emu-table id="table-module-graph-deferred-async-cycle-root-fields-2" class="module-overflow" caption="Module fields after the _B_.ExecuteModule() call">
+            <emu-table id="table-module-graph-deferred-async-cycle-root-fields-2" class="module-overflow" caption="Module fields after _A_.ExecuteModule() completes">
               <table>
                 <thead>
                   <tr>
@@ -1928,13 +1929,13 @@ contributors: Nicolò Ribaudo
                 </thead>
                 <tr>
                   <th>[[Status]]</th>
-                  <td>~evaluating-async~</td>
                   <td>~evaluated~</td>
+                  <td>~linked~</td>
                   <td>~evaluated~</td>
                 </tr>
                 <tr>
                   <th>[[AsyncEvaluationOrder]]</th>
-                  <td>1</td>
+                  <td>~done~</td>
                   <td>~unset~</td>
                   <td>~done~</td>
                 </tr>
@@ -1953,13 +1954,13 @@ contributors: Nicolò Ribaudo
                 <tr>
                   <th>[[CycleRoot]]</th>
                   <td>_A_</td>
-                  <td>_B_</td>
+                  <td>~empty~</td>
                   <td>_A_</td>
                 </tr>
               </table>
             </emu-table>
 
-            <p>Once the call to _A_.ExecuteModule() completes, _A_.[[Status]] transitions to ~evaluated~.</p>
+            <p>From this point, _B_ can be evaluated synchronously.</p>
           </emu-clause>
         </emu-clause>
       </emu-clause>
