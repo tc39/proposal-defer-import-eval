@@ -1964,7 +1964,55 @@ contributors: Nicolò Ribaudo
               </table>
             </emu-table>
 
-            <p>From this point, _B_ can be evaluated synchronously.</p>
+            <p>From this point, _B_ can be evaluated synchronously. Assume that _B_'s deferred namespace object is accessed again, for example by some asynchronous code in _A_ that didn't block _A_'s top-level code evaluation, which performs EvaluateModuleSync(_B_). _B_.[[Status]] is ~linked~ and _B_.[[HasTLA]] is *false*, so ReadyForSyncExecution(_B_) checks _C_: since _C_.[[CycleRoot]] is _A_ and _A_.[[Status]] is ~evaluated~, IsModuleSCCEvaluated(_C_) is *true* and ReadyForSyncExecution(_B_) returns *true*. _B_.Evaluate() is then called, which calls InnerModuleEvaluation on _B_ and on _C_. Since _C_.[[Status]] is ~evaluated~, InnerModuleEvaluation on _C_ returns immediately, and InnerModuleEvaluation on _B_ checks _C_.[[CycleRoot]] (_A_): _A_ was already evaluated, so _B_ has no pending asynchronous dependencies. _B_.ExecuteModule() is called synchronously and, assuming it completes successfully, _B_.[[Status]] transitions to ~evaluated~ and _B_ becomes the root of its own strongly connected component. The promise returned by _B_.Evaluate() is already fulfilled, so EvaluateModuleSync(_B_) completes normally. At this point, the fields of the modules are given in <emu-xref href="#table-module-graph-deferred-async-cycle-root-fields-3"></emu-xref>:</p>
+
+            <emu-table id="table-module-graph-deferred-async-cycle-root-fields-3" class="module-overflow" caption="Module fields after the synchronous evaluation of _B_">
+              <table>
+                <thead>
+                  <tr>
+                    <th class="corner-cell">
+                      <span class="column">Field</span>
+                      <div class="slash">
+                      </div>
+                      <span class="row">Module</span>
+                    </th>
+                    <th>_A_</th>
+                    <th>_B_</th>
+                    <th>_C_</th>
+                  </tr>
+                </thead>
+                <tr>
+                  <th>[[Status]]</th>
+                  <td>~evaluated~</td>
+                  <td>~evaluated~</td>
+                  <td>~evaluated~</td>
+                </tr>
+                <tr>
+                  <th>[[AsyncEvaluationOrder]]</th>
+                  <td>~done~</td>
+                  <td>~unset~</td>
+                  <td>~done~</td>
+                </tr>
+                <tr>
+                  <th>[[AsyncParentModules]]</th>
+                  <td>« »</td>
+                  <td>« »</td>
+                  <td>« _A_ »</td>
+                </tr>
+                <tr>
+                  <th>[[PendingAsyncDependencies]]</th>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                </tr>
+                <tr>
+                  <th>[[CycleRoot]]</th>
+                  <td>_A_</td>
+                  <td>_B_</td>
+                  <td>_A_</td>
+                </tr>
+              </table>
+            </emu-table>
           </emu-clause>
         </emu-clause>
       </emu-clause>
