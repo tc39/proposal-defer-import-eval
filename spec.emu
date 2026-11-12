@@ -1974,6 +1974,49 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-source-text-module-records">
         <h1>Source Text Module Records</h1>
 
+        <emu-clause id="sec-parsemodule" type="abstract operation">
+          <h1>
+            ParseModule (
+              _sourceText_: a String or a sequence of Unicode code points,
+              _realm_: a Realm Record,
+              _hostDefined_: anything,
+            ): a Source Text Module Record or a non-empty List of *SyntaxError* objects
+          </h1>
+          <dl class="header">
+            <dt>description</dt>
+            <dd>It creates a Source Text Module Record based upon the result of parsing _sourceText_ as a |Module|.</dd>
+          </dl>
+          <emu-alg>
+            1. Let _body_ be ParseText(_sourceText_, |Module|).
+            1. If _body_ is a List of errors, return _body_.
+            1. Let _requestedModules_ be the ModuleRequests of _body_.
+            1. Let _importEntries_ be the ImportEntries of _body_.
+            1. Let _importedBoundNames_ be ImportedLocalNames(_importEntries_).
+            1. Let _indirectExportEntries_ be a new empty List.
+            1. Let _localExportEntries_ be a new empty List.
+            1. Let _starExportEntries_ be a new empty List.
+            1. Let _exportEntries_ be the ExportEntries of _body_.
+            1. For each ExportEntry Record _exportEntry_ of _exportEntries_, do
+              1. If _exportEntry_.[[ModuleRequest]] is *null*, then
+                1. If _importedBoundNames_ does not contain _exportEntry_.[[LocalName]], then
+                  1. Append _exportEntry_ to _localExportEntries_.
+                1. Else,
+                  1. NOTE: When exporting a binding or namespace object which was originally imported from another module, the ExportEntry Record is rewritten to match the form it would have if the binding or namespace object had been re-exported directly from the original module rather than imported then exported. This allows conflicts which arise from exporting the same binding or namespace twice under the same name through `export * from` to be ignored rather than being treated as ambiguous in step <emu-xref href="#step-resolveexport-conflict"></emu-xref> of <emu-xref href="#sec-resolveexport">the ResolveExport concrete method of Source Text Module Records</emu-xref>.
+                  1. Let _importEntry_ be the element of _importEntries_ whose [[LocalName]] is _exportEntry_.[[LocalName]].
+                  1. Append the ExportEntry Record { [[ModuleRequest]]: _importEntry_.[[ModuleRequest]], [[ImportName]]: _importEntry_.[[ImportName]], [[LocalName]]: *null*, [[ExportName]]: _exportEntry_.[[ExportName]] } to _indirectExportEntries_.
+              1. Else if _exportEntry_.[[ImportName]] is ~all-but-default~, then
+                1. Assert: _exportEntry_.[[ExportName]] is *null*.
+                1. Append _exportEntry_ to _starExportEntries_.
+              1. Else,
+                1. Append _exportEntry_ to _indirectExportEntries_.
+            1. Let _async_ be _body_ Contains `await`.
+            1. Return Source Text Module Record { [[Realm]]: _realm_, [[Environment]]: ~empty~, [[Namespace]]: ~empty~, <ins>[[DeferredNamespace]]: ~empty~,</ins> [[CycleRoot]]: ~empty~, [[HasTLA]]: _async_, [[AsyncEvaluationOrder]]: ~unset~, [[TopLevelCapability]]: ~empty~, [[AsyncParentModules]]: « », [[PendingAsyncDependencies]]: ~empty~, [[Status]]: ~new~, [[EvaluationError]]: ~empty~, [[HostDefined]]: _hostDefined_, [[ECMAScriptCode]]: _body_, [[Context]]: ~empty~, [[ImportMeta]]: ~empty~, [[RequestedModules]]: _requestedModules_, [[LoadedModules]]: « », [[ImportEntries]]: _importEntries_, [[LocalExportEntries]]: _localExportEntries_, [[IndirectExportEntries]]: _indirectExportEntries_, [[StarExportEntries]]: _starExportEntries_, [[DFSAncestorIndex]]: ~empty~ }.
+          </emu-alg>
+          <emu-note>
+            <p>An implementation may parse module source text and analyse it for Early Error conditions prior to the evaluation of ParseModule for that module source text. However, the reporting of any errors must be deferred until the point where this specification actually performs ParseModule upon that source text.</p>
+          </emu-note>
+        </emu-clause>
+
         <emu-clause id="sec-source-text-module-record-initialize-environment" type="concrete method">
           <h1>InitializeEnvironment ( ): either a normal completion containing ~unused~ or a throw completion</h1>
           <dl class="header">
