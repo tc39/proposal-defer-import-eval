@@ -109,7 +109,7 @@ contributors: Nicolò Ribaudo
           <dd>a module namespace exotic object _obj_</dd>
         </dl>
         <emu-alg>
-          1. If <del>_propertyKey_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_propertyKey_, _obj_)</ins> is *true*, return OrdinaryGetOwnProperty(_obj_, _propertyKey_).
+          1. If <del>_propertyKey_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_propertyKey_, _obj_) is *true*</ins>, return OrdinaryGetOwnProperty(_obj_, _propertyKey_).
           1. Let _exports_ be <del>_obj_.[[Exports]]</del><ins>? GetModuleExportsList(_obj_)</ins>.
           1. If _exports_ does not contain _propertyKey_, return *undefined*.
           1. Let _value_ be ? _obj_.[[Get]](_propertyKey_, _obj_).
@@ -172,7 +172,8 @@ contributors: Nicolò Ribaudo
           <dd>a module namespace exotic object _obj_</dd>
         </dl>
         <emu-alg>
-          1. If <del>_propertyKey_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_propertyKey_, _obj_)</ins>, return ! OrdinaryGet(_obj_, _propertyKey_, _receiver_).
+          1. If <del>_propertyKey_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_propertyKey_, _obj_)</ins>, then
+            1. Return ! OrdinaryGet(_obj_, _propertyKey_, _receiver_).
           1. Let _exports_ be <del>_obj_.[[Exports]]</del><ins>? GetModuleExportsList(_obj_)</ins>.
           1. If _exports_ does not contain _propertyKey_, return *undefined*.
           1. Let _module_ be _obj_.[[Module]].
@@ -221,7 +222,8 @@ contributors: Nicolò Ribaudo
           <dd>a module namespace exotic object _obj_</dd>
         </dl>
         <emu-alg>
-          1. If <del>_propertyKey_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_propertyKey_, _obj_)</ins>, return ! OrdinaryDelete(_obj_, _propertyKey_).
+          1. If <del>_propertyKey_ is a Symbol</del><ins>IsSymbolLikeNamespaceKey(_propertyKey_, _obj_)</ins>, then
+            1. Return ! OrdinaryDelete(_obj_, _propertyKey_).
           1. Let _exports_ be <del>_obj_.[[Exports]]</del><ins>? GetModuleExportsList(_obj_)</ins>.
           1. If _exports_ contains _propertyKey_, return *false*.
           1. Return *true*.
@@ -475,23 +477,23 @@ contributors: Nicolò Ribaudo
             1. Let _loadPromise_ be _module_.LoadRequestedModules().
             1. Let _rejectedClosure_ be a new Abstract Closure with parameters (_reason_) that captures _promiseCapability_ and performs the following steps when called:
               1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « _reason_ »).
-              1. Return ~unused~.
+              1. Return NormalCompletion(*undefined*).
             1. Let _onRejected_ be CreateBuiltinFunction(_rejectedClosure_, 1, *""*, « »).
-            1. Let _linkAndEvaluateClosure_ be a new Abstract Closure with no parameters that captures _module_, _promiseCapability_, <ins>_phase_</ins> and _onRejected_ and performs the following steps when called:
+            1. Let _linkAndEvaluateClosure_ be a new Abstract Closure with no parameters that captures _module_, _promiseCapability_, <ins>_phase_,</ins> and _onRejected_ and performs the following steps when called:
               1. Let _link_ be Completion(_module_.Link()).
               1. If _link_ is an abrupt completion, then
                 1. Perform ! Call(_promiseCapability_.[[Reject]], *undefined*, « _link_.[[Value]] »).
-                1. Return ~unused~.
+                1. Return NormalCompletion(*undefined*).
               1. <del>Let _evaluatePromise_ be _module_.Evaluate().</del>
               1. Let _fulfilledClosure_ be a new Abstract Closure with no parameters that captures _module_, <ins>_phase_,</ins> and _promiseCapability_ and performs the following steps when called:
                 1. Let _namespace_ be GetModuleNamespace(_module_, <ins>_phase_</ins>).
-                1. Perform ! Call(_promiseCapability_.[[Resolve]], *undefined*, « _namespace_ »).
-                1. Return ~unused~.
+                1. Perform ! <emu-meta effects="user-code">Call(_promiseCapability_.[[Resolve]], *undefined*, « _namespace_ »)</emu-meta>.
+                1. Return NormalCompletion(*undefined*).
               1. <ins>If _phase_ is ~defer~, then</ins>
                 1. <ins>Let _evaluationList_ be GatherAsynchronousTransitiveDependencies(_module_).</ins>
                 1. <ins>If _evaluationList_ is empty, then</ins>
-                  1. <ins>Perform _fulfilledClosure_().</ins>
-                  1. <ins>Return ~unused~.</ins>
+                  1. <ins>Perform ! _fulfilledClosure_().</ins>
+                  1. <ins>Return NormalCompletion(*undefined*).</ins>
                 1. <ins>Let _asyncDepsEvaluationPromises_ be a new empty List.</ins>
                 1. <ins>For each Module Record _dep_ of _evaluationList_, append _dep_.Evaluate() to _asyncDepsEvaluationPromises_.</ins>
                 1. <ins>Let _evaluatePromise_ be SafePerformPromiseAll(_asyncDepsEvaluationPromises_).</ins>
@@ -595,14 +597,14 @@ contributors: Nicolò Ribaudo
         </emu-table>
 
         <emu-clause id="del-sec-ModuleRequestsEqual">
-          <h1><del>ModuleRequestsEqual ( _left_, _right_ )</del></h1>
+          <h1><del>ModuleRequestsEqual ( _x_, _y_ )</del></h1>
         </emu-clause>
 
         <emu-clause id="sec-ModuleRequestsKeyEqual" oldids="sec-ModuleRequestsEqual" type="abstract operation">
           <h1>
             <ins>ModuleRequestsKeyEqual (
-              _left_: a ModuleRequest Record or a LoadedModuleRequest Record,
-              _right_: a ModuleRequest Record or a LoadedModuleRequest Record,
+              _x_: a ModuleRequest Record or a LoadedModuleRequest Record,
+              _y_: a ModuleRequest Record or a LoadedModuleRequest Record,
             ): a Boolean</ins>
           </h1>
           <dl class="header">
@@ -611,14 +613,14 @@ contributors: Nicolò Ribaudo
           </dl>
 
           <emu-alg>
-            1. If _left_.[[Specifier]] is not _right_.[[Specifier]], return *false*.
-            1. Let _leftAttrs_ be _left_.[[Attributes]].
-            1. Let _rightAttrs_ be _right_.[[Attributes]].
-            1. Let _leftAttrsCount_ be the number of elements in _leftAttrs_.
-            1. Let _rightAttrsCount_ be the number of elements in _rightAttrs_.
-            1. If _leftAttrsCount_ ≠ _rightAttrsCount_, return *false*.
-            1. For each ImportAttribute Record _l_ of _leftAttrs_, do
-              1. If _rightAttrs_ does not contain an ImportAttribute Record _r_ such that _l_.[[Key]] is _r_.[[Key]] and _l_.[[Value]] is _r_.[[Value]], return *false*.
+            1. If _x_.[[Specifier]] is not _y_.[[Specifier]], return *false*.
+            1. Let _xAttrs_ be _x_.[[Attributes]].
+            1. Let _yAttrs_ be _y_.[[Attributes]].
+            1. Let _xAttrsCount_ be the number of elements in _xAttrs_.
+            1. Let _yAttrsCount_ be the number of elements in _yAttrs_.
+            1. If _xAttrsCount_ ≠ _yAttrsCount_, return *false*.
+            1. For each ImportAttribute Record _xAttr_ of _xAttrs_, do
+              1. If _yAttrs_ does not contain an ImportAttribute Record _yAttr_ such that _xAttr_.[[Key]] is _yAttr_.[[Key]] and _xAttr_.[[Value]] is _yAttr_.[[Value]], return *false*.
             1. Return *true*.
           </emu-alg>
         </emu-clause>
@@ -634,7 +636,7 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ModuleItemList : ModuleItem</emu-grammar>
         <emu-alg>
-          1. Return ModuleRequests of |ModuleItem|.
+          1. Return the ModuleRequests of |ModuleItem|.
         </emu-alg>
         <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
         <emu-alg>
@@ -662,30 +664,37 @@ contributors: Nicolò Ribaudo
           1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
           1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, <ins>[[Phase]]: ~evaluation~</ins> }.
         </emu-alg>
+        <emu-grammar>ImportDeclaration : `import` ModuleSpecifier `;`</emu-grammar>
+        <emu-alg>
+          1. Let _specifier_ be the SV of |ModuleSpecifier|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », <ins>[[Phase]]: ~evaluation~</ins> }.
+        </emu-alg>
+        <emu-grammar>ImportDeclaration : `import` ModuleSpecifier WithClause `;`</emu-grammar>
+        <emu-alg>
+          1. Let _specifier_ be the SV of |ModuleSpecifier|.
+          1. Let _attrs_ be WithClauseToAttributes of |WithClause|.
+          1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, <ins>[[Phase]]: ~evaluation~</ins> }.
+        </emu-alg>
         <emu-grammar>
           <ins>ImportDeclaration : `import` `defer` NameSpaceImport FromClause `;`</ins>
         </emu-grammar>
         <emu-alg>
-          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
+          1. <ins>Let _specifier_ be the SV of |FromClause|.</ins>
           1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », [[Phase]]: ~defer~ }.</ins>
         </emu-alg>
         <emu-grammar>
           <ins>ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause `;`</ins>
         </emu-grammar>
         <emu-alg>
-          1. <ins>Let _specifier_ be SV of |FromClause|.</ins>
+          1. <ins>Let _specifier_ be the SV of |FromClause|.</ins>
           1. <ins>Let _attrs_ be WithClauseToAttributes of |WithClause|.</ins>
           1. <ins>Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: _attrs_, [[Phase]]: ~defer~ }.</ins>
-        </emu-alg>
-        <emu-grammar><del>ModuleSpecifier : StringLiteral</del></emu-grammar>
-        <emu-alg>
-          1. <del>Return a List whose sole element is the SV of |StringLiteral|.</del>
         </emu-alg>
         <emu-grammar>
           ExportDeclaration : `export` ExportFromClause FromClause `;`
         </emu-grammar>
         <emu-alg>
-          1. Let _specifier_ be SV of |FromClause|.
+          1. Let _specifier_ be the SV of |FromClause|.
           1. Return a List whose sole element is the ModuleRequest Record { [[Specifier]]: _specifier_, [[Attributes]]: « », <ins>[[Phase]]: ~evaluation~</ins> }.
         </emu-alg>
         <emu-grammar>
@@ -713,7 +722,7 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-abstract-module-records" number="4">
         <h1>Abstract Module Records</h1>
         <p>A <dfn variants="Module Records">Module Record</dfn> encapsulates structural information about the imports and exports of a single module. This information is used to link the imports and exports of sets of connected modules. A Module Record includes four fields that are only used when evaluating a module.</p>
-        <p>For specification purposes Module Record values are values of the Record specification type and can be thought of as existing in a simple object-oriented hierarchy where Module Record is an abstract class with both abstract and concrete subclasses. This specification defines the abstract subclass named Cyclic Module Record and its concrete subclass named Source Text Module Record. Other specifications and implementations may define additional Module Record subclasses corresponding to alternative module definition facilities that they defined.</p>
+        <p>For specification purposes Module Records are values of the Record specification type and can be thought of as existing in a simple object-oriented hierarchy where Module Record is an abstract class with both abstract and concrete subclasses. This specification defines the abstract subclass named Cyclic Module Record and its concrete subclass named Source Text Module Record. Other specifications and implementations may define additional Module Record subclasses corresponding to alternative module definition facilities that they defined.</p>
         <p>Module Record defines the fields listed in <emu-xref href="#table-module-record-fields"></emu-xref>. All Module Definition subclasses include at least those fields. Module Record also defines the abstract method list in <emu-xref href="#table-abstract-methods-of-module-records"></emu-xref>. All Module definition subclasses must provide concrete implementations of these abstract methods.</p>
         <emu-table id="table-module-record-fields" caption="Module Record Fields" oldids="table-36">
           <table>
@@ -1101,7 +1110,7 @@ contributors: Nicolò Ribaudo
                 1. Return _index_.
               1. If _module_.[[Status]] is either ~evaluating-async~ or ~evaluated~, then
                 1. If _module_.[[EvaluationError]] is ~empty~, return _index_.
-                1. Otherwise, return ? _module_.[[EvaluationError]].
+                1. Return ? _module_.[[EvaluationError]].
               1. If _module_.[[Status]] is ~evaluating~, return _index_.
               1. Assert: _module_.[[Status]] is ~linked~.
               1. Set _module_.[[Status]] to ~evaluating~.
@@ -1136,7 +1145,7 @@ contributors: Nicolò Ribaudo
                   1. If _requiredModule_.[[AsyncEvaluationOrder]] is an integer, then
                     1. Set _module_.[[PendingAsyncDependencies]] to _module_.[[PendingAsyncDependencies]] + 1.
                     1. Append _module_ to _requiredModule_.[[AsyncParentModules]].
-              1. If _module_.[[PendingAsyncDependencies]] > 0 or _module_.[[HasTLA]] is *true*, then
+              1. If _module_.[[HasTLA]] is *true* or _module_.[[PendingAsyncDependencies]] > 0, then
                 1. Assert: _module_.[[AsyncEvaluationOrder]] is ~unset~.
                 1. Set _module_.[[AsyncEvaluationOrder]] to IncrementModuleAsyncEvaluationCount().
                 1. If _module_.[[PendingAsyncDependencies]] = 0, perform ExecuteAsyncModule(_module_).
@@ -1152,7 +1161,7 @@ contributors: Nicolò Ribaudo
                   1. Assert: _requiredModule_ is a Cyclic Module Record.
                   1. Assert: _requiredModule_.[[AsyncEvaluationOrder]] is either an integer or ~unset~.
                   1. If _requiredModule_.[[AsyncEvaluationOrder]] is ~unset~, set _requiredModule_.[[Status]] to ~evaluated~.
-                  1. Otherwise, set _requiredModule_.[[Status]] to ~evaluating-async~.
+                  1. Else, set _requiredModule_.[[Status]] to ~evaluating-async~.
                   1. If _requiredModule_ and _module_ are the same Module Record, set _done_ to *true*.
                   1. Set _requiredModule_.[[CycleRoot]] to _module_.
               1. Return _index_.
@@ -1208,7 +1217,7 @@ contributors: Nicolò Ribaudo
             <img alt="A module graph in which module A depends on module B, and module B depends on module C" width="60" height="198" src="img/module-graph-simple.svg">
           </emu-figure>
 
-          <p>Let's first assume that there are no error conditions. When a host first calls _A_.LoadRequestedModules(), this will complete successfully by assumption, and recursively load the dependencies of _B_ and _C_ as well (respectively, _C_ and none), and then set _A_.[[Status]] = _B_.[[Status]] = _C_.[[Status]] = ~unlinked~. Then, when the host calls _A_.Link(), it will complete successfully (again by assumption) such that _A_.[[Status]] = _B_.[[Status]] = _C_.[[Status]] = linked. These preparatory steps can be performed at any time. Later, when the host is ready to incur any possible side effects of the modules, it can call _A_.Evaluate(), which will complete successfully, returning a Promise resolving to *undefined* (again by assumption), recursively having evaluated first _C_ and then _B_. Each module's [[Status]] at this point will be ~evaluated~.</p>
+          <p>Let's first assume that there are no error conditions. When a host first calls _A_.LoadRequestedModules(), this will complete successfully by assumption, and recursively load the dependencies of _B_ and _C_ as well (respectively, _C_ and none), and then set _A_.[[Status]] = _B_.[[Status]] = _C_.[[Status]] = ~unlinked~. Then, when the host calls _A_.Link(), it will complete successfully (again by assumption) such that _A_.[[Status]] = _B_.[[Status]] = _C_.[[Status]] = ~linked~. These preparatory steps can be performed at any time. Later, when the host is ready to incur any possible side effects of the modules, it can call _A_.Evaluate(), which will complete successfully, returning a Promise resolving to *undefined* (again by assumption), recursively having evaluated first _C_ and then _B_. Each module's [[Status]] at this point will be ~evaluated~.</p>
 
           <p>Consider then cases involving linking errors, after a successful call to _A_.LoadRequestedModules(). If InnerModuleLinking of _C_ succeeds but, thereafter, fails for _B_, for example because it imports something that _C_ does not provide, then the original _A_.Link() will fail, and both _A_ and _B_'s [[Status]] remain ~unlinked~. _C_'s [[Status]] has become ~linked~, though.</p>
 
@@ -1292,7 +1301,7 @@ contributors: Nicolò Ribaudo
                 <td>1</td>
                 <td>3</td>
                 <td>0</td>
-                <td>2*</td>
+                <td>2</td>
               </tr>
               <tr>
                 <th>[[AsyncParentModules]]</th>
@@ -1572,7 +1581,7 @@ contributors: Nicolò Ribaudo
               <tr>
                 <th>[[PendingAsyncDependencies]]</th>
                 <td>1 (_B_)</td>
-                <th>0</th>
+                <td>0</td>
               </tr>
               <tr>
                 <th>[[EvaluationError]]</th>
@@ -1653,8 +1662,8 @@ contributors: Nicolò Ribaudo
               </tr>
               <tr>
                 <th>[[AsyncEvaluationOrder]]</th>
-                <td>~done~</td>
-                <td>~done~</td>
+                <td>4</td>
+                <td>1</td>
               </tr>
               <tr>
                 <th>[[AsyncParentModules]]</th>
@@ -2026,7 +2035,7 @@ contributors: Nicolò Ribaudo
                 1. Else,
                   1. Perform ! _envRecord_.CreateMutableBinding(_name_, *false*).
                 1. If _lexicalDecl_ is either a |FunctionDeclaration|, a |GeneratorDeclaration|, an |AsyncFunctionDeclaration|, or an |AsyncGeneratorDeclaration|, then
-                  1. Let _funcObj_ be InstantiateFunctionObject of _lexicalDecl_ with arguments _envRecord_ and _privateEnv_.
+                  1. Let _funcObj_ be InstantiateFunctionDeclaration of _lexicalDecl_ with arguments _envRecord_ and _privateEnv_.
                   1. Perform ! _envRecord_.InitializeBinding(_name_, _funcObj_).
             1. Remove _moduleContext_ from the execution context stack.
             1. Return ~unused~.
@@ -2092,7 +2101,7 @@ contributors: Nicolò Ribaudo
                 1. Assert: _resolution_ is a ResolvedBinding Record.
                 1. If _starResolution_ is *null*, then
                   1. Set _starResolution_ to _resolution_.
-                1. Else,
+                1. [id="step-resolveexport-conflict"] Else,
                   1. Assert: There is more than one `*` export that includes the requested name.
                   1. If _resolution_.[[Module]] and _starResolution_.[[Module]] are not the same Module Record, return ~ambiguous~.
                   1. If _resolution_.[[BindingName]] is not _starResolution_.[[BindingName]], return ~ambiguous~.
@@ -2142,7 +2151,7 @@ contributors: Nicolò Ribaudo
 
         <emu-alg>
           1. Assert: If _module_ is a Cyclic Module Record, then _module_.[[Status]] is not ~new~ or ~unlinked~.
-          1. <ins>If _phase_ is ~defer~, let _namespace_ be _module_.[[DeferredNamespace]]. Otherwise,</ins> let _namespace_ be _module_.[[Namespace]].
+          1. <ins>If _phase_ is ~defer~, let _namespace_ be _module_.[[DeferredNamespace]]. Else,</ins> let _namespace_ be _module_.[[Namespace]].
           1. If _namespace_ is ~empty~, then
             1. Let _exportedNames_ be _module_.GetExportedNames().
             1. Let _unambiguousNames_ be a new empty List.
@@ -2183,8 +2192,7 @@ contributors: Nicolò Ribaudo
 
         NamedImports :
           `{` `}`
-          `{` ImportsList `}`
-          `{` ImportsList `,` `}`
+          `{` ImportsList `,`? `}`
 
         FromClause :
           `from` ModuleSpecifier
@@ -2236,8 +2244,8 @@ contributors: Nicolò Ribaudo
         </emu-alg>
         <emu-grammar>ModuleItemList : ModuleItemList ModuleItem</emu-grammar>
         <emu-alg>
-          1. Let _entries1_ be ImportEntries of |ModuleItemList|.
-          1. Let _entries2_ be ImportEntries of |ModuleItem|.
+          1. Let _entries1_ be the ImportEntries of |ModuleItemList|.
+          1. Let _entries2_ be the ImportEntries of |ModuleItem|.
           1. Return the list-concatenation of _entries1_ and _entries2_.
         </emu-alg>
         <emu-grammar>
@@ -2251,12 +2259,12 @@ contributors: Nicolò Ribaudo
         <emu-grammar>ImportDeclaration : `import` ImportClause FromClause WithClause? `;`</emu-grammar>
         <emu-alg>
           1. Let _module_ be the sole element of the ModuleRequests of |ImportDeclaration|.
-          1. Return ImportEntriesForModule of |ImportClause| with arguments _module_.
+          1. Return the ImportEntriesForModule of |ImportClause| with argument _module_.
         </emu-alg>
         <emu-grammar><ins>ImportDeclaration : `import` `defer` NameSpaceImport FromClause WithClause? `;`</ins></emu-grammar>
         <emu-alg>
           1. <ins>Let _module_ be the sole element of the ModuleRequests of |ImportDeclaration|.</ins>
-          1. <ins>Return ImportEntriesForModule of |NameSpaceImport| with arguments _module_.</ins>
+          1. <ins>Return the ImportEntriesForModule of |NameSpaceImport| with argument _module_.</ins>
         </emu-alg>
         <emu-grammar>ImportDeclaration : `import` ModuleSpecifier WithClause? `;`</emu-grammar>
         <emu-alg>
@@ -2318,7 +2326,7 @@ contributors: Nicolò Ribaudo
               _ctor_: a constructor,
               _resultCapability_: a PromiseCapability Record,
               _promiseResolve_: a function object,
-            ): either a normal completion containing an ECMAScript language value or a throw completion
+            ): either a normal completion containing an Object or a throw completion
           </h1>
           <dl class="header">
           </dl>
