@@ -406,7 +406,7 @@ contributors: Nicolò Ribaudo
       <emu-clause id="sec-evaluate-import-call" type="abstract operation">
         <h1>
           EvaluateImportCall (
-            <ins>_arguments_: a Parse Node,</ins>
+            <ins>_args_: a Parse Node,</ins>
             <ins>_phase_: ~defer~ or ~evaluation~,</ins>
             <del>_specifierExpr_: a Parse Node,</del>
             <del>optional _optionsExpr_: a Parse Node,</del>
@@ -417,13 +417,13 @@ contributors: Nicolò Ribaudo
           1. Let _referrer_ be GetActiveScriptOrModule().
           1. If _referrer_ is *null*, set _referrer_ to the current Realm Record.
           1. <del>Let _specifierRef_ be ? Evaluation of _specifierExpr_.</del>
-          1. Let _specifier_ be ? <del>GetValue(_specifierRef_)</del><ins>EvaluateImportCallSpecifier of _arguments_</ins>.
+          1. Let _specifier_ be ? <del>GetValue(_specifierRef_)</del><ins>EvaluateImportCallSpecifier of _args_</ins>.
           1. <del>If _optionsExpr_ is present, then</del>
             1. <del>Let _optionsRef_ be ? Evaluation of _optionsExpr_.</del>
             1. <del>Let _options_ be ? GetValue(_optionsRef_).</del>
           1. <del>Else,</del>
             1. <del>Let _options_ be *undefined*.</del>
-          1. <ins>Let _options_ be ? EvaluateImportCallOptions of _arguments_.</ins>
+          1. <ins>Let _options_ be ? EvaluateImportCallOptions of _args_.</ins>
           1. Let _promiseCapability_ be ! NewPromiseCapability(%Promise%).
           1. Let _specifierString_ be Completion(ToString(_specifier_)).
           1. IfAbruptRejectPromise(_specifierString_, _promiseCapability_).
@@ -935,8 +935,8 @@ contributors: Nicolò Ribaudo
               1. If _seen_ contains _module_, return *true*.
               1. Append _module_ to _seen_.
               1. If IsModuleSCCEvaluated(_module_), return *true*.
-              1. If _module_.[[Status]] is ~evaluating~ or ~evaluating-async~, return *false*.
-              1. Assert: _module_.[[Status]] is ~linked~ or ~evaluated~.
+              1. If _module_.[[Status]] is either ~evaluating~ or ~evaluating-async~, return *false*.
+              1. Assert: _module_.[[Status]] is either ~linked~ or ~evaluated~.
               1. If _module_.[[HasTLA]] is *true*, return *false*.
               1. For each ModuleRequest Record _request_ of _module_.[[RequestedModules]], do
                 1. Let _requiredModule_ be GetImportedModule(_module_, _request_).
@@ -1183,7 +1183,7 @@ contributors: Nicolò Ribaudo
             </h1>
             <dl class="header">
               <dt>description</dt>
-              <dd>Collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency is found.</dd>
+              <dd>It collects the direct post-order list of asynchronous unexecuted transitive dependencies, stopping the depth-first search for a branch when an asynchronous dependency is found.</dd>
             </dl>
 
             <emu-alg>
@@ -1192,7 +1192,7 @@ contributors: Nicolò Ribaudo
               1. If _seen_ contains _module_, return _result_.
               1. Append _module_ to _seen_.
               1. If _module_ is not a Cyclic Module Record, return _result_.
-              1. If _module_.[[Status]] is either ~evaluating~ or IsModuleSCCEvaluated(_module_), return _result_.
+              1. If _module_.[[Status]] is ~evaluating~ or IsModuleSCCEvaluated(_module_) is *true*, return _result_.
               1. If _module_.[[HasTLA]] is *true*, then
                 1. Append _module_ to _result_.
                 1. Return _result_.
@@ -2000,8 +2000,8 @@ contributors: Nicolò Ribaudo
               1. Else,
                 1. Let _resolution_ be _importedModule_.ResolveExport(_importEntry_.[[ImportName]]).
                 1. If _resolution_ is either *null* or ~ambiguous~, throw a *SyntaxError* exception.
-                1. If _resolution_.[[BindingName]] is ~namespace~ <ins>or ~deferred-namespace~</ins>, then
-                  1. <ins>If _resolution_.[[BindingName]] is ~namespace~ let _phase_ be ~evaluation~, else let _phase_ be ~defer~.</ins>
+                1. If _resolution_.[[BindingName]] is <ins>either</ins> ~namespace~ <ins>or ~deferred-namespace~</ins>, then
+                  1. <ins>If _resolution_.[[BindingName]] is ~namespace~, let _phase_ be ~evaluation~; else let _phase_ be ~defer~.</ins>
                   1. Let _namespace_ be GetModuleNamespace(_resolution_.[[Module]], <ins>_phase_</ins>).
                   1. Perform ! _envRecord_.CreateImmutableBinding(_importEntry_.[[LocalName]], *true*).
                   1. Perform ! _envRecord_.InitializeBinding(_importEntry_.[[LocalName]], _namespace_).
